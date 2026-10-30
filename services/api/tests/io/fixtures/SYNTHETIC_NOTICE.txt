@@ -1,0 +1,2 @@
+SYNTHETIC TEST FIXTURES. Headers mirror real vendor exports; genotype calls are invented and
+do not belong to any person.

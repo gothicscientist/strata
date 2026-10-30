@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strata report: {{ b.analysis.title or b.analysis.kind }}</title>
+<style>
+  :root { --ink:#1b1b1b; --muted:#5d5d5d; --rule:#1b1b1b; --hair:#cfcfcf; --paper:#fdfdfb;
+          --accent:#7a2e1f; --formal:#1f4e79; }
+  html { background: var(--paper); }
+  body { color: var(--ink); background: var(--paper); margin: 0 auto; max-width: 46rem;
+         padding: 3rem 1.25rem 4rem; font: 1.02rem/1.6 Charter, "Bitstream Charter",
+         "Sitka Text", Cambria, Georgia, serif; font-variant-numeric: oldstyle-nums;
+         hyphens: auto; }
+  h1 { font-size: 1.75rem; line-height: 1.2; margin: 0 0 .25rem; font-weight: 600; }
+  h2 { font-size: 1.05rem; font-variant: small-caps; letter-spacing: .04em; margin: 2.2rem 0 .6rem;
+       font-weight: 600; border-bottom: 1px solid var(--hair); padding-bottom: .2rem; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .badge { display: inline-block; font: 600 .72rem/1 system-ui, sans-serif; letter-spacing: .06em;
+           text-transform: uppercase; padding: .35rem .55rem; border: 1px solid currentColor;
+           border-radius: 2px; color: var(--accent); }
+  .badge.formal { color: var(--formal); }
+  table { border-collapse: collapse; width: 100%; margin: .75rem 0 1rem; font-size: .92rem;
+          font-variant-numeric: lining-nums tabular-nums; }
+  thead th { border-top: 1.5px solid var(--rule); border-bottom: .75px solid var(--rule);
+             text-align: left; font-weight: 600; padding: .35rem .5rem; }
+  tbody td { padding: .3rem .5rem; vertical-align: top; }
+  tbody tr:last-child td { border-bottom: 1.5px solid var(--rule); }
+  td.num, th.num { text-align: right; }
+  code, pre { font: .82rem/1.45 "SFMono-Regular", Menlo, Consolas, monospace; }
+  pre { background: #f3f2ee; padding: .8rem 1rem; overflow-x: auto; border-left: 2px solid var(--hair); }
+  ol li, ul li { margin: .25rem 0; }
+  .caveats li { color: #3a3a3a; }
+  .hash { word-break: break-all; font-size: .78rem; color: var(--muted); }
+  footer { margin-top: 3rem; font-size: .82rem; color: var(--muted); border-top: 1px solid var(--hair);
+           padding-top: .75rem; }
+  @media print { body { padding: 0; max-width: none; } pre { white-space: pre-wrap; } }
+</style>
+</head>
+<body>
+<header>
+  <span class="badge {{ 'formal' if b.classification == 'formal' else '' }}">
+    {{ 'Formal test (f-statistics)' if b.classification == 'formal' else 'Exploratory analysis' }}
+  </span>
+  <h1>{{ b.analysis.title or (b.analysis.kind | replace('_', ' ') | title) }}</h1>
+  <div class="meta">
+    Analysis <code>{{ b.analysis.id }}</code> · {{ b.analysis.kind }} · status {{ b.analysis.status }}<br>
+    Created {{ b.analysis.created_at }}{% if b.analysis.finished_at %} · finished {{ b.analysis.finished_at }}{% endif %}
+    · report generated {{ b.generated_at }}
+  </div>
+</header>
+
+<h2>Results</h2>
+{% set r = b.results %}
+{% if r.target %}<p>Target: <strong>{{ r.target }}</strong>{% if r.space %} · coordinate space <code>{{ r.space }}</code>{% endif %}</p>{% endif %}
+{% if r.weights and r.weights[0] is mapping %}
+<table>
+  <thead><tr><th>Source</th><th class="num">Weight</th><th class="num">SE</th>
+    <th class="num">95% interval</th>{% if r.weights[0].z is defined %}<th class="num">z</th>{% endif %}</tr></thead>
+  <tbody>
+  {% for w in r.weights %}
+    <tr><td>{{ w.source or w.name }}</td><td class="num">{{ w.weight | pct }}</td>
+      <td class="num">{{ w.se | fmt }}</td>
+      <td class="num">{% if w.ci_low is not none and w.ci_high is not none %}{{ w.ci_low | pct }} – {{ w.ci_high | pct }}{% else %}–{% endif %}</td>
+      {% if r.weights[0].z is defined %}<td class="num">{{ w.z | fmt(2) }}</td>{% endif %}</tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% if r.distance is defined and r.distance is not none %}<p>Fit distance: {{ r.distance | fmt }}</p>{% endif %}
+{% if r.p_value is defined %}<p>p-value {{ r.p_value | fmt }} · χ² {{ r.chisq | fmt(3) }} · dof {{ r.dof }}{% if r.feasible is defined %} · {{ 'feasible' if r.feasible else 'infeasible (weights outside [0, 1])' }}{% endif %}</p>{% endif %}
+{% if r.models %}
+<table>
+  <thead><tr><th>#</th><th>Sources</th><th class="num">Weights</th><th class="num">{{ 'p-value' if b.classification == 'formal' else 'Distance' }}</th></tr></thead>
+  <tbody>
+  {% for m in r.models[:25] %}
+    <tr><td>{{ m.rank or loop.index }}</td><td>{{ (m.sources or m.left or []) | join(' + ') }}</td>
+      <td class="num">{% if m.weights %}{% for w in m.weights %}{{ (w.weight if w is mapping else w) | pct }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</td>
+      <td class="num">{{ (m.p_value if b.classification == 'formal' else m.distance) | fmt }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% if r.hits %}
+<table>
+  <thead><tr><th>#</th><th>Population</th><th class="num">Distance</th></tr></thead>
+  <tbody>{% for h in r.hits[:30] %}<tr><td>{{ loop.index }}</td><td>{{ h.name or h.population_id }}</td><td class="num">{{ h.distance | fmt }}</td></tr>{% endfor %}</tbody>
+</table>
+{% endif %}
+{% if r.rank_tests %}
+<table>
+  <thead><tr><th>Rank</th><th class="num">dof</th><th class="num">χ²</th><th class="num">p</th></tr></thead>
+  <tbody>{% for t in r.rank_tests %}<tr><td>{{ t.rank }}</td><td class="num">{{ t.dof }}</td><td class="num">{{ t.chisq | fmt(3) }}</td><td class="num">{{ t.p | fmt }}</td></tr>{% endfor %}</tbody>
+</table>
+{% endif %}
+<details><summary>Full result (JSON)</summary><pre>{{ r | tojson_pretty }}</pre></details>
+
+<h2>Uncertainty</h2>
+<pre>{{ b.uncertainty | tojson_pretty }}</pre>
+
+<h2>Interpretation and caveats</h2>
+<ul class="caveats">{% for c in b.caveats %}<li>{{ c }}</li>{% endfor %}</ul>
+
+<h2>Inputs</h2>
+{% if b.inputs %}
+<table>
+  <thead><tr><th>Dataset</th><th>Kind</th><th>Input SHA-256</th></tr></thead>
+  <tbody>{% for i in b.inputs %}<tr><td>{{ i.name }}</td><td>{{ i.kind }}</td><td class="hash">{{ i.input_sha256 }}</td></tr>{% endfor %}</tbody>
+</table>
+{% else %}<p>Reference data only (no user dataset).</p>{% endif %}
+
+<h2>Parameters</h2>
+<pre>{{ b.parameters | tojson_pretty }}</pre>
+
+<h2>Software and data versions</h2>
+<table>
+  <tbody>
+    <tr><td>Strata</td><td>{{ b.provenance.code.strata if b.provenance.code else '–' }}{% if b.provenance.code and b.provenance.code.git_sha %} (<code>{{ b.provenance.code.git_sha[:12] }}</code>{% if b.provenance.code.git_dirty %}, modified{% endif %}){% endif %}</td></tr>
+    <tr><td>Reference data</td><td>{{ b.provenance.reference_version or '–' }}</td></tr>
+    <tr><td>Random seed</td><td>{{ b.provenance.seed if b.provenance.seed is not none else '–' }}</td></tr>
+    {% for k, v in (b.provenance.software or {}).items() %}<tr><td>{{ k }}</td><td>{{ v or '–' }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+<h2>How to reproduce</h2>
+<ol>{% for s in b.reproduce.steps %}<li>{{ s }}</li>{% endfor %}</ol>
+<pre>{{ b.reproduce.api_request | tojson_pretty }}</pre>
+
+<footer>
+  {{ b.report_version }} · bundle SHA-256 <span class="hash">{{ b.bundle_sha256 }}</span><br>
+  Generated by Strata. Genetic ancestry estimates are statistical summaries relative to the
+  reference samples used; they are not statements about identity, ethnicity or health.
+</footer>
+</body>
+</html>

@@ -1,0 +1,19 @@
+##fileformat=VCFv4.2
+##source=SYNTHETIC_TEST_FIXTURE
+##reference=GRCh38
+##contig=<ID=chr1,length=248956422>
+##contig=<ID=chr2,length=242193529>
+##contig=<ID=chr15,length=101991189>
+##contig=<ID=chrX,length=156040895>
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE1
+chr1	817186	rs3094315	G	A	50	PASS	.	GT:GQ	0/1:99
+chr1	817341	rs3131972	A	G	50	PASS	.	GT:GQ	1|1:99
+chr1	900000	.	C	T	50	PASS	.	GT:GQ	0/0:80
+chr1	910000	rs99999901	AT	A	50	PASS	.	GT:GQ	0/1:80
+chr2	135851076	rs4988235	G	A	50	PASS	.	GT:GQ	0/1:99
+chr2	136000000	rs99999902	C	A,T	50	PASS	.	GT:GQ	1/2:60
+chr15	48134287	rs1426654	G	A	50	PASS	.	GT:GQ	./.:0
+chr15	48200000	rs99999903	T	<NON_REF>	50	PASS	.	GT	0/0
+chrX	5000000	rs99999904	G	A	50	PASS	.	GT	1
