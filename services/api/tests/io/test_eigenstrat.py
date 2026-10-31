@@ -128,3 +128,40 @@ def test_merge_sample(tmp_path):
             sample_population="T",
             dosage=dosage,
         )
+
+
+def _write_tgeno(path, geno: np.ndarray) -> None:
+    """Transposed packed ancestrymap, laid out as AADR v66.p1 ships it:
+    a 48-byte header, then one ceil(n_snp/4)-byte record per individual."""
+    n_ind, n_snp = geno.shape
+    rlen = max(48, -(-n_snp // 4))
+    codes = np.where(geno == MISSING, 3, geno).astype(np.uint8)
+    padded = np.full((n_ind, rlen * 4), 3, dtype=np.uint8)
+    padded[:, :n_snp] = codes
+    v = padded.reshape(n_ind, rlen, 4)
+    body = (v[:, :, 0] << 6) | (v[:, :, 1] << 4) | (v[:, :, 2] << 2) | v[:, :, 3]
+    header = f"TGENO {n_ind:7d} {n_snp:7d} 0 0".encode().ljust(48, b"\x00")
+    with open(path, "wb") as fh:
+        fh.write(header)
+        fh.write(body.astype(np.uint8).tobytes())
+
+
+@pytest.mark.parametrize("n_snp", [7, 200, 1001])
+def test_read_tgeno_matches_written_genotypes(tmp_path, n_snp: int) -> None:
+    ds = _dataset(9, n_snp, seed=n_snp)
+    path = tmp_path / "t.geno"
+    _write_tgeno(path, ds.geno)
+    np.testing.assert_array_equal(read_geno(path, 9, n_snp), ds.geno)
+    ii = np.array([8, 0, 3])
+    ss = np.array([n_snp - 1, 0, n_snp // 2])
+    np.testing.assert_array_equal(
+        read_geno(path, 9, n_snp, ind_idx=ii, snp_idx=ss), ds.geno[np.ix_(ii, ss)]
+    )
+
+
+def test_read_tgeno_rejects_size_mismatch(tmp_path) -> None:
+    ds = _dataset(4, 100)
+    path = tmp_path / "t.geno"
+    _write_tgeno(path, ds.geno)
+    with pytest.raises(Exception, match="TGENO"):
+        read_geno(path, 5, 100)

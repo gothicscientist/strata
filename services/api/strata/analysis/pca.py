@@ -76,20 +76,25 @@ class PCAModel(ArrayModel):
             )
 
 
-def _as_float(G: np.ndarray) -> np.ndarray:
+def _as_float(G: np.ndarray, dtype: type = np.float64) -> np.ndarray:
     G = np.asarray(G)
     if G.dtype.kind in "iu":
-        out = G.astype(np.float64)
+        out = G.astype(dtype)
         out[(G < 0) | (G > 2)] = np.nan
         return out
-    return G.astype(np.float64, copy=False)
+    return G.astype(dtype, copy=False)
 
 
 def normalisation(G: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Per-SNP mean (2p) and sqrt(p(1-p)) with smartpca's +1/+2 frequency smoothing."""
-    obs = np.isfinite(G)
-    n = obs.sum(axis=0)
-    s = np.where(obs, G, 0.0).sum(axis=0)
+    # Row blocks keep the temporaries small on panel-sized matrices.
+    n = np.zeros(G.shape[1], dtype=np.int64)
+    s = np.zeros(G.shape[1], dtype=np.float64)
+    for start in range(0, G.shape[0], 256):
+        blk = G[start : start + 256]
+        obs = np.isfinite(blk)
+        n += obs.sum(axis=0)
+        s += np.where(obs, blk, 0.0).sum(axis=0, dtype=np.float64)
     mean = np.divide(s, n, out=np.zeros(G.shape[1]), where=n > 0)
     p = (s + 1.0) / (2.0 * n + 2.0)
     return mean, np.sqrt(p * (1.0 - p))
@@ -104,17 +109,29 @@ def fit_reference_pca(
     snp_ids: np.ndarray | None = None,
     space: str = "strata-pca-v1",
     n_iter: int = 7,
+    dtype: type = np.float64,
 ) -> PCAModel:
-    """Fit PCA on reference dosages ``G`` (n_individuals, n_snps); NaN or -1 = missing."""
-    X = _as_float(G)
+    """Fit PCA on reference dosages ``G`` (n_individuals, n_snps); NaN or -1 = missing.
+
+    ``dtype=np.float32`` halves the working set, which is what makes a fit on
+    the full AADR Human Origins panel (thousands of individuals x ~400k SNPs)
+    fit in memory. Pass integer genotypes (int8, -1 = missing) to avoid holding
+    a float copy outside this function as well.
+    """
+    X = _as_float(G, dtype)
+    if np.shares_memory(X, G):
+        X = X.copy()  # standardised in place below; never touch the caller's array
     n, m = X.shape
     if n < 2 or m < 2:
         raise ValueError("need at least 2 individuals and 2 SNPs")
     k = int(min(n_components, n - 1, m))
     mean, scale = normalisation(X)
-    Xs = (X - mean) / scale
+    Xs = X
+    Xs -= mean
+    Xs /= scale
     Xs[~np.isfinite(Xs)] = 0.0
-    total_ss = float(np.sum(Xs * Xs))
+    # Row-wise in float64: avoids an n x m temporary and float32 accumulation.
+    total_ss = float(sum(float(np.dot(r.astype(np.float64), r)) for r in Xs))
     if min(n, m) <= 500:
         U, S, Vt = np.linalg.svd(Xs, full_matrices=False)
         U, S, Vt = U[:, :k], S[:k], Vt[:k]
@@ -213,6 +230,7 @@ def out_of_fold_scores(
     n_folds: int = 5,
     seed: int = 0,
     groups: np.ndarray | None = None,
+    dtype: type = np.float64,
 ) -> np.ndarray:
     """Reference coordinates free of in-sample shrinkage bias, in ``model``'s axes.
 
@@ -221,7 +239,9 @@ def out_of_fold_scores(
     coordinates are rotated into the full model's frame by orthogonal Procrustes on the
     loadings. The result is directly comparable with ``project_array`` output for new samples.
     """
-    X = _as_float(G)
+    # Folds are sliced from G as given (ideally int8) and converted per fold,
+    # so no full-size float copy of G is held across the loop.
+    X = np.asarray(G)
     n = X.shape[0]
     rng = np.random.default_rng(seed)
     fold = np.empty(n, dtype=np.int64)
@@ -237,7 +257,7 @@ def out_of_fold_scores(
         test = fold == f
         if not test.any() or test.all():
             continue
-        sub = fit_reference_pca(X[~test], model.n_components, seed=seed + f)
+        sub = fit_reference_pca(X[~test], model.n_components, seed=seed + f, dtype=dtype)
         coords, _ = project_array(X[test], sub, min_snps=0)
         u, _, wt = np.linalg.svd(sub.loadings.T @ model.loadings)
         out[test] = coords @ (u @ wt)

@@ -42,21 +42,24 @@ RETIRED_AADR_VERSIONS = ("v62.0", "v66.0", "62.0", "66.0")
 class AadrDataset:
     """One AADR genotype dataset within a release.
 
-    `stem` is the basename AADR uses inside the distributed archive, e.g.
-    `v66.p1_HO_public`, which expands to `.geno`, `.snp`, `.ind` and `.anno`.
+    `stem` is the EIGENSTRAT genotype prefix as published on Dataverse, e.g.
+    `v66.p1_HO.aadr.patch.PUB`, which expands to `.geno`, `.snp` and `.ind`.
+    `anno_stem` is the annotation file's own basename: from v66.p1 the `.anno`
+    is published without the `.patch` infix (`v66.p1_HO.aadr.PUB.anno`).
     """
 
     key: str
     snpset: str
     stem: str
     description: str
+    anno_stem: str | None = None
     # Populated from the Dataverse dataset listing at download time; the
     # pipeline verifies against it when present and records what it saw.
     expected_sha256: str | None = None
 
     @property
     def anno(self) -> str:
-        return f"{self.stem}.anno"
+        return f"{self.anno_stem or self.stem}.anno"
 
     @property
     def files(self) -> tuple[str, ...]:
@@ -64,8 +67,14 @@ class AadrDataset:
 
 
 def _stem(snpset: str) -> str:
-    # AADR's naming convention, e.g. "v54.1.p1_HO_public", "v66.p1_1240K_public".
-    return f"{AADR_VERSION}_{snpset}_public"
+    # AADR's Dataverse file naming as of v66.p1 (read from the dataset listing
+    # on 2026-10-31): genotypes are "v66.p1_HO.aadr.patch.PUB.{geno,snp,ind}".
+    return f"{AADR_VERSION}_{snpset}.aadr.patch.PUB"
+
+
+def _anno_stem(snpset: str) -> str:
+    # ...and the annotation is "v66.p1_HO.aadr.PUB.anno", without ".patch".
+    return f"{AADR_VERSION}_{snpset}.aadr.PUB"
 
 
 # HO = Human Origins (~597k SNPs, includes present-day individuals genotyped on
@@ -76,12 +85,14 @@ DATASETS: dict[str, AadrDataset] = {
         key="HO",
         snpset="HO",
         stem=_stem("HO"),
+        anno_stem=_anno_stem("HO"),
         description="AADR Human Origins subset; PCA space 'strata-pca-v1'.",
     ),
     "1240K": AadrDataset(
         key="1240K",
         snpset="1240K",
         stem=_stem("1240K"),
+        anno_stem=_anno_stem("1240K"),
         description="AADR 1240K capture panel; f2 blocks for qpAdm/qpWave/f4.",
     ),
 }
@@ -122,6 +133,10 @@ class QcThresholds:
         "_outlier_",  # keep bare "_outlier" labels, which are real analysis groups
         "_hasrelative",
         "_published",  # duplicate of an already-published individual
+        # AADR v66.p1 hyphen markers.
+        "-qcremove",
+        "-dup",
+        "relative",
     )
     # Drop one of each pair of individuals sharing a Master ID (same person
     # sequenced twice), keeping the one with more SNPs.

@@ -140,11 +140,14 @@ def build_space(
     log.info("PCA fit: %d individuals, %d SNPs", int(is_fit.sum()), snp_idx.size)
 
     snp_ids = np.asarray(ds.panel.rsid)[snp_idx]
-    fit_dosage = _dosage(ds.geno[np.ix_(is_fit, snp_idx)])
+    # Kept as int8 (-1 = missing) and converted to float32 inside the fit: a
+    # float64 copy of the HO fit matrix alone is ~9 GB.
+    fit_geno = ds.geno[np.ix_(is_fit, snp_idx)]
     model = fit_reference_pca(
-        fit_dosage,
+        fit_geno,
         config.n_components,
         seed=config.seed,
+        dtype=np.float32,
         sample_ids=[i for i, f in zip(ids, is_fit, strict=True) if f],
         snp_ids=snp_ids,
         space=config.space_id,
@@ -163,17 +166,21 @@ def build_space(
     #
     # Mixing the two scales measurably biases downstream admixture fits, so
     # every stored row is out-of-sample with respect to its own coordinates.
-    all_dosage = _dosage(ds.geno[:, snp_idx])
-    coords, used = project_array(all_dosage, model)
+    coords = np.full((len(ids), model.n_components), np.nan)
+    used = np.zeros(len(ids), dtype=np.int64)
+    for start in range(0, len(ids), 256):
+        block = _dosage(ds.geno[start : start + 256][:, snp_idx])
+        coords[start : start + 256], used[start : start + 256] = project_array(block, model)
 
     fit_ix = np.flatnonzero(is_fit)
     if fit_ix.size:
         oof = out_of_fold_scores(
-            fit_dosage,
+            fit_geno,
             model,
             n_folds=config.n_folds,
             seed=config.seed,
             groups=np.array([meta[ids[i]].population_id for i in fit_ix], dtype=object),
+            dtype=np.float32,
         )
         # A fold that could not be fitted leaves NaN; keep the lsq-projected
         # value there rather than dropping the individual.
