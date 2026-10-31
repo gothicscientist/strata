@@ -21,9 +21,9 @@ def test_normalisation_matches_smartpca_formula():
     np.testing.assert_allclose(scale, np.sqrt(p * (1 - p)))
 
 
-def test_fit_separates_populations_and_variance_ordered(sim):
-    G, labels = _ref(sim)
-    model = pca.fit_reference_pca(G, 4, seed=1)
+def test_fit_separates_populations_and_variance_ordered(sim, ref_pca):
+    _, labels = _ref(sim)
+    model = ref_pca
     ev = model.explained_variance_ratio
     assert np.all(np.diff(ev) <= 1e-12) and ev.sum() < 1
     sc = model.reference_scores
@@ -33,21 +33,21 @@ def test_fit_separates_populations_and_variance_ordered(sim):
     assert min(abs(o.mean() - rest.mean()) / sc[:, 0].std(), 10) > 1.5
 
 
-def test_projection_reproduces_reference_scores(sim):
+def test_projection_reproduces_reference_scores(sim, ref_pca):
     G, _ = _ref(sim)
-    model = pca.fit_reference_pca(G, 4)
+    model = ref_pca
     coords, used = pca.project_array(G[:5], model)
     np.testing.assert_allclose(coords, model.reference_scores[:5], atol=1e-8)
     assert np.all(used == G.shape[1])
 
 
-def test_heldout_projection_matches_full_pca(sim):
+def test_heldout_projection_matches_full_pca(sim, ref_pca):
     G, labels = _ref(sim)
     rng = np.random.default_rng(0)
     held = np.zeros(len(labels), dtype=bool)
     for p in ["A", "B", "C", "O"]:
         held[rng.choice(np.flatnonzero(labels == p), 4, replace=False)] = True
-    full = pca.fit_reference_pca(G, 3, seed=0)
+    full = ref_pca
     part = pca.fit_reference_pca(G[~held], 3, seed=0)
     proj, _ = pca.project_array(G[held], part)
     target = full.reference_scores[held]
@@ -59,9 +59,8 @@ def test_heldout_projection_matches_full_pca(sim):
         assert 0.75 < ratio < 1.33
 
 
-def test_projection_with_missing_snps(sim):
-    G, _ = _ref(sim)
-    model = pca.fit_reference_pca(G, 3)
+def test_projection_with_missing_snps(sim, ref_pca):
+    model = ref_pca
     X = sim.G[sim.labels == "X"][:10].astype(float)
     full, _ = pca.project_array(X, model)
     rng = np.random.default_rng(3)
@@ -92,9 +91,7 @@ def test_randomized_and_exact_svd_agree():
     np.testing.assert_allclose(exact.singular_values, approx.singular_values)
     big = np.repeat(G, 2, axis=0)[:, :600]  # 1200 x 600 -> randomized path
     m1 = pca.fit_reference_pca(big, 2, seed=1)
-    U, S, _ = np.linalg.svd(
-        np.nan_to_num((big - m1.mean) / m1.scale), full_matrices=False
-    )
+    U, S, _ = np.linalg.svd(np.nan_to_num((big - m1.mean) / m1.scale), full_matrices=False)
     np.testing.assert_allclose(m1.singular_values, S[:2], rtol=1e-6)
 
 
@@ -124,3 +121,21 @@ def test_project_wrong_length():
     model = pca.fit_reference_pca(np.random.default_rng(0).integers(0, 3, (10, 30)), 2)
     with pytest.raises(ValueError):
         pca.project_array(np.zeros(29), model)
+
+
+def test_out_of_fold_scores_remove_shrinkage(sim, ref_pca):
+    G, labels = _ref(sim)
+    oof = pca.out_of_fold_scores(G, ref_pca, n_folds=5, groups=labels)
+    xs, _ = pca.project_array(sim.G[sim.labels == "X"], ref_pca)
+    # Out-of-fold reference coordinates and projected X are on the same scale, so the
+    # simulated mixture X = 0.3 A + 0.7 B is recovered from them.
+    from strata.analysis import admixture
+
+    cent = {p: oof[labels == p, :4].mean(axis=0) for p in ["A", "B", "C"]}
+    res = admixture.fit(
+        xs[:, :4].mean(axis=0), np.vstack(list(cent.values())), source_names=list(cent)
+    )
+    w = res.weights()
+    assert abs(w["A"] - 0.3) < 0.06 and abs(w["B"] - 0.7) < 0.06
+    for k in range(2):
+        assert abs(np.corrcoef(oof[:, k], ref_pca.reference_scores[:, k])[0, 1]) > 0.95

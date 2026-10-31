@@ -32,7 +32,7 @@ function LibraryFigure() {
         </>
       }
     >
-      <PcaPlot space={space} compact height={360} />
+      <PcaPlot space={space} compact height={420} />
     </Figure>
   );
 }

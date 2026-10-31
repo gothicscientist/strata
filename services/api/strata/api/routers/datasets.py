@@ -18,32 +18,47 @@ router = APIRouter(prefix="/datasets", tags=["datasets"])
 _UPLOAD_SCHEMA = {
     "requestBody": {
         "required": True,
-        "content": {"multipart/form-data": {"schema": {
-            "type": "object",
-            "properties": {
-                "kind": {"type": "string", "enum": ["g25", "raw_dna", "vcf", "auto"],
-                         "default": "auto"},
-                "file": {"type": "string", "format": "binary",
-                         "description": "23andMe / AncestryDNA / FTDNA / MyHeritage export, "
-                                        "single-sample VCF, or G25 CSV (.gz/.zip accepted)"},
-                "g25_text": {"type": "string", "description": "Pasted G25 coordinates"},
-                "name": {"type": "string", "maxLength": 200},
-            },
-        }}},
+        "content": {
+            "multipart/form-data": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "kind": {
+                            "type": "string",
+                            "enum": ["g25", "raw_dna", "vcf", "auto"],
+                            "default": "auto",
+                        },
+                        "file": {
+                            "type": "string",
+                            "format": "binary",
+                            "description": "23andMe / AncestryDNA / FTDNA / MyHeritage export, "
+                            "single-sample VCF, or G25 CSV (.gz/.zip accepted)",
+                        },
+                        "g25_text": {"type": "string", "description": "Pasted G25 coordinates"},
+                        "name": {"type": "string", "maxLength": 200},
+                    },
+                }
+            }
+        },
     }
 }
 
 
-@router.post("", response_model=DatasetOut, status_code=201, openapi_extra=_UPLOAD_SCHEMA,
-             dependencies=[Depends(rate_limit_expensive)],
-             summary="Upload G25 coordinates or a raw DNA file")
-async def upload_dataset(request: Request, db: DbDep, principal: PrincipalDep,
-                         settings: SettingsDep) -> dict:
+@router.post(
+    "",
+    response_model=DatasetOut,
+    status_code=201,
+    openapi_extra=_UPLOAD_SCHEMA,
+    dependencies=[Depends(rate_limit_expensive)],
+    summary="Upload G25 coordinates or a raw DNA file",
+)
+async def upload_dataset(
+    request: Request, db: DbDep, principal: PrincipalDep, settings: SettingsDep
+) -> dict:
     """Parses the upload in memory, harmonises raw DNA to the reference SNP panel (when
     installed), encrypts the result with a per-dataset key, and returns the QC report.
     The original file is never written to disk or logged."""
-    form = await request.form(max_files=1, max_fields=6,
-                              max_part_size=settings.max_upload_bytes)
+    form = await request.form(max_files=1, max_fields=6, max_part_size=settings.max_upload_bytes)
     try:
         kind = str(form.get("kind") or "auto")
         if kind not in ("g25", "raw_dna", "vcf", "auto"):
@@ -71,16 +86,27 @@ async def upload_dataset(request: Request, db: DbDep, principal: PrincipalDep,
     del raw
     if kind == "auto":
         kind = svc.detect_kind(accepted.data, accepted.filename)
-    ds = svc.ingest(db, vault_from_settings(), principal, kind=kind, data=accepted.data,
-                    filename=accepted.filename, name=name,
-                    expires_at=owner_expiry(db, principal))
+    ds = svc.ingest(
+        db,
+        vault_from_settings(),
+        principal,
+        kind=kind,
+        data=accepted.data,
+        filename=accepted.filename,
+        name=name,
+        expires_at=owner_expiry(db, principal),
+    )
     return svc.to_out(ds)
 
 
 @router.get("", response_model=list[DatasetOut], summary="List my datasets")
 def list_datasets(db: DbDep, principal: PrincipalDep) -> list[dict]:
-    rows = db.query(Dataset).filter(Dataset.owner_id == principal.user_id).order_by(
-        Dataset.created_at.desc()).all()
+    rows = (
+        db.query(Dataset)
+        .filter(Dataset.owner_id == principal.user_id)
+        .order_by(Dataset.created_at.desc())
+        .all()
+    )
     return [svc.to_out(d) for d in rows]
 
 

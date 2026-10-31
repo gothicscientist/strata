@@ -6,7 +6,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { bpRange, int } from "@/lib/format";
 import { useResource } from "@/lib/useResource";
-import type { PopulationQuery, Publication } from "@/lib/types";
+import type { Facets, PopulationQuery, Publication } from "@/lib/types";
 import { OriginsMap } from "@/components/charts/OriginsMap";
 import { Empty, ErrorNote, Figure, Loading, PageHeader } from "@/components/typography";
 import { shortCitation } from "@/lib/citation";
@@ -60,11 +60,7 @@ function Library() {
   }, [pubs.data]);
 
   // Facets come from the API; until it reports them, offer the values visible on this page.
-  const [facets, setFacets] = useState<{ region: string[]; period: string[]; source_dataset: string[] }>({
-    region: [],
-    period: [],
-    source_dataset: [],
-  });
+  const [facets, setFacets] = useState<Facets>({ region: [], period: [], country: [], source_dataset: [] });
   useEffect(() => {
     const d = pops.data;
     if (!d) return;
@@ -77,8 +73,9 @@ function Library() {
         [...new Set([...a, ...b.filter((x): x is string => !!x)])].sort();
       return {
         region: merge(f.region, d.items.map((i) => i.region)),
+        country: merge(f.country, d.items.map((i) => i.country)),
         period: merge(f.period, d.items.map((i) => i.period)),
-        source_dataset: merge(f.source_dataset, d.items.map((i) => i.source_dataset)),
+        source_dataset: merge(f.source_dataset, d.items.map((i) => i.data_source)),
       };
     });
   }, [pops.data]);
@@ -104,10 +101,10 @@ function Library() {
 
   const data = pops.data;
   const first = data ? (data.page - 1) * data.page_size + 1 : 0;
-  const last = data ? Math.min(data.total, data.page * data.page_size) : 0;
+  const last = data ? first + data.items.length - 1 : 0;
   const pages = data ? Math.max(1, Math.ceil(data.total / data.page_size)) : 1;
 
-  const selects: Array<[string, keyof typeof facets, string | undefined, (v: string) => void]> = [
+  const selects: Array<[string, keyof Facets, string | undefined, (v: string) => void]> = [
     ["Region", "region", query.region, (v) => set({ region: v || undefined })],
     ["Period", "period", query.period, (v) => set({ period: v || undefined })],
     ["Source dataset", "source_dataset", query.source_dataset, (v) => set({ source_dataset: v || undefined })],
@@ -253,7 +250,7 @@ function Library() {
                         {bpRange(p.date_min_bp, p.date_max_bp, p.date_mean_bp)}
                       </td>
                       <td className="r num">{p.n_samples}</td>
-                      <td>{p.source_dataset ?? "—"}</td>
+                      <td>{p.data_source}</td>
                       <td className="text-ink-2">
                         {p.publication_ids.length
                           ? p.publication_ids

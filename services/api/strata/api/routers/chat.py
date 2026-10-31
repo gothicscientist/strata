@@ -48,14 +48,21 @@ def _owned(db: Session, principal: Principal, sid: uuid.UUID) -> ChatSession:
     return s
 
 
-@router.post("/sessions", response_model=ChatSessionOut, status_code=201,
-             summary="Start a research-assistant session")
+@router.post(
+    "/sessions",
+    response_model=ChatSessionOut,
+    status_code=201,
+    summary="Start a research-assistant session",
+)
 def create_session(body: ChatSessionCreate, db: DbDep, principal: PrincipalDep) -> ChatSession:
     for did in body.dataset_ids:
         dsvc.get_owned(db, principal, did)
-    s = ChatSession(owner_id=principal.user_id, title=body.title,
-                    dataset_ids=[str(d) for d in body.dataset_ids],
-                    expires_at=owner_expiry(db, principal))
+    s = ChatSession(
+        owner_id=principal.user_id,
+        title=body.title,
+        dataset_ids=[str(d) for d in body.dataset_ids],
+        expires_at=owner_expiry(db, principal),
+    )
     db.add(s)
     db.flush()
     return s
@@ -63,12 +70,20 @@ def create_session(body: ChatSessionCreate, db: DbDep, principal: PrincipalDep) 
 
 @router.get("/sessions", response_model=list[ChatSessionOut], summary="List my sessions")
 def list_sessions(db: DbDep, principal: PrincipalDep) -> list[ChatSession]:
-    return list(db.scalars(select(ChatSession).where(ChatSession.owner_id == principal.user_id)
-                           .order_by(ChatSession.updated_at.desc())))
+    return list(
+        db.scalars(
+            select(ChatSession)
+            .where(ChatSession.owner_id == principal.user_id)
+            .order_by(ChatSession.updated_at.desc())
+        )
+    )
 
 
-@router.get("/sessions/{session_id}", response_model=ChatSessionDetail,
-            summary="Session with full message + tool audit history")
+@router.get(
+    "/sessions/{session_id}",
+    response_model=ChatSessionDetail,
+    summary="Session with full message + tool audit history",
+)
 def get_session(session_id: uuid.UUID, db: DbDep, principal: PrincipalDep) -> ChatSession:
     return _owned(db, principal, session_id)
 
@@ -86,17 +101,36 @@ def _list_datasets(owner: uuid.UUID) -> list[dict[str, Any]]:
     with get_sessionmaker()() as s:
         rows = s.scalars(select(Dataset).where(Dataset.owner_id == owner)).all()
         # Metadata only: no payloads, no genotypes.
-        return [{"id": str(d.id), "kind": d.kind, "name": d.name,
-                 "created_at": d.created_at.isoformat(), "space": d.summary.get("space"),
-                 "sample_names": d.summary.get("sample_names", []),
-                 "qc": {k: d.qc_report.get(k) for k in
-                        ("n_variants", "call_rate", "panel_overlap", "n_samples", "n_dims",
-                         "scaled", "vendor", "build") if k in d.qc_report}}
-                for d in rows]
+        return [
+            {
+                "id": str(d.id),
+                "kind": d.kind,
+                "name": d.name,
+                "created_at": d.created_at.isoformat(),
+                "space": d.summary.get("space"),
+                "sample_names": d.summary.get("sample_names", []),
+                "qc": {
+                    k: d.qc_report.get(k)
+                    for k in (
+                        "n_variants",
+                        "call_rate",
+                        "panel_overlap",
+                        "n_samples",
+                        "n_dims",
+                        "scaled",
+                        "vendor",
+                        "build",
+                    )
+                    if k in d.qc_report
+                },
+            }
+            for d in rows
+        ]
 
 
-def _dataset_coordinates(owner: uuid.UUID, dataset_id: str, space: str,
-                         target: str | None = None) -> dict[str, Any] | None:
+def _dataset_coordinates(
+    owner: uuid.UUID, dataset_id: str, space: str, target: str | None = None
+) -> dict[str, Any] | None:
     """Derived coordinates only (G25 rows or a PCA projection), owner-checked."""
     from strata.jobs.handlers import project_dataset
 
@@ -114,20 +148,28 @@ def _dataset_coordinates(owner: uuid.UUID, dataset_id: str, space: str,
                 return None
             names = payload.meta["names"]
             name = target if target in names else names[0]
-            return {"space": space, "name": name,
-                    "coords": [float(x) for x in payload.arrays["matrix"][names.index(name)]]}
+            return {
+                "space": space,
+                "name": name,
+                "coords": [float(x) for x in payload.arrays["matrix"][names.index(name)]],
+            }
         proj = project_dataset(payload, space)
         if proj is None:
             return None
-        return {"space": space, "name": ds.name, "coords": proj["coords"],
-                "n_snps_used": proj.get("n_snps_used")}
+        return {
+            "space": space,
+            "name": ds.name,
+            "coords": proj["coords"],
+            "n_snps_used": proj.get("n_snps_used"),
+        }
 
 
 def _make_run_job(owner: uuid.UUID, settings: Settings):
     def run_job(kind: str, payload: dict[str, Any]) -> dict[str, Any]:
         with get_sessionmaker()() as s:
-            job = submit(s, kind, {"params": payload}, owner_id=owner, settings=settings,
-                         priority=50)
+            job = submit(
+                s, kind, {"params": payload}, owner_id=owner, settings=settings, priority=50
+            )
             deadline = time.monotonic() + settings.job_timeout_s
             while job.status not in queue.TERMINAL:
                 if time.monotonic() > deadline:
@@ -158,29 +200,53 @@ def _tool_context(principal: Principal, settings: Settings) -> Any:
 # ------------------------------------------------------------------ streaming
 
 
-@router.post("/sessions/{session_id}/messages", summary="Send a message (SSE stream)",
-             dependencies=[Depends(rate_limit_expensive)],
-             responses={200: {"content": {"text/event-stream": {}},
-                              "description": "Server-Sent Events"}})
-async def post_message(session_id: uuid.UUID, body: ChatMessageCreate, request: Request,
-                       db: DbDep, principal: PrincipalDep,
-                       settings: SettingsDep) -> EventSourceResponse:
+@router.post(
+    "/sessions/{session_id}/messages",
+    summary="Send a message (SSE stream)",
+    dependencies=[Depends(rate_limit_expensive)],
+    responses={200: {"content": {"text/event-stream": {}}, "description": "Server-Sent Events"}},
+)
+async def post_message(
+    session_id: uuid.UUID,
+    body: ChatMessageCreate,
+    request: Request,
+    db: DbDep,
+    principal: PrincipalDep,
+    settings: SettingsDep,
+) -> EventSourceResponse:
     chat = _owned(db, principal, session_id)
     if not settings.llm_configured:
-        raise ApiError(503, f"research assistant unavailable: no API key configured for "
-                            f"{settings.llm_provider}", "llm_unavailable")
+        raise ApiError(
+            503,
+            f"research assistant unavailable: no API key configured for {settings.llm_provider}",
+            "llm_unavailable",
+        )
     try:
         import strata.agent as agent_mod
     except ImportError as exc:
         raise ApiError(503, f"agent module unavailable: {exc}", "llm_unavailable") from exc
 
-    prior = list(db.scalars(select(ChatMessage).where(ChatMessage.session_id == chat.id)
-                            .order_by(ChatMessage.seq.desc()).limit(HISTORY_TURNS)))[::-1]
+    prior = list(
+        db.scalars(
+            select(ChatMessage)
+            .where(ChatMessage.session_id == chat.id)
+            .order_by(ChatMessage.seq.desc())
+            .limit(HISTORY_TURNS)
+        )
+    )[::-1]
     history = [{"role": m.role, "content": m.content} for m in prior if m.content]
-    next_seq = (db.scalar(select(func.max(ChatMessage.seq))
-                          .where(ChatMessage.session_id == chat.id)) or 0) + 1
-    db.add(ChatMessage(session_id=chat.id, owner_id=principal.user_id, seq=next_seq,
-                       role="user", content=body.content))
+    next_seq = (
+        db.scalar(select(func.max(ChatMessage.seq)).where(ChatMessage.session_id == chat.id)) or 0
+    ) + 1
+    db.add(
+        ChatMessage(
+            session_id=chat.id,
+            owner_id=principal.user_id,
+            seq=next_seq,
+            role="user",
+            content=body.content,
+        )
+    )
     if not chat.title:
         chat.title = body.content[:80]
     chat.updated_at = utcnow()
@@ -219,32 +285,61 @@ async def post_message(session_id: uuid.UUID, body: ChatMessageCreate, request: 
             error = "client disconnected"
             raise
         finally:
-            msg_id = _persist(chat.id, principal.user_id, next_seq + 1, text, done,
-                              tool_calls, tool_results, usage, error)
+            msg_id = _persist(
+                chat.id,
+                principal.user_id,
+                next_seq + 1,
+                text,
+                done,
+                tool_calls,
+                tool_results,
+                usage,
+                error,
+            )
         yield {"event": "saved", "data": json.dumps({"type": "saved", "message_id": str(msg_id)})}
         if done is not None:
             payload = {k: v for k, v in done.items() if k != "transcript"}
             yield {"event": "done", "data": json.dumps(payload, default=str)}
 
-    return EventSourceResponse(events(), ping=15, headers={"Cache-Control": "no-store",
-                                                           "X-Accel-Buffering": "no"})
+    return EventSourceResponse(
+        events(), ping=15, headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"}
+    )
 
 
-def _persist(session_id: uuid.UUID, owner: uuid.UUID, seq: int, text: list[str],
-             done: dict[str, Any] | None, tool_calls: list[dict[str, Any]],
-             tool_results: list[dict[str, Any]], usage: dict[str, Any] | None,
-             error: str | None) -> uuid.UUID:
+def _persist(
+    session_id: uuid.UUID,
+    owner: uuid.UUID,
+    seq: int,
+    text: list[str],
+    done: dict[str, Any] | None,
+    tool_calls: list[dict[str, Any]],
+    tool_results: list[dict[str, Any]],
+    usage: dict[str, Any] | None,
+    error: str | None,
+) -> uuid.UUID:
     content = (done or {}).get("answer") or "".join(text)
     mid = uuid.uuid4()
     with get_sessionmaker()() as s, s.begin():
-        s.add(ChatMessage(
-            id=mid, session_id=session_id, owner_id=owner, seq=seq, role="assistant",
-            content=content, tool_calls=tool_calls, tool_results=tool_results,
-            grounding=(done or {}).get("grounding"), citations=(done or {}).get("citations", []),
-            usage={**(usage or {}), "steps": (done or {}).get("steps"),
-                   "transcript": (done or {}).get("transcript", [])},
-            error=error,
-        ))
+        s.add(
+            ChatMessage(
+                id=mid,
+                session_id=session_id,
+                owner_id=owner,
+                seq=seq,
+                role="assistant",
+                content=content,
+                tool_calls=tool_calls,
+                tool_results=tool_results,
+                grounding=(done or {}).get("grounding"),
+                citations=(done or {}).get("citations", []),
+                usage={
+                    **(usage or {}),
+                    "steps": (done or {}).get("steps"),
+                    "transcript": (done or {}).get("transcript", []),
+                },
+                error=error,
+            )
+        )
         cs = s.get(ChatSession, session_id)
         if cs is not None:
             cs.updated_at = utcnow()

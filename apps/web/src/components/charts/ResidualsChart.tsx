@@ -19,11 +19,14 @@ export function ResidualsChart({
   points,
   yLabel,
   band,
+  highlightAbove,
   title,
 }: {
   points: ResidualPoint[];
   yLabel: string;
   band?: number;
+  /** Points with |value| above this are drawn in the alert hue. */
+  highlightAbove?: number;
   title: string;
 }) {
   const [ref, width] = useWidth<HTMLDivElement>();
@@ -38,6 +41,7 @@ export function ResidualsChart({
   );
   const y = scaleLinear().domain([-ext * 1.1, ext * 1.1]).range([h, 0]).nice();
   const x = scaleBand<string>().domain(points.map((p, i) => `${i}`)).range([0, w]).padding(0.3);
+  const tickFmt = y.tickFormat(5);
   const fmt = (v: number) => (Math.abs(v) >= 0.01 || v === 0 ? v.toFixed(3) : v.toExponential(1)).replace("-", "−");
 
   return (
@@ -52,7 +56,7 @@ export function ResidualsChart({
           <line x1={0} x2={w} y1={y(0)} y2={y(0)} stroke="#000" strokeWidth={0.75} />
           {points.map((p, i) => {
             const cx = (x(`${i}`) ?? 0) + x.bandwidth() / 2;
-            const out = band !== undefined && Math.abs(p.value) > band;
+            const out = highlightAbove !== undefined && Math.abs(p.value) > highlightAbove;
             return (
               <g key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
                 <rect x={x(`${i}`)} y={0} width={x.bandwidth()} height={h} fill="transparent" />
@@ -76,7 +80,7 @@ export function ResidualsChart({
             <g key={t} transform={`translate(0,${y(t)})`}>
               <line x2={-4} stroke="#000" strokeWidth={0.75} />
               <text x={-7} dy="0.35em" textAnchor="end" fontSize={12} fill="#333" className="num">
-                {fmt(t)}
+                {tickFmt(t).replace("-", "\u2212")}
               </text>
             </g>
           ))}

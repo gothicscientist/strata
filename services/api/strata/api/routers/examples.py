@@ -18,8 +18,10 @@ _SUMMARY_KEYS = set(ExampleSummary.model_fields)
 def examples(settings: SettingsDep, response: Response) -> list[dict[str, Any]]:
     """Real analyses computed by the data pipeline from public ancient DNA (with provenance)."""
     response.headers["Cache-Control"] = "public, max-age=300"
-    return [{k: v for k, v in ex.items() if k in _SUMMARY_KEYS}
-            for ex in list_examples(settings.examples_dir)]
+    return [
+        {k: v for k, v in ex.items() if k in _SUMMARY_KEYS}
+        for ex in list_examples(settings.examples_dir)
+    ]
 
 
 @router.get("/{slug}", response_model=ExampleDetail, summary="Example detail with full result")

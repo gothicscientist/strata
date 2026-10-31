@@ -43,13 +43,20 @@ class DatasetPayload:
 
 def _encode(payload: DatasetPayload) -> bytes:
     if payload.format == "g25-json-v1":
-        body = {"format": payload.format, **payload.meta,
-                "matrix": payload.arrays["matrix"].tolist()}
+        body = {
+            "format": payload.format,
+            **payload.meta,
+            "matrix": payload.arrays["matrix"].tolist(),
+        }
         return json.dumps(body, separators=(",", ":")).encode()
     buf = io.BytesIO()
-    np.savez_compressed(buf, __meta__=np.frombuffer(
-        json.dumps({"format": payload.format, **payload.meta}).encode(), dtype=np.uint8),
-        **payload.arrays)
+    np.savez_compressed(
+        buf,
+        __meta__=np.frombuffer(
+            json.dumps({"format": payload.format, **payload.meta}).encode(), dtype=np.uint8
+        ),
+        **payload.arrays,
+    )
     return buf.getvalue()
 
 
@@ -86,40 +93,62 @@ def _ingest_g25(text: str) -> tuple[DatasetPayload, dict[str, Any], dict[str, An
     matrix = np.asarray(table.matrix, dtype=np.float64)
     warnings = [w.model_dump() for w in table.warnings]
     qc = {
-        "n_samples": len(table.names), "n_dims": int(table.n_dims), "scaled": table.scaled,
-        "n_variants": 0, "warnings": _warning_strings(warnings), "warning_details": warnings,
+        "n_samples": len(table.names),
+        "n_dims": int(table.n_dims),
+        "scaled": table.scaled,
+        "n_variants": 0,
+        "warnings": _warning_strings(warnings),
+        "warning_details": warnings,
     }
-    summary = {"space": G25_SPACE, "sample_names": list(table.names),
-               "n_samples": len(table.names), "n_dims": int(table.n_dims),
-               "scaled": table.scaled}
-    payload = DatasetPayload("g25-json-v1", {"space": G25_SPACE, "names": list(table.names),
-                                             "scaled": table.scaled}, {"matrix": matrix})
+    summary = {
+        "space": G25_SPACE,
+        "sample_names": list(table.names),
+        "n_samples": len(table.names),
+        "n_dims": int(table.n_dims),
+        "scaled": table.scaled,
+    }
+    payload = DatasetPayload(
+        "g25-json-v1",
+        {"space": G25_SPACE, "names": list(table.names), "scaled": table.scaled},
+        {"matrix": matrix},
+    )
     return payload, qc, summary
 
 
-def _ingest_raw(data: bytes, filename: str, sample_name: str
-                ) -> tuple[DatasetPayload, dict[str, Any], dict[str, Any], str | None]:
+def _ingest_raw(
+    data: bytes, filename: str, sample_name: str
+) -> tuple[DatasetPayload, dict[str, Any], dict[str, Any], str | None]:
     io_mod = science._module("strata.io")
     raw = io_mod.parse_raw_dna(data, filename)
     qc_model = raw.qc
     qc: dict[str, Any] = qc_model.model_dump(mode="json")
     detail = qc.get("warnings", [])
-    qc.update({
-        "n_variants": qc_model.n_markers, "n_no_calls": qc_model.n_nocalls,
-        "het_rate": qc_model.autosomal_het_rate,
-        "sex_chrom_counts": qc["sex_chromosomes"],
-        "warnings": _warning_strings(detail), "warning_details": detail,
-    })
-    summary: dict[str, Any] = {"space": None, "sample_names": [sample_name], "n_samples": 1,
-                               "vendor": raw.vendor, "build": raw.build}
+    qc.update(
+        {
+            "n_variants": qc_model.n_markers,
+            "n_no_calls": qc_model.n_nocalls,
+            "het_rate": qc_model.autosomal_het_rate,
+            "sex_chrom_counts": qc["sex_chromosomes"],
+            "warnings": _warning_strings(detail),
+            "warning_details": detail,
+        }
+    )
+    summary: dict[str, Any] = {
+        "space": None,
+        "sample_names": [sample_name],
+        "n_samples": 1,
+        "vendor": raw.vendor,
+        "build": raw.build,
+    }
     panel = science.snp_panel()
     if panel is not None:
         harm = io_mod.harmonize(raw, panel)
         dosage = np.asarray(harm.dosage, dtype=np.float64)
         enc = np.where(np.isnan(dosage), -1, dosage).astype(np.int8)
         ov = harm.overlap.model_dump(mode="json")
-        qc.update({"panel_overlap": ov["overlap_fraction"], "panel_size": ov["n_panel"],
-                   "overlap": ov})
+        qc.update(
+            {"panel_overlap": ov["overlap_fraction"], "panel_size": ov["n_panel"], "overlap": ov}
+        )
         qc["warnings"] += _warning_strings([w.model_dump() for w in harm.warnings])
         if ov["n_usable"] < 10_000:
             qc["warnings"].append(
@@ -127,9 +156,14 @@ def _ingest_raw(data: bytes, filename: str, sample_name: str
                 "noisy."
             )
         panel_version = f"{panel.name}:{panel.n}"
-        meta = {"panel_name": harm.panel_name, "panel_version": panel_version,
-                "panel_n": int(panel.n), "build": harm.build,
-                "counted_allele": harm.counted_allele, "sample_name": sample_name}
+        meta = {
+            "panel_name": harm.panel_name,
+            "panel_version": panel_version,
+            "panel_n": int(panel.n),
+            "build": harm.build,
+            "counted_allele": harm.counted_allele,
+            "sample_name": sample_name,
+        }
         summary.update(harmonized=True, panel=panel_version, n_usable=ov["n_usable"])
         return DatasetPayload("dosage-npz-v1", meta, {"dosage": enc}), qc, summary, panel_version
     a1, a2 = np.asarray(raw.allele1).astype(str), np.asarray(raw.allele2).astype(str)
@@ -138,7 +172,8 @@ def _ingest_raw(data: bytes, filename: str, sample_name: str
         "rsid": np.asarray(raw.rsid).astype(str)[called],
         "chrom": np.asarray(raw.chrom).astype(str)[called],
         "pos": np.asarray(raw.pos).astype(np.int64)[called],
-        "allele1": a1[called], "allele2": a2[called],
+        "allele1": a1[called],
+        "allele2": a2[called],
     }
     qc["warnings"].append(
         "Reference SNP panel not installed: calls stored encrypted, to be harmonised later."
@@ -149,8 +184,15 @@ def _ingest_raw(data: bytes, filename: str, sample_name: str
 
 
 def ingest(
-    session: Session, vault: DatasetVault, principal: Principal, *, kind: str,
-    data: bytes, filename: str | None, name: str | None, expires_at: Any,
+    session: Session,
+    vault: DatasetVault,
+    principal: Principal,
+    *,
+    kind: str,
+    data: bytes,
+    filename: str | None,
+    name: str | None,
+    expires_at: Any,
 ) -> Dataset:
     """Parse in memory, encrypt, persist. Raw bytes never touch disk or logs."""
     input_sha = hashlib.sha256(data).hexdigest()
@@ -174,10 +216,18 @@ def ingest(
     except io_mod.InputFormatError as exc:
         raise ApiError(422, f"could not parse file: {exc}", "invalid_input") from exc
     ds = Dataset(
-        id=uuid.uuid4(), owner_id=principal.user_id, name=display, kind=kind,
-        original_filename=safe_name, size_bytes=len(data), input_sha256=input_sha,
-        payload_format=payload.format, qc_report=qc, summary=summary,
-        panel_version=panel_version, expires_at=expires_at,
+        id=uuid.uuid4(),
+        owner_id=principal.user_id,
+        name=display,
+        kind=kind,
+        original_filename=safe_name,
+        size_bytes=len(data),
+        input_sha256=input_sha,
+        payload_format=payload.format,
+        qc_report=qc,
+        summary=summary,
+        panel_version=panel_version,
+        expires_at=expires_at,
     )
     vault.seal(session, ds, _encode(payload))
     session.flush()
@@ -228,9 +278,16 @@ def g25_coordinates(payload: DatasetPayload, target: str | None) -> tuple[str, n
 
 def to_out(ds: Dataset) -> dict[str, Any]:
     return {
-        "id": ds.id, "name": ds.name, "kind": ds.kind, "space": ds.summary.get("space"),
-        "sample_names": ds.summary.get("sample_names", []), "created_at": ds.created_at,
-        "expires_at": ds.expires_at, "qc": ds.qc_report, "summary": ds.summary,
-        "input_sha256": ds.input_sha256, "payload_sha256": ds.payload_sha256,
+        "id": ds.id,
+        "name": ds.name,
+        "kind": ds.kind,
+        "space": ds.summary.get("space"),
+        "sample_names": ds.summary.get("sample_names", []),
+        "created_at": ds.created_at,
+        "expires_at": ds.expires_at,
+        "qc": ds.qc_report,
+        "summary": ds.summary,
+        "input_sha256": ds.input_sha256,
+        "payload_sha256": ds.payload_sha256,
         "size_bytes": ds.size_bytes,
     }

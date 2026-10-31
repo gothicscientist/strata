@@ -14,8 +14,9 @@ def synthetic_derived(tmp_path_factory: pytest.TempPathFactory) -> Path:
     return build_synthetic_reference(tmp_path_factory.mktemp("derived"))
 
 
-def _client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, derived: Path | None,
-            **extra: str) -> Iterator[TestClient]:
+def _client(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, derived: Path | None, **extra: str
+) -> Iterator[TestClient]:
     for k, v in env_for(tmp_path, derived, **extra).items():
         monkeypatch.setenv(k, v)
     reset_platform_caches()
@@ -33,8 +34,9 @@ def client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[TestClie
 
 
 @pytest.fixture
-def ref_client(monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
-               synthetic_derived: Path) -> Iterator[TestClient]:
+def ref_client(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, synthetic_derived: Path
+) -> Iterator[TestClient]:
     """API with the SYNTHETIC reference library installed."""
     yield from _client(monkeypatch, tmp_path, synthetic_derived)
 

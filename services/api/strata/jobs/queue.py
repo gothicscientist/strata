@@ -48,8 +48,14 @@ def enqueue(
 
     get_handler(kind)  # unknown kinds fail at enqueue time, not in the worker
     job = Job(
-        id=uuid.uuid4(), kind=kind, payload=payload, owner_id=owner_id, priority=priority,
-        max_attempts=max_attempts, timeout_s=timeout_s, run_after=run_after or utcnow(),
+        id=uuid.uuid4(),
+        kind=kind,
+        payload=payload,
+        owner_id=owner_id,
+        priority=priority,
+        max_attempts=max_attempts,
+        timeout_s=timeout_s,
+        run_after=run_after or utcnow(),
         status="queued",
     )
     session.add(job)
@@ -79,8 +85,13 @@ def claim(engine: Engine, worker_id: str, kinds: list[str] | None = None) -> uui
                 return None
             job_id = row[0]
             s.execute(
-                update(Job).where(Job.id == job_id).values(
-                    status="running", locked_by=worker_id, started_at=now, heartbeat_at=now,
+                update(Job)
+                .where(Job.id == job_id)
+                .values(
+                    status="running",
+                    locked_by=worker_id,
+                    started_at=now,
+                    heartbeat_at=now,
                     attempts=Job.attempts + 1,
                 )
             )
@@ -94,10 +105,16 @@ def claim(engine: Engine, worker_id: str, kinds: list[str] | None = None) -> uui
             if job_id is None:
                 return None
             res = s.execute(
-                update(Job).where(Job.id == job_id, Job.status == "queued").values(
-                    status="running", locked_by=worker_id, started_at=now, heartbeat_at=now,
+                update(Job)
+                .where(Job.id == job_id, Job.status == "queued")
+                .values(
+                    status="running",
+                    locked_by=worker_id,
+                    started_at=now,
+                    heartbeat_at=now,
                     attempts=Job.attempts + 1,
-                ).execution_options(synchronize_session=False)
+                )
+                .execution_options(synchronize_session=False)
             )
             if res.rowcount == 1:
                 return job_id
@@ -108,8 +125,9 @@ def heartbeat(engine: Engine, job_id: uuid.UUID, worker_id: str) -> bool:
     """Refresh the lease. False if the job is no longer ours (reaped or cancelled)."""
     with Session(engine) as s, s.begin():
         res = s.execute(
-            update(Job).where(Job.id == job_id, Job.locked_by == worker_id,
-                              Job.status == "running").values(heartbeat_at=utcnow())
+            update(Job)
+            .where(Job.id == job_id, Job.locked_by == worker_id, Job.status == "running")
+            .values(heartbeat_at=utcnow())
             .execution_options(synchronize_session=False)
         )
         return res.rowcount == 1
@@ -127,9 +145,7 @@ def complete(session: Session, job: Job, result: dict[str, Any]) -> None:
     job.locked_by = None
 
 
-def fail(
-    session: Session, job: Job, error: str, *, retryable: bool, backoff_base_s: float
-) -> None:
+def fail(session: Session, job: Job, error: str, *, retryable: bool, backoff_base_s: float) -> None:
     if retryable and job.attempts < job.max_attempts:
         job.status = "queued"
         job.run_after = utcnow() + timedelta(seconds=backoff_delay(job.attempts, backoff_base_s))
@@ -175,12 +191,17 @@ def reap_stale(session: Session, *, stale_after_s: float, backoff_base_s: float)
     cutoff = utcnow() - timedelta(seconds=stale_after_s)
     n = 0
     for job in session.scalars(
-        select(Job).where(Job.status == "running", Job.heartbeat_at < cutoff).with_for_update(
-            skip_locked=True
-        )
+        select(Job)
+        .where(Job.status == "running", Job.heartbeat_at < cutoff)
+        .with_for_update(skip_locked=True)
     ):
-        fail(session, job, "worker lost (heartbeat timeout)", retryable=True,
-             backoff_base_s=backoff_base_s)
+        fail(
+            session,
+            job,
+            "worker lost (heartbeat timeout)",
+            retryable=True,
+            backoff_base_s=backoff_base_s,
+        )
         n += 1
     return n
 

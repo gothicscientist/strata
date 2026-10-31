@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 import jsonschema
+import numpy as np
 import pytest
 
 from strata.agent.tools import (
@@ -34,8 +35,7 @@ def test_tool_specs_are_json_serialisable_and_documented() -> None:
     for spec in specs:
         json.dumps(spec.model_dump())
         assert len(spec.description) > 40, spec.name
-    exploratory = {"nearest_populations", "fit_admixture", "rotate_sources",
-                   "sensitivity_analysis"}
+    exploratory = {"nearest_populations", "fit_admixture", "rotate_sources", "sensitivity_analysis"}
     for name in exploratory:
         assert "EXPLORATORY" in TOOLS_BY_NAME[name].description
     for name in ("run_qpadm", "run_qpadm_rotate", "run_f4"):
@@ -52,8 +52,9 @@ async def test_unknown_tool_and_bad_arguments_return_errors(tool_ctx: ToolContex
     out = await execute_tool("search_populations", {"limit": 1000}, tool_ctx)
     assert not out.ok and "invalid arguments" in out.error
 
-    out = await execute_tool("get_population", {"population_id": "x"}, tool_ctx,
-                             parse_error="unterminated string")
+    out = await execute_tool(
+        "get_population", {"population_id": "x"}, tool_ctx, parse_error="unterminated string"
+    )
     assert not out.ok and "INVALID_JSON" in out.error
 
 
@@ -105,13 +106,12 @@ async def test_target_resolution_errors(tool_ctx: ToolContext) -> None:
     out = await execute_tool("nearest_populations", {"target": {}}, tool_ctx)
     assert not out.ok and "dataset_id or population" in out.error
 
-    out = await execute_tool(
-        "nearest_populations", {"target": {"population": "Nope"}}, tool_ctx
-    )
+    out = await execute_tool("nearest_populations", {"target": {"population": "Nope"}}, tool_ctx)
     assert not out.ok and "no coordinates" in out.error
 
     out = await execute_tool(
-        "nearest_populations", {"target": {"dataset_id": "ds-1"}, "space": "strata-pca-v1"},
+        "nearest_populations",
+        {"target": {"dataset_id": "ds-1"}, "space": "strata-pca-v1"},
         tool_ctx,
     )
     assert not out.ok  # fixture has no coordinates for that dataset/space combination
@@ -207,8 +207,11 @@ async def test_fit_admixture_rejects_unknown_sources(tool_ctx: ToolContext) -> N
 async def test_run_qpadm_requires_more_right_than_left(tool_ctx: ToolContext) -> None:
     out = await execute_tool(
         "run_qpadm",
-        {"target": "Modern_Punjabi", "sources": ["Onge.SG", "Han.DG"],
-         "right": ["Mbuti.DG", "Iran_GanjDareh_N"]},
+        {
+            "target": "Modern_Punjabi",
+            "sources": ["Onge.SG", "Han.DG"],
+            "right": ["Mbuti.DG", "Iran_GanjDareh_N"],
+        },
         tool_ctx,
     )
     assert not out.ok
@@ -227,8 +230,11 @@ async def test_run_qpadm_rejects_overlapping_sets(
     tool_ctx.run_job = run_job
     out = await execute_tool(
         "run_qpadm",
-        {"target": "Modern_Punjabi", "sources": ["Onge.SG"],
-         "right": ["Onge.SG", "Mbuti.DG", "Han.DG"]},
+        {
+            "target": "Modern_Punjabi",
+            "sources": ["Onge.SG"],
+            "right": ["Onge.SG", "Mbuti.DG", "Han.DG"],
+        },
         tool_ctx,
     )
     assert not out.ok
@@ -263,8 +269,11 @@ async def test_formal_tools_use_the_job_runner(
     tool_ctx.run_job = run_job
     out = await execute_tool(
         "run_qpadm",
-        {"target": "Modern_Punjabi", "sources": ["Onge.SG", "Russia_Steppe_MLBA"],
-         "right": ["Mbuti.DG", "Han.DG", "Iran_GanjDareh_N"]},
+        {
+            "target": "Modern_Punjabi",
+            "sources": ["Onge.SG", "Russia_Steppe_MLBA"],
+            "right": ["Mbuti.DG", "Han.DG", "Iran_GanjDareh_N"],
+        },
         tool_ctx,
     )
     assert out.ok, out.error
@@ -296,8 +305,12 @@ async def test_run_f4_zips_quadruples_rowwise(
     tool_ctx.run_job = run_job
     out = await execute_tool(
         "run_f4",
-        {"quadruples": [["Mbuti.DG", "Han.DG", "Onge.SG", "Modern_Punjabi"],
-                        ["Mbuti.DG", "Han.DG", "Onge.SG", "Iran_GanjDareh_N"]]},
+        {
+            "quadruples": [
+                ["Mbuti.DG", "Han.DG", "Onge.SG", "Modern_Punjabi"],
+                ["Mbuti.DG", "Han.DG", "Onge.SG", "Iran_GanjDareh_N"],
+            ]
+        },
         tool_ctx,
     )
     assert out.ok, out.error
@@ -312,8 +325,7 @@ async def test_formal_tools_report_unavailability_without_job_runner(
     """With no worker and no local ADMIXTOOLS 2, the tool says so instead of guessing."""
     out = await execute_tool(
         "run_qpadm",
-        {"target": "Modern_Punjabi", "sources": ["Onge.SG"],
-         "right": ["Mbuti.DG", "Han.DG"]},
+        {"target": "Modern_Punjabi", "sources": ["Onge.SG"], "right": ["Mbuti.DG", "Han.DG"]},
         tool_ctx,
     )
     if not out.ok:
@@ -323,25 +335,43 @@ async def test_formal_tools_report_unavailability_without_job_runner(
 async def test_compare_models_separates_exploratory_and_formal(tool_ctx: ToolContext) -> None:
     exp_id = tool_ctx.results.put(
         "fit_admixture",
-        {"kind": "exploratory", "space": "g25", "target": "my-kit",
-         "fit": {"sources": ["A", "B"], "weights": [0.7, 0.3], "distance": 0.031}},
+        {
+            "kind": "exploratory",
+            "space": "g25",
+            "target": "my-kit",
+            "fit": {"sources": ["A", "B"], "weights": [0.7, 0.3], "distance": 0.031},
+        },
     )
     exp2_id = tool_ctx.results.put(
         "fit_admixture",
-        {"kind": "exploratory", "space": "g25", "target": "my-kit",
-         "fit": {"sources": ["A", "C"], "weights": [0.5, 0.5], "distance": 0.012}},
+        {
+            "kind": "exploratory",
+            "space": "g25",
+            "target": "my-kit",
+            "fit": {"sources": ["A", "C"], "weights": [0.5, 0.5], "distance": 0.012},
+        },
     )
     formal_id = tool_ctx.results.put(
         "run_qpadm",
-        {"kind": "formal", "weights": [{"left": "A", "weight": 0.6}, {"left": "B",
-         "weight": 0.4}], "p": 0.3, "chisq": 5.0, "dof": 6,
-         "feasibility": {"verdict": "plausible"}},
+        {
+            "kind": "formal",
+            "weights": [{"left": "A", "weight": 0.6}, {"left": "B", "weight": 0.4}],
+            "p": 0.3,
+            "chisq": 5.0,
+            "dof": 6,
+            "feasibility": {"verdict": "plausible"},
+        },
     )
     rejected_id = tool_ctx.results.put(
         "run_qpadm",
-        {"kind": "formal", "weights": [{"left": "A", "weight": 1.2}, {"left": "B",
-         "weight": -0.2}], "p": 0.001, "chisq": 30.0, "dof": 6,
-         "feasibility": {"verdict": "infeasible"}},
+        {
+            "kind": "formal",
+            "weights": [{"left": "A", "weight": 1.2}, {"left": "B", "weight": -0.2}],
+            "p": 0.001,
+            "chisq": 30.0,
+            "dof": 6,
+            "feasibility": {"verdict": "infeasible"},
+        },
     )
     out = await execute_tool(
         "compare_models", {"result_ids": [exp_id, exp2_id, formal_id, rejected_id]}, tool_ctx
@@ -361,10 +391,13 @@ async def test_compare_models_separates_exploratory_and_formal(tool_ctx: ToolCon
 
 
 async def test_compare_models_flags_mixed_spaces(tool_ctx: ToolContext) -> None:
-    a = tool_ctx.results.put("fit_admixture", {"kind": "exploratory", "space": "g25",
-                                               "fit": {"distance": 0.02}})
-    b = tool_ctx.results.put("fit_admixture", {"kind": "exploratory", "space": "strata-pca-v1",
-                                               "fit": {"distance": 0.01}})
+    a = tool_ctx.results.put(
+        "fit_admixture", {"kind": "exploratory", "space": "g25", "fit": {"distance": 0.02}}
+    )
+    b = tool_ctx.results.put(
+        "fit_admixture",
+        {"kind": "exploratory", "space": "strata-pca-v1", "fit": {"distance": 0.01}},
+    )
     out = await execute_tool("compare_models", {"result_ids": [a, b]}, tool_ctx)
     assert out.ok
     assert any("different coordinate spaces" in n for n in out.result["notes"])
@@ -377,7 +410,8 @@ async def test_compare_models_rejects_unknown_result_ids(tool_ctx: ToolContext) 
 
 async def test_retrieve_knowledge_returns_citable_chunks(tool_ctx: ToolContext) -> None:
     out = await execute_tool(
-        "retrieve_knowledge", {"query": "how should I interpret a qpAdm p-value", "k": 2},
+        "retrieve_knowledge",
+        {"query": "how should I interpret a qpAdm p-value", "k": 2},
         tool_ctx,
     )
     assert out.ok
@@ -418,8 +452,12 @@ async def test_propose_reference_sets_respects_date_ordering(tool_ctx: ToolConte
     """A source younger than the target is not proposed as a proximal source."""
     out = await execute_tool(
         "propose_reference_sets",
-        {"target": {"population": "India_IVC_periphery"}, "target_date_bp": 4300,
-         "n_sources": 6, "min_samples": 3},
+        {
+            "target": {"population": "India_IVC_periphery"},
+            "target_date_bp": 4300,
+            "n_sources": 6,
+            "min_samples": 3,
+        },
         tool_ctx,
     )
     assert out.ok
@@ -441,3 +479,81 @@ async def test_tool_result_json_has_no_nan(tool_ctx: ToolContext) -> None:
 @pytest.mark.parametrize("name", [t.name for t in TOOLS])
 def test_tool_names_are_snake_case(name: str) -> None:
     assert name == name.lower() and " " not in name
+
+
+# ---- the real reference adapter ---------------------------------------------------------------
+
+
+async def test_real_reference_adapter_reports_unbuilt_data() -> None:
+    """With no reference data built, tools must say so rather than invent populations."""
+    from strata.agent.backends import default_reference
+
+    default_reference.cache_clear()
+    ctx = ToolContext(user_id="u")
+    out = await execute_tool("search_populations", {"query": "Onge"}, ctx)
+    if out.ok:
+        # Reference data is present in this environment: results must carry real ids.
+        assert all("id" in p for p in out.result["populations"])
+    else:
+        assert "reference library has not been built" in out.error
+        assert "populations.parquet" in out.error or "missing" in out.error
+
+
+def test_real_reference_adapter_exposes_the_expected_methods() -> None:
+    from strata.agent.backends import LibraryReference
+
+    for name in ("search", "get", "coordinates", "population_samples", "all_metadata"):
+        assert callable(getattr(LibraryReference, name))
+
+
+def test_real_reference_summary_keeps_group_id_and_date_alias() -> None:
+    """group_id must survive into the model's view: qpAdm keys on it, not on id."""
+    from strata.agent.backends import _summary
+
+    row = _summary(
+        {
+            "id": "Iran_GanjDareh_N",
+            "group_id": "Iran_GanjDareh_N",
+            "name": "Ganj Dareh",
+            "date_mean_bp": 9800.0,
+            "n_samples": 8,
+            "culture": None,
+        }
+    )
+    assert row["group_id"] == "Iran_GanjDareh_N"
+    assert row["date_bp"] == 9800.0
+    assert "culture" not in row  # None values are dropped
+
+
+async def test_bootstrap_runs_when_sample_coordinates_exist(tool_ctx: ToolContext) -> None:
+    """With a backend exposing population_samples, bootstrap CIs are computed for real."""
+    rng = np.random.default_rng(3)
+    ref = tool_ctx.reference
+    names, mat = ref.coordinates("g25")
+
+    def population_samples(space: str, population_ids: list[str]) -> dict[str, Any]:
+        out = {}
+        for pid in population_ids:
+            mean = mat[names.index(pid)]
+            out[pid] = mean[None, :] + rng.normal(0, 0.02, (6, mean.shape[0]))
+        return out
+
+    ref.population_samples = population_samples  # type: ignore[attr-defined]
+    out = await execute_tool(
+        "fit_admixture",
+        {
+            "target": {"dataset_id": "ds-1"},
+            "sources": ["Onge.SG", "Iran_GanjDareh_N"],
+            "bootstrap": True,
+            "n_bootstrap": 25,
+            "seed": 1,
+        },
+        tool_ctx,
+    )
+    assert out.ok, out.error
+    boot = out.result["bootstrap"]
+    assert boot["kind"] == "exploratory"
+    assert boot["n_bootstrap"] == 25
+    for w in boot["weights"]:
+        assert w["ci_low"] <= w["ci_high"]
+    assert {w["name"] for w in boot["weights"]} == {"Onge.SG", "Iran_GanjDareh_N"}

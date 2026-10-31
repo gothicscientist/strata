@@ -67,9 +67,15 @@ def register(
     return deco
 
 
+_loaded = False
+
+
 def _ensure_loaded() -> None:
-    if not _REGISTRY:
+    global _loaded
+    if not _loaded:
         import strata.jobs.handlers  # noqa: F401 - registers built-in handlers
+
+        _loaded = True
 
 
 def get_spec(kind: str) -> JobSpec:

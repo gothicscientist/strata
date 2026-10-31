@@ -18,8 +18,11 @@ def _read_json(p: Path) -> Any:
 
 def load_example(directory: Path) -> dict[str, Any] | None:
     main = directory / "example.json"
-    files = [main] if main.exists() else [directory / f for f in
-                                          ("meta.json", "result.json", "provenance.json")]
+    files = (
+        [main]
+        if main.exists()
+        else [directory / f for f in ("meta.json", "result.json", "provenance.json")]
+    )
     existing = [f for f in files if f.exists()]
     if not existing:
         return None

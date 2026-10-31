@@ -9,10 +9,10 @@ import base64
 import secrets
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     env: Literal["dev", "test", "prod"] = Field("dev", alias="STRATA_ENV")
     log_level: str = Field("INFO", alias="STRATA_LOG_LEVEL")
     data_dir: Path = Field(REPO_ROOT / "data", alias="STRATA_DATA_DIR")
+    examples_dir_override: Path | None = Field(None, alias="STRATA_EXAMPLES_DIR")
     storage_dir: Path = Field(REPO_ROOT / ".strata-storage", alias="STRATA_STORAGE_DIR")
 
     # --- database ---
@@ -69,16 +70,14 @@ class Settings(BaseSettings):
     worker_poll_s: float = Field(1.0, alias="STRATA_WORKER_POLL_S")
 
     # --- HTTP ---
-    cors_origins: list[str] = Field(
+    cors_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:3000"], alias="STRATA_CORS_ORIGINS"
     )
     guest_ttl_hours: float = Field(24.0, alias="STRATA_GUEST_TTL_HOURS")
     max_upload_mb: float = Field(64.0, alias="STRATA_MAX_UPLOAD_MB")
     rate_limit_per_minute: int = Field(120, alias="STRATA_RATE_LIMIT_PER_MINUTE")
     rate_limit_burst: int = Field(60, alias="STRATA_RATE_LIMIT_BURST")
-    rate_limit_expensive_per_minute: int = Field(
-        10, alias="STRATA_RATE_LIMIT_EXPENSIVE_PER_MINUTE"
-    )
+    rate_limit_expensive_per_minute: int = Field(10, alias="STRATA_RATE_LIMIT_EXPENSIVE_PER_MINUTE")
     trust_proxy_headers: bool = Field(False, alias="STRATA_TRUST_PROXY_HEADERS")
 
     @field_validator("cors_origins", mode="before")
@@ -117,7 +116,7 @@ class Settings(BaseSettings):
 
     @property
     def examples_dir(self) -> Path:
-        return self.data_dir / "examples"
+        return self.examples_dir_override or self.data_dir / "examples"
 
     def kek_bytes(self) -> bytes:
         """Primary key-encryption key. In dev/test without a key, a per-process ephemeral key."""

@@ -1,6 +1,6 @@
 /** Reducer that folds streamed agent events into a renderable assistant turn. */
 
-import type { ChatEvent, Grounding } from "./types";
+import type { ChatEvent, ChatMessage, Grounding } from "./types";
 
 export interface ToolPart {
   kind: "tool";
@@ -167,4 +167,25 @@ export function citationHref(id: string): string {
   const [file = "", anchor] = id.split("#");
   const slug = file.replace(/^.*\//, "").replace(/\.md$/, "");
   return `/methods/#${anchor ? `${slug}--${anchor}` : slug}`;
+}
+
+/** Rebuild rendered turns from a persisted session (tool events are stored as emitted). */
+export function turnsFromHistory(messages: ChatMessage[]): Turn[] {
+  return [...messages]
+    .sort((a, b) => a.seq - b.seq)
+    .map((m): Turn => {
+      if (m.role === "user") return { role: "user", content: m.content };
+      let t = emptyAssistant();
+      for (const c of m.tool_calls) t = applyEvent(t, { ...(c as object), type: "tool_call" } as ChatEvent);
+      for (const r of m.tool_results) t = applyEvent(t, { ...(r as object), type: "tool_result" } as ChatEvent);
+      if (m.content) t = { ...t, parts: [...t.parts, { kind: "text", text: m.content }] };
+      return {
+        ...t,
+        done: true,
+        grounding: m.grounding,
+        citations: m.citations ?? [],
+        error: m.error,
+        messageId: m.id,
+      };
+    });
 }

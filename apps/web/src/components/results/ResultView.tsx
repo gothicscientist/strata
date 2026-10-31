@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/api";
 import { fixed, int, pValue, pct, weightSe } from "@/lib/format";
-import { qpadmNotes, rankQpAdmModels, sortedWeights, ALPHA_REJECT } from "@/lib/results";
+import { f4Residuals, qpadmNotes, rankQpAdmModels, sortedWeights, ALPHA_REJECT } from "@/lib/results";
 import { useResource } from "@/lib/useResource";
 import type {
   AdmixtureFitResult,
@@ -90,7 +90,7 @@ function PcaView({ r, compact }: { r: PcaProjectionResult; compact: boolean }) {
         <Empty>The reference space {r.space} is not available on this server, so only coordinates are shown.</Empty>
       )}
       <TableFigure n={1} caption="Projected coordinates on the first components.">
-        <table className="booktabs">
+        <table className="booktabs max-w-[44rem]">
           <thead>
             <tr>
               <th>Sample</th>
@@ -115,6 +115,7 @@ function PcaView({ r, compact }: { r: PcaProjectionResult; compact: boolean }) {
           </tbody>
         </table>
       </TableFigure>
+      {r.note ? <Footnote mark="*">{r.note}</Footnote> : null}
       <ExploratoryCaveat text={r.caveat} />
     </div>
   );
@@ -294,6 +295,25 @@ function FitView({ r, compact }: { r: AdmixtureFitResult; compact: boolean }) {
         </Figure>
       ) : null}
       {!compact && r.sensitivity ? <SensitivityTables s={r.sensitivity} start={2} /> : null}
+      {r.quality || r.sensitivity?.stability_note || r.notes?.length ? (
+        <ol className="mt-4 max-w-[44rem] list-[lower-alpha] space-y-1 pl-6 text-small text-ink-2">
+          {r.quality ? (
+            <li>
+              Fit quality: <em>{r.quality.label}</em>. Residual distance{" "}
+              <span className="num">{fixed(r.quality.distance, 4)}</span> against{" "}
+              <span className="num">{fixed(r.quality.best_single_distance, 4)}</span> for the best single
+              source ({r.quality.best_single_source}). {r.quality.caveat}
+            </li>
+          ) : null}
+          {r.sensitivity?.stability_note ? (
+            <li className={r.sensitivity.stable === false ? "text-alert" : ""}>{r.sensitivity.stability_note}</li>
+          ) : null}
+          {r.converged === false ? <li className="text-alert">The optimiser did not converge.</li> : null}
+          {r.notes?.map((n, i) => (
+            <li key={i}>{n}</li>
+          ))}
+        </ol>
+      ) : null}
       <ExploratoryCaveat text={r.caveat} />
     </div>
   );
@@ -311,7 +331,18 @@ function RotationView({ r }: { r: RotationResult }) {
       <TableFigure
         n={1}
         caption="Source rotation, ranked by residual distance. Sources with weight below 1% are pruned and the model refitted."
-        notes="Neighbouring models with similar distances are not distinguishable by this method. Carry the leading models into qpAdm for a formal test."
+        notes={
+          <>
+            {r.preferred_rank ? (
+              <>
+                &dagger; Preferred model: the most parsimonious within the distance tolerance
+                {r.tolerance !== undefined ? <> ({fixed(r.tolerance, 4)})</> : null} of the best.{" "}
+              </>
+            ) : null}
+            Neighbouring models with similar distances are not distinguishable by this method. Carry the
+            leading models into qpAdm for a formal test.
+          </>
+        }
       >
         <table className="booktabs">
           <thead>
@@ -324,8 +355,11 @@ function RotationView({ r }: { r: RotationResult }) {
           </thead>
           <tbody>
             {r.models.map((m) => (
-              <tr key={m.rank}>
-                <td className="r num text-ink-3">{m.rank}</td>
+              <tr key={m.rank} className={m.rank === r.preferred_rank ? "font-medium" : ""}>
+                <td className="r num text-ink-3">
+                  {m.rank}
+                  {m.rank === r.preferred_rank ? <sup>&dagger;</sup> : null}
+                </td>
                 <td>
                   {m.sources.map((s, i) => (
                     <span key={s} className="mr-3 inline-block whitespace-nowrap">
@@ -466,7 +500,7 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
         </TableFigure>
       ) : null}
 
-      {!compact && r.f4?.length ? (
+      {!compact && f4Residuals(r).length ? (
         <Figure
           n={2}
           caption="Residual f4-statistics, f4(target, left; right₁, right₂) observed minus fitted, as z-scores. Dashed lines mark |z| = 2; residuals beyond |z| = 3 are drawn in rose."
@@ -475,7 +509,8 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
             title="f4 residual z-scores"
             yLabel="Residual z"
             band={2}
-            points={r.f4.map((f) => ({ label: `${f.pop3}, ${f.pop4}`, value: f.z }))}
+            highlightAbove={3}
+            points={f4Residuals(r).map((f) => ({ label: f.label, value: f.z }))}
           />
         </Figure>
       ) : null}
@@ -506,6 +541,7 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
           <p>{r.right.join(", ")}</p>
         </div>
       </div>
+      {r.caveat ? <Footnote mark="†">{r.caveat}</Footnote> : null}
       <Footnote mark="*">
         A non-rejected model is consistent with the data given this right set; it is not unique.
         Results depend on the choice of right populations and on the f2 blocks used.
@@ -564,7 +600,10 @@ function QpAdmRotateView({ r }: { r: QpAdmRotateResult }) {
       </TableFigure>
       <p className="max-w-[44rem] text-caption text-ink-2">
         Right populations: {r.right.join(", ")}.
+        {r.n_models_tested !== undefined ? ` ${r.n_models_tested} of ${r.n_models_enumerated ?? r.n_models_tested} enumerated models tested.` : ""}
       </p>
+      {r.rotation_caveat ? <Footnote mark="*">{r.rotation_caveat}</Footnote> : null}
+      {r.caveat ? <Footnote mark="†">{r.caveat}</Footnote> : null}
     </div>
   );
 }

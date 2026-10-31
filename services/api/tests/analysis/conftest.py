@@ -2,7 +2,7 @@
 
 Demography (generations ago): O splits from the rest at 4000; C from AB at 2000; A and B
 split at 1000; X is formed 20 generations ago as 0.3 A + 0.7 B. Each "chromosome" is an
-independent 1 Mb simulation so block-jackknife blocks are realistic and independent.
+independent 0.4 Mb simulation so block-jackknife blocks are realistic and independent.
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ def sim() -> SimData:
         ts = msprime.sim_ancestry(
             samples={p: n_per for p in POPS},
             demography=demo,
-            sequence_length=1_000_000,
+            sequence_length=400_000,
             recombination_rate=1e-8,
             random_seed=1000 + c,
         )
@@ -65,3 +65,11 @@ def sim() -> SimData:
     G = np.concatenate(blocks, axis=1).astype(np.int8)
     labels = np.repeat(POPS, n_per).astype(object)
     return SimData(G=G, labels=labels, chrom=np.concatenate(chroms), pos=np.concatenate(positions))
+
+
+@pytest.fixture(scope="session")
+def ref_pca(sim):
+    from strata.analysis import pca
+
+    m = np.isin(sim.labels, ["A", "B", "C", "O"])
+    return pca.fit_reference_pca(sim.G[m], 4, seed=0)

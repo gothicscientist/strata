@@ -38,7 +38,13 @@ EXPLORATORY_CAVEAT = (
 
 
 class ReferenceBackend(Protocol):
-    """What the tools need from the reference library (``strata.reference``)."""
+    """What the tools need from the reference library (``strata.reference``).
+
+    An implementation may also provide
+    ``population_samples(space, population_ids) -> dict[str, ndarray]`` (per-individual
+    coordinates). It is optional: without it, bootstrap confidence intervals are reported as
+    unavailable rather than replaced by a point estimate.
+    """
 
     def search(
         self, query: str | None, region: str | None, period: str | None, limit: int
@@ -793,8 +799,9 @@ _POPS = {"type": "array", "items": {"type": "string"}, "minItems": 1}
 TOOLS: list[Tool] = [
     Tool(
         "search_populations",
-        "Search the reference library by free text, region and/or period. Returns population "
-        "IDs with basic metadata (region, period, dates, sample count, publication).",
+        "Search the reference library by free text, region and/or period. Returns each "
+        "population's id and group_id with basic metadata (region, period, dates, sample "
+        "count, publication). Use id for coordinate tools and group_id for qpAdm/f4 tools.",
         _obj(
             {
                 "query": {"type": "string"},
@@ -897,7 +904,8 @@ TOOLS: list[Tool] = [
         "strictly MORE right than source populations, all names distinct and disjoint. Returns "
         "weights with SE and Z, p-value, chi-square, rank-drop and pop-drop tables and a "
         "feasibility verdict whose 'reasons' you should quote: 'plausible' means NOT REJECTED, "
-        "never proven. Population names must match the reference f2 cache exactly.",
+        "never proven. Use each population's group_id (from search_populations or "
+        "get_population), not its id: qpAdm keys on the group label stored in the f2 cache.",
         _obj(
             {
                 "target": {"type": "string"},
@@ -915,8 +923,9 @@ TOOLS: list[Tool] = [
         "FORMAL. Rotate a candidate pool between source and right roles: every candidate not "
         "used as a source becomes a right population, plus any populations in 'right' which "
         "stay on the right in every model. Keep the pool under about 10 names and "
-        "max_sources at 2-3, or enumeration is refused. Rotation p-values are NOT corrected "
-        "for multiple testing; report n_models_tested alongside any ranking.",
+        "max_sources at 2-3, or enumeration is refused. Use group_id values, not ids. "
+        "Rotation p-values are NOT corrected for multiple testing; report n_models_tested "
+        "alongside any ranking.",
         _obj(
             {
                 "target": {"type": "string"},
@@ -933,8 +942,8 @@ TOOLS: list[Tool] = [
     Tool(
         "run_f4",
         "FORMAL. Compute f4(A,B;C,D) for each given quadruple, with block-jackknife SE and "
-        "Z-scores. |Z| >= 3 is the conventional significance threshold; f4 near zero is "
-        "consistent with the tree (A,B)(C,D) and does not prove it.",
+        "Z-scores, using group_id values. |Z| >= 3 is the conventional significance "
+        "threshold; f4 near zero is consistent with the tree (A,B)(C,D) and does not prove it.",
         _obj(
             {
                 "quadruples": {

@@ -5,6 +5,12 @@ smoothed allele frequency p_j = (sum_i g_ij + 1) / (2 n_j + 2), x_ij = (g_ij - m
 sqrt(p_j (1 - p_j)). Missing genotypes are mean-imputed (x = 0) for fitting. Projection of new
 samples solves min_t || V_obs t - x_obs ||^2 over observed SNPs only (smartpca
 ``lsqproject: YES``), which for a fully observed reference sample reproduces its fitted score.
+
+Shrinkage: in-sample scores of the individuals the PCA was fitted on are inflated relative to
+projected samples when n_snps >> n_individuals. Exploratory mixture fits must therefore use
+coordinates of one kind (e.g. all projected, as the data pipeline does for held-out or
+leave-out projections); mixing in-sample source scores with a projected target biases weights
+toward the centre of the PCA.
 """
 
 from __future__ import annotations
@@ -198,3 +204,41 @@ def population_centroids(
         counts[str(lab)] = int(sub.shape[0])
     matrix = np.vstack(rows) if rows else np.zeros((0, coords.shape[1]))
     return CoordinateTable(space=space, names=names, matrix=matrix), counts
+
+
+def out_of_fold_scores(
+    G: np.ndarray,
+    model: PCAModel,
+    *,
+    n_folds: int = 5,
+    seed: int = 0,
+    groups: np.ndarray | None = None,
+) -> np.ndarray:
+    """Reference coordinates free of in-sample shrinkage bias, in ``model``'s axes.
+
+    Individuals are split into ``n_folds`` folds (stratified by ``groups`` when given). For each
+    fold a PCA is fitted on the other folds, the fold is projected with lsqproject, and the
+    coordinates are rotated into the full model's frame by orthogonal Procrustes on the
+    loadings. The result is directly comparable with ``project_array`` output for new samples.
+    """
+    X = _as_float(G)
+    n = X.shape[0]
+    rng = np.random.default_rng(seed)
+    fold = np.empty(n, dtype=np.int64)
+    if groups is None:
+        fold[rng.permutation(n)] = np.arange(n) % n_folds
+    else:
+        groups = np.asarray(groups, dtype=object)
+        for g in dict.fromkeys(groups.tolist()):
+            ix = np.flatnonzero(groups == g)
+            fold[rng.permutation(ix)] = (np.arange(ix.size) + rng.integers(n_folds)) % n_folds
+    out = np.full((n, model.n_components), np.nan)
+    for f in range(n_folds):
+        test = fold == f
+        if not test.any() or test.all():
+            continue
+        sub = fit_reference_pca(X[~test], model.n_components, seed=seed + f)
+        coords, _ = project_array(X[test], sub, min_snps=0)
+        u, _, wt = np.linalg.svd(sub.loadings.T @ model.loadings)
+        out[test] = coords @ (u @ wt)
+    return out

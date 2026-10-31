@@ -22,8 +22,9 @@ log = logging.getLogger("strata.jobs")
 
 
 class _Heartbeat(threading.Thread):
-    def __init__(self, engine: Engine, job_id: uuid.UUID, worker_id: str, every_s: float,
-                 ctx: JobContext) -> None:
+    def __init__(
+        self, engine: Engine, job_id: uuid.UUID, worker_id: str, every_s: float, ctx: JobContext
+    ) -> None:
         super().__init__(daemon=True, name=f"heartbeat-{job_id}")
         self.engine, self.job_id, self.worker_id, self.every_s = engine, job_id, worker_id, every_s
         self.ctx = ctx
@@ -56,8 +57,13 @@ def run_claimed(
     spec = get_spec(job.kind)
     timeout = float(job.timeout_s or spec.timeout_s or settings.job_timeout_s)
     ctx = JobContext(
-        job_id=job.id, kind=job.kind, owner_id=job.owner_id, payload=dict(job.payload or {}),
-        session=session, settings=settings, attempt=job.attempts,
+        job_id=job.id,
+        kind=job.kind,
+        owner_id=job.owner_id,
+        payload=dict(job.payload or {}),
+        session=session,
+        settings=settings,
+        attempt=job.attempts,
         deadline=time.monotonic() + timeout,
     )
     hb = _Heartbeat(engine, job.id, worker_id, settings.job_heartbeat_s, ctx)
@@ -105,8 +111,9 @@ def run_claimed(
             raise WorkerMustExitError(str(job_id))
 
 
-def _record_failure(engine: Engine, job_id: uuid.UUID, exc: BaseException, settings: Settings,
-                    overran: bool) -> str:
+def _record_failure(
+    engine: Engine, job_id: uuid.UUID, exc: BaseException, settings: Settings, overran: bool
+) -> str:
     if isinstance(exc, JobCancelledError):
         with Session(engine) as s, s.begin():
             j = s.get(Job, job_id)
@@ -130,9 +137,14 @@ def _requeue_after_interrupt(engine: Engine, job_id: uuid.UUID) -> None:
     try:
         with Session(engine) as s, s.begin():
             s.execute(
-                update(Job).where(Job.id == job_id, Job.status == "running").values(
-                    status="queued", locked_by=None, heartbeat_at=None,
-                    attempts=Job.attempts - 1, run_after=utcnow(),
+                update(Job)
+                .where(Job.id == job_id, Job.status == "running")
+                .values(
+                    status="queued",
+                    locked_by=None,
+                    heartbeat_at=None,
+                    attempts=Job.attempts - 1,
+                    run_after=utcnow(),
                 )
             )
     except Exception:  # noqa: BLE001
@@ -143,10 +155,16 @@ def claim_specific(engine: Engine, job_id: uuid.UUID, worker_id: str) -> bool:
     now = utcnow()
     with Session(engine) as s, s.begin():
         res = s.execute(
-            update(Job).where(Job.id == job_id, Job.status == "queued").values(
-                status="running", locked_by=worker_id, started_at=now, heartbeat_at=now,
+            update(Job)
+            .where(Job.id == job_id, Job.status == "queued")
+            .values(
+                status="running",
+                locked_by=worker_id,
+                started_at=now,
+                heartbeat_at=now,
                 attempts=Job.attempts + 1,
-            ).execution_options(synchronize_session=False)
+            )
+            .execution_options(synchronize_session=False)
         )
         return res.rowcount == 1
 
@@ -164,12 +182,26 @@ def run_inline(engine: Engine, job_id: uuid.UUID, settings: Settings) -> str:
     return status
 
 
-def submit(session: Session, kind: str, payload: dict[str, Any], *, owner_id: uuid.UUID | None,
-           settings: Settings, priority: int = 100) -> Job:
+def submit(
+    session: Session,
+    kind: str,
+    payload: dict[str, Any],
+    *,
+    owner_id: uuid.UUID | None,
+    settings: Settings,
+    priority: int = 100,
+) -> Job:
     """Enqueue a job, commit, and in inline mode run it before returning."""
     spec = get_spec(kind)
-    job = queue.enqueue(session, kind, payload, owner_id=owner_id, priority=priority,
-                        max_attempts=settings.job_max_attempts, timeout_s=spec.timeout_s)
+    job = queue.enqueue(
+        session,
+        kind,
+        payload,
+        owner_id=owner_id,
+        priority=priority,
+        max_attempts=settings.job_max_attempts,
+        timeout_s=spec.timeout_s,
+    )
     session.commit()
     if settings.job_mode == "inline":
         bind = session.get_bind()

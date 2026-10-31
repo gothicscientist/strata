@@ -137,13 +137,32 @@ export function Empty({ children }: { children: ReactNode }) {
   return <div className="py-6 text-small text-ink-2 italic">{children}</div>;
 }
 
-export function describeError(error: unknown): { title: string; detail: string } {
+export function describeError(error: unknown): { title: string; detail: string; expected?: boolean } {
   if (error instanceof ApiError) {
     if (error.unreachable)
       return {
         title: "The Strata API could not be reached.",
         detail:
           "Check that the API is running and that NEXT_PUBLIC_API_URL points at it. See docs/DEPLOYMENT.md.",
+      };
+    const code =
+      error.detail && typeof error.detail === "object" && "code" in error.detail
+        ? String((error.detail as { code: unknown }).code)
+        : null;
+    if (code === "reference_unavailable")
+      return {
+        expected: true,
+        title: "The reference library has not been built on this server yet.",
+        detail:
+          "Reference populations come from the data pipeline (data/pipeline), which builds data/derived from the Allen Ancient DNA Resource. See the Data page and docs/DEPLOYMENT.md.",
+      };
+    if (code === "llm_unavailable")
+      return { expected: true, title: "The research assistant is not configured on this server.", detail: error.message };
+    if (code === "qpadm_unavailable")
+      return {
+        expected: true,
+        title: "qpAdm is not available on this server.",
+        detail: "Formal tests need R and ADMIXTOOLS 2, provided by the worker image (services/worker).",
       };
     if (error.status === 404) return { title: "Not found.", detail: error.message };
     if (error.status === 503)
@@ -154,12 +173,15 @@ export function describeError(error: unknown): { title: string; detail: string }
 }
 
 export function ErrorNote({ error, retry }: { error: unknown; retry?: () => void }) {
-  const { title, detail } = describeError(error);
+  const { title, detail, expected } = describeError(error);
   return (
-    <div role="alert" className="my-6 max-w-[44rem] border-l-2 border-alert py-1 pl-5 text-small">
-      <p className="text-alert">{title}</p>
+    <div
+      role={expected ? "status" : "alert"}
+      className={`my-6 max-w-[44rem] border-l py-1 pl-5 text-small ${expected ? "border-ink-3" : "border-l-2 border-alert"}`}
+    >
+      <p className={expected ? "italic" : "text-alert"}>{title}</p>
       <p className="mt-1 text-ink-2">{detail}</p>
-      {retry ? (
+      {retry && !expected ? (
         <button type="button" className="linkish mt-2 text-small" onClick={retry}>
           Try again
         </button>
@@ -172,7 +194,7 @@ export function ErrorNote({ error, retry }: { error: unknown; retry?: () => void
 export function KindMark({ kind }: { kind: "exploratory" | "formal" }) {
   return (
     <span
-      className={`smallcaps inline-block border px-1.5 py-px align-[0.1em] ${
+      className={`smallcaps inline-block border px-1 py-px align-[0.12em] text-[0.62em] ${
         kind === "formal" ? "border-ink text-ink" : "border-ink-3 text-ink-2"
       }`}
       title={

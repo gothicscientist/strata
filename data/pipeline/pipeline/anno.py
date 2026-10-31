@@ -270,7 +270,7 @@ def to_float(value: str | None) -> float | None:
 
 def to_int(value: str | None) -> int | None:
     f = to_float(value)
-    return None if f is None else int(round(f))
+    return None if f is None else round(f)
 
 
 def normalise_sex(value: str | None) -> str:

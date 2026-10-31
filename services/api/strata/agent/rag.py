@@ -188,6 +188,7 @@ class BM25Retriever:
     def __init__(self, chunks: Sequence[Chunk]) -> None:
         self.chunks = list(chunks)
         docs = [tokenize(f"{c.title} {c.title} {c.text}") for c in self.chunks]
+        self._doc_terms = [set(d) for d in docs]
         self._bm25 = BM25Okapi(docs) if docs else None
 
     def search(self, query: str, k: int = 5) -> list[tuple[Chunk, float]]:
@@ -197,8 +198,13 @@ class BM25Retriever:
         if not q:
             return []
         scores = self._bm25.get_scores(q)
-        order = sorted(range(len(scores)), key=lambda i: (-scores[i], i))
-        return [(self.chunks[i], float(scores[i])) for i in order[:k] if scores[i] > 0]
+        # Relevance gate on term overlap rather than score > 0: BM25Okapi's IDF is ~0 for a
+        # term present in every document (e.g. a one-document corpus), which would otherwise
+        # discard genuine matches.
+        qset = set(q)
+        matched = [i for i in range(len(scores)) if self._doc_terms[i] & qset]
+        matched.sort(key=lambda i: (-scores[i], -len(self._doc_terms[i] & qset), i))
+        return [(self.chunks[i], float(scores[i])) for i in matched[:k]]
 
 
 EmbedFn = Callable[[list[str]], list[list[float]]]

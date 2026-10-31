@@ -1,0 +1,297 @@
+name: Build reference data
+
+# Builds Strata's AADR-derived reference library on a GitHub runner, which has
+# the internet access the development container lacks (Harvard Dataverse and
+# conda-forge are both reachable there).
+#
+# Manual only: the build downloads tens of GB from Dataverse and takes hours,
+# so it runs when a maintainer asks for it, not on every push.
+#
+# Outputs:
+#   * small, redistributable derived metadata -> a pull request
+#   * the SNP panel and PCA model              -> workflow artefacts
+#   * the f2 block cache                       -> a release asset (opt-in)
+#
+# Read docs/DATA_PROVENANCE.md before changing what this publishes. AADR
+# genotypes are not redistributed; only derived metadata, coordinates and
+# f-statistics are.
+
+on:
+  workflow_dispatch:
+    inputs:
+      aadr_version:
+        description: "AADR release (must be a .p1 release; v62.0 and v66.0 are decommissioned)"
+        required: true
+        default: "v66.p1"
+      reference_version:
+        description: "Strata reference version written to MANIFEST.json"
+        required: true
+        default: "strata-ref-v1"
+      stages:
+        description: "Which stages to run"
+        required: true
+        default: "metadata"
+        type: choice
+        options:
+          - metadata        # download + curate + manifest (no genotype maths)
+          - metadata+pca    # also fit strata-pca-v1
+          - full            # also build the f2 block cache (slow: many hours)
+      open_pull_request:
+        description: "Open a PR with the committable derived files"
+        required: true
+        default: true
+        type: boolean
+      publish_f2_release:
+        description: "Attach the f2 cache to a release (requires stages=full)"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: build-reference-${{ inputs.reference_version }}
+  cancel-in-progress: false
+
+env:
+  STRATA_AADR_VERSION: ${{ inputs.aadr_version }}
+  STRATA_REFERENCE_VERSION: ${{ inputs.reference_version }}
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # The f2 stage is the long pole; metadata-only finishes in minutes.
+    timeout-minutes: ${{ inputs.stages == 'full' && 1400 || 180 }}
+
+    steps:
+      - name: Refuse decommissioned AADR releases
+        # v62.0 and v66.0 contained data from 161 present-day individuals that
+        # is only available through the EGA data access committee. The pipeline
+        # also checks this; failing here avoids a pointless multi-GB download.
+        run: |
+          case "${{ inputs.aadr_version }}" in
+            v62.0|v66.0|62.0|66.0)
+              echo "::error::AADR ${{ inputs.aadr_version }} has been decommissioned by the Reich Lab. Use v62.0.p1 or v66.p1. See docs/DATA_PROVENANCE.md."
+              exit 1
+              ;;
+          esac
+
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        # A full AADR 1240K + HO build needs well over the runner's default
+        # free space once the archives are unpacked.
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          df -h /
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install the strata package
+        working-directory: services/api
+        run: |
+          uv venv .venv
+          uv pip install -p .venv/bin/python -e '.[dev]'
+
+      - name: Unit-test the parsing and curation logic
+        # These are the version-fragile parts: an AADR release that renames a
+        # .anno column must fail here, before anything is published.
+        working-directory: services/api
+        run: .venv/bin/python -m pytest tests/pipeline tests/qpadm -q
+
+      # ----------------------------------------------------------------- R
+      - name: Cache the R environment
+        if: inputs.stages == 'full'
+        id: cache-r
+        uses: actions/cache@v4
+        with:
+          path: /opt/strata-r
+          # The install script pins micromamba, R and the ADMIXTOOLS commit.
+          key: strata-r-${{ runner.os }}-${{ hashFiles('services/worker/r/install_env.sh') }}
+
+      - name: Build the R environment with ADMIXTOOLS 2
+        if: inputs.stages == 'full' && steps.cache-r.outputs.cache-hit != 'true'
+        run: |
+          sudo mkdir -p /opt && sudo chown "$USER" /opt
+          bash services/worker/r/install_env.sh /opt/strata-r
+
+      - name: Export STRATA_RSCRIPT
+        if: inputs.stages == 'full'
+        run: |
+          echo "STRATA_RSCRIPT=/opt/strata-r/bin/Rscript" >> "$GITHUB_ENV"
+          /opt/strata-r/bin/Rscript -e 'cat(R.version.string, as.character(packageVersion("admixtools")), "\n")'
+
+      # ----------------------------------------------------------- download
+      - name: Cache the AADR download
+        id: cache-aadr
+        uses: actions/cache@v4
+        with:
+          path: data/raw/aadr
+          key: aadr-${{ inputs.aadr_version }}-v1
+          # Checksums are verified by the pipeline regardless of a cache hit,
+          # so a corrupted cache entry is re-downloaded rather than trusted.
+
+      - name: Download AADR
+        working-directory: data/pipeline
+        env:
+          # Optional: raises Dataverse's rate limits. Not required for public data.
+          DATAVERSE_API_TOKEN: ${{ secrets.DATAVERSE_API_TOKEN }}
+        run: make download AADR_VERSION='${{ inputs.aadr_version }}'
+
+      # ------------------------------------------------------------- build
+      - name: Curate the panel
+        working-directory: data/pipeline
+        run: |
+          make curate \
+            AADR_VERSION='${{ inputs.aadr_version }}' \
+            REF_VERSION='${{ inputs.reference_version }}'
+
+      - name: Fit the PCA space
+        if: inputs.stages != 'metadata'
+        working-directory: data/pipeline
+        run: |
+          make pca \
+            AADR_VERSION='${{ inputs.aadr_version }}' \
+            REF_VERSION='${{ inputs.reference_version }}'
+
+      - name: Build the f2 block cache
+        if: inputs.stages == 'full'
+        working-directory: data/pipeline
+        run: |
+          make f2 \
+            AADR_VERSION='${{ inputs.aadr_version }}' \
+            REF_VERSION='${{ inputs.reference_version }}'
+
+      - name: Generate the worked examples
+        if: inputs.stages == 'full'
+        # Real computations on ADMIXTOOLS 2's bundled f2 blocks. The script
+        # exits non-zero rather than writing anything if R is unavailable.
+        run: services/api/.venv/bin/python data/examples/generate_examples.py
+
+      - name: Write MANIFEST.json
+        working-directory: data/pipeline
+        run: |
+          make manifest \
+            AADR_VERSION='${{ inputs.aadr_version }}' \
+            REF_VERSION='${{ inputs.reference_version }}'
+
+      - name: Verify the manifest against the files on disk
+        working-directory: data/pipeline
+        run: make verify
+
+      - name: Summarise the build
+        run: |
+          {
+            echo "## Reference build: ${{ inputs.reference_version }}"
+            echo
+            echo "- AADR release: \`${{ inputs.aadr_version }}\`"
+            echo "- Stages: \`${{ inputs.stages }}\`"
+            echo
+            echo '### Counts'
+            echo '```json'
+            services/api/.venv/bin/python -c "import json;m=json.load(open('data/derived/MANIFEST.json'));print(json.dumps({'counts':m.get('counts'),'panel':m.get('panel',{}).get('matched_groups'),'f2':{k:m.get('f2',{}).get(k) for k in ('n_pops','n_snps','n_blocks','cache_id')}},indent=2))"
+            echo '```'
+            echo
+            echo '### Exclusions'
+            echo '```json'
+            services/api/.venv/bin/python -c "import json;m=json.load(open('data/derived/MANIFEST.json'));print(json.dumps({k:v.get('by_reason') for k,v in (m.get('exclusions') or {}).items()},indent=2))"
+            echo '```'
+            echo
+            echo '### Citation'
+            echo 'Using this data requires citing the AADR release and the AADR manuscript:'
+            echo '```'
+            (cd data/pipeline && make -s citations)
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # --------------------------------------------------------- publishing
+      - name: Upload the large derived artefacts
+        # snp_panel.parquet and the PCA model are too large for git but are
+        # needed by the API and the worker; they are rebuilt or fetched rather
+        # than committed. See docs/notes/reference-schema.md.
+        if: inputs.stages != 'metadata'
+        uses: actions/upload-artifact@v4
+        with:
+          name: strata-reference-large-${{ inputs.reference_version }}
+          path: |
+            data/derived/snp_panel.parquet
+            data/derived/pca/
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Package the f2 cache
+        if: inputs.stages == 'full' && inputs.publish_f2_release
+        run: |
+          tar -C data/derived/f2 -czf \
+            "f2-${{ inputs.reference_version }}.tar.gz" "${{ inputs.reference_version }}"
+          sha256sum "f2-${{ inputs.reference_version }}.tar.gz" \
+            > "f2-${{ inputs.reference_version }}.tar.gz.sha256"
+          ls -lh f2-*.tar.gz*
+
+      - name: Publish the f2 cache as a release asset
+        if: inputs.stages == 'full' && inputs.publish_f2_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="reference-${{ inputs.reference_version }}"
+          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" \
+            --title "Reference data ${{ inputs.reference_version }}" \
+            --notes "ADMIXTOOLS 2 f2 block cache built from AADR ${{ inputs.aadr_version }}. Derived f-statistics only; no AADR genotypes are redistributed. See docs/DATA_PROVENANCE.md."
+          gh release upload "$tag" \
+            "f2-${{ inputs.reference_version }}.tar.gz" \
+            "f2-${{ inputs.reference_version }}.tar.gz.sha256" --clobber
+
+      - name: Open a pull request with the committable derived files
+        if: inputs.open_pull_request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ github.token }}
+          branch: reference/${{ inputs.reference_version }}-${{ inputs.aadr_version }}
+          base: ${{ github.ref_name }}
+          commit-message: |
+            data: rebuild reference library from AADR ${{ inputs.aadr_version }}
+
+            Reference version: ${{ inputs.reference_version }}
+            Stages: ${{ inputs.stages }}
+          title: "data: reference library from AADR ${{ inputs.aadr_version }}"
+          body: |
+            Automated reference build from `.github/workflows/build-reference.yml`.
+
+            - AADR release: `${{ inputs.aadr_version }}`
+            - Reference version: `${{ inputs.reference_version }}`
+            - Stages: `${{ inputs.stages }}`
+            - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Only small, redistributable derived files are committed: population
+            and sample metadata, publications, coordinate spaces, the worked
+            examples and `MANIFEST.json`. No AADR genotypes are included.
+            `snp_panel.parquet`, the PCA model and the f2 cache are attached to
+            the workflow run or a release instead.
+
+            **Review checklist**
+            - [ ] `MANIFEST.json` records the AADR release and source checksums
+            - [ ] Exclusion counts look sane (no stage dropping everything)
+            - [ ] `panel.unmatched_labels` is empty, or the misses are expected
+                  for this release (AADR renames groups between versions)
+            - [ ] Nothing genotype-shaped was added to git
+            - [ ] `docs/DATA_PROVENANCE.md` still describes what is published
+          add-paths: |
+            data/derived/populations.parquet
+            data/derived/samples.parquet
+            data/derived/publications.parquet
+            data/derived/spaces.json
+            data/derived/coordinates/
+            data/derived/MANIFEST.json
+            data/examples/
+          delete-branch: true

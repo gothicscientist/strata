@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "npx serve out",
+    "build": "next build && node scripts/write-headers.mjs out",
+    "start": "node e2e/serve.mjs out 4173",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "node e2e/smoke.mjs",
-    "screenshots": "node e2e/screenshots.mjs"
+    "screenshots": "node e2e/screenshots.mjs",
+    "deploy": "pnpm build && wrangler pages deploy out --project-name strata-web"
   },
   "dependencies": {
     "@fontsource/eb-garamond": "^5.3.0",
@@ -54,5 +55,9 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "vitest": "^5.0.5"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=20"
   }
 }

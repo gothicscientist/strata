@@ -1,0 +1,1 @@
+# Static export uses query parameters, so no rewrites are needed. Unknown paths get 404.html.

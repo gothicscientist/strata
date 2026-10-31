@@ -45,7 +45,8 @@ class TokenBucketLimiter:
     def _evict(self, now: float) -> None:
         # Drop buckets that have refilled completely (they carry no state).
         full = [
-            k for k, b in self._buckets.items()
+            k
+            for k, b in self._buckets.items()
             if b.tokens + (now - b.updated) * self.rate >= self.capacity
         ]
         for k in full:

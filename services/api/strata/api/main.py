@@ -23,12 +23,21 @@ PREFIX = "/api/v1"
 TAGS = [
     {"name": "health", "description": "Liveness and honest capability flags."},
     {"name": "auth", "description": "Guest workspaces (signed tokens) and Supabase sessions."},
-    {"name": "reference", "description": "Public reference library: AADR-derived populations, "
-                                         "publications and coordinate spaces."},
-    {"name": "datasets", "description": "User uploads (G25 coordinates, raw DNA, VCF), parsed in "
-                                        "memory, stored encrypted; delete crypto-shreds."},
-    {"name": "analyses", "description": "Exploratory PCA/G25 fits and formal qpAdm tests, run as "
-                                        "jobs, with reproducible reports."},
+    {
+        "name": "reference",
+        "description": "Public reference library: AADR-derived populations, "
+        "publications and coordinate spaces.",
+    },
+    {
+        "name": "datasets",
+        "description": "User uploads (G25 coordinates, raw DNA, VCF), parsed in "
+        "memory, stored encrypted; delete crypto-shreds.",
+    },
+    {
+        "name": "analyses",
+        "description": "Exploratory PCA/G25 fits and formal qpAdm tests, run as "
+        "jobs, with reproducible reports.",
+    },
     {"name": "comparisons", "description": "Saved side-by-side model comparisons."},
     {"name": "jobs", "description": "Job status for queued analyses."},
     {"name": "examples", "description": "Precomputed real example analyses."},
@@ -74,9 +83,16 @@ class _TooLargeError(Exception):
 
 async def _reject(send: Send) -> None:
     body = b'{"detail":"request body too large","code":"payload_too_large"}'
-    await send({"type": "http.response.start", "status": 413,
-                "headers": [(b"content-type", b"application/json"),
-                            (b"content-length", str(len(body)).encode())]})
+    await send(
+        {
+            "type": "http.response.start",
+            "status": 413,
+            "headers": [
+                (b"content-type", b"application/json"),
+                (b"content-length", str(len(body)).encode()),
+            ],
+        }
+    )
     await send({"type": "http.response.body", "body": body})
 
 
@@ -112,10 +128,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     install_error_handlers(app)
     api = APIRouter(prefix=PREFIX, dependencies=[Depends(rate_limit_default)])
-    for r in (health.router, auth.router, reference.router, datasets.router, analyses.router,
-              jobs.router, examples.router, chat.router):
+    for r in (
+        health.router,
+        auth.router,
+        reference.router,
+        datasets.router,
+        analyses.router,
+        jobs.router,
+        examples.router,
+        chat.router,
+    ):
         api.include_router(r)
     app.include_router(api)
+
+    @app.get("/health", include_in_schema=False)
+    def liveness() -> dict[str, str]:
+        """Process liveness for container/load-balancer probes (no DB, no auth)."""
+        return {"status": "ok"}
 
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(

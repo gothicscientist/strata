@@ -99,11 +99,11 @@ export function qpadmNotes(r: QpAdmResult): Note[] {
       text: `The right set (${r.right.length}) should exceed the number of sources (${r.left.length}) to give the test power.`,
     });
   }
-  const badF4 = (r.f4 ?? []).filter((f) => Math.abs(f.z) > 3);
+  const badF4 = f4Residuals(r).filter((f) => Math.abs(f.z) > 3);
   if (badF4.length) {
     notes.push({
       level: "caution",
-      text: `${badF4.length} f4 residual${badF4.length === 1 ? "" : "s"} exceed |z| = 3; see Figure 2 for the populations involved.`,
+      text: `${badF4.length} f4 residual${badF4.length === 1 ? " exceeds" : "s exceed"} |z| = 3; see Figure 2 for the populations involved.`,
     });
   }
   return notes;
@@ -120,4 +120,11 @@ export function rankQpAdmModels(r: QpAdmRotateResult) {
     const ok = (m: typeof a) => (m.feasible && m.p_value >= ALPHA_REJECT ? 1 : 0);
     return ok(b) - ok(a) || b.p_value - a.p_value;
   });
+}
+
+/** f4 residual z-scores, (observed - fitted) / SE, for rows where the model fit is reported. */
+export function f4Residuals(r: QpAdmResult): Array<{ label: string; z: number }> {
+  return (r.f4 ?? [])
+    .filter((f) => f.est !== null && f.fit !== null && f.fit !== undefined && f.se)
+    .map((f) => ({ label: `${f.pop3}, ${f.pop4}`, z: (f.est! - f.fit!) / f.se! }));
 }

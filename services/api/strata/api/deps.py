@@ -55,21 +55,33 @@ def _bearer(request: Request) -> str | None:
         return None
     scheme, _, token = auth.partition(" ")
     if scheme.lower() != "bearer" or not token.strip():
-        raise ApiError(401, "malformed Authorization header", "unauthorized",
-                       headers={"WWW-Authenticate": "Bearer"})
+        raise ApiError(
+            401,
+            "malformed Authorization header",
+            "unauthorized",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return token.strip()
 
 
 def current_principal(request: Request, db: DbDep, settings: SettingsDep) -> Principal:
     token = _bearer(request)
     if token is None:
-        raise ApiError(401, "authentication required (guest token or Supabase session)",
-                       "unauthorized", headers={"WWW-Authenticate": "Bearer"})
+        raise ApiError(
+            401,
+            "authentication required (guest token or Supabase session)",
+            "unauthorized",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     try:
         principal = authenticate_bearer(token, settings)
     except AuthError as exc:
-        raise ApiError(401, str(exc), "unauthorized",
-                       headers={"WWW-Authenticate": 'Bearer error="invalid_token"'}) from exc
+        raise ApiError(
+            401,
+            str(exc),
+            "unauthorized",
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+        ) from exc
     user = db.get(User, principal.user_id)
     now = utcnow()
     if principal.is_guest:
@@ -107,8 +119,9 @@ def _limiters() -> dict[str, TokenBucketLimiter]:
     s = get_settings()
     return {
         "default": TokenBucketLimiter(s.rate_limit_per_minute, s.rate_limit_burst),
-        "expensive": TokenBucketLimiter(s.rate_limit_expensive_per_minute,
-                                        max(1, s.rate_limit_expensive_per_minute // 2)),
+        "expensive": TokenBucketLimiter(
+            s.rate_limit_expensive_per_minute, max(1, s.rate_limit_expensive_per_minute // 2)
+        ),
         "guest": TokenBucketLimiter(10, 5),
     }
 
@@ -120,8 +133,12 @@ def reset_rate_limits() -> None:
 def _limit(bucket: str, key: str) -> None:
     ok, retry = _limiters()[bucket].acquire(key)
     if not ok:
-        raise ApiError(429, "rate limit exceeded", "rate_limited",
-                       headers={"Retry-After": str(max(1, int(retry + 0.999)))})
+        raise ApiError(
+            429,
+            "rate limit exceeded",
+            "rate_limited",
+            headers={"Retry-After": str(max(1, int(retry + 0.999)))},
+        )
 
 
 def rate_limit_default(request: Request, settings: SettingsDep) -> None:

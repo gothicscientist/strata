@@ -31,8 +31,8 @@ function Population() {
         id: s.id,
         lat: s.lat!,
         lon: s.lon!,
-        label: s.name,
-        detail: `${bp(s.date_mean_bp)}${s.sex ? `; ${s.sex}` : ""}`,
+        label: s.id,
+        detail: `${bp(s.date_mean_bp)}${s.locality ? `; ${s.locality}` : ""}`,
         emphasis: true,
       }))
     : p.lat !== null && p.lon !== null
@@ -47,17 +47,17 @@ function Population() {
       <PageHeader
         kicker={[p.region, p.country].filter(Boolean).join(", ") || "Reference population"}
         title={p.name}
-        lede={p.description ?? undefined}
+        lede={p.culture ?? undefined}
         aside={
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
             <dt className="text-ink-3">Date</dt>
             <dd className="num">{bpRange(p.date_min_bp, p.date_max_bp, p.date_mean_bp)}</dd>
             <dt className="text-ink-3">Period</dt>
-            <dd>{p.period ?? "—"}</dd>
+            <dd>{[p.period, p.culture].filter(Boolean).join("; ") || "—"}</dd>
             <dt className="text-ink-3">Individuals</dt>
             <dd className="num">{p.n_samples}</dd>
             <dt className="text-ink-3">Source</dt>
-            <dd>{p.source_dataset ?? "—"}</dd>
+            <dd>{p.data_source}</dd>
             {p.spaces?.length ? (
               <>
                 <dt className="text-ink-3">Spaces</dt>
@@ -98,8 +98,8 @@ function Population() {
             n={1}
             caption={`Individuals assigned to ${p.name}. Dates are means of calibrated ranges where available.`}
             notes={
-              p.samples.some((s) => s.qc_flags?.length)
-                ? "QC flags are carried through from the source annotation; flagged individuals may be excluded from some analyses."
+              p.samples.some((s) => s.assessment && !/^pass/i.test(s.assessment))
+                ? "Assessments are carried through from the AADR annotation; individuals not marked PASS may be excluded from some analyses."
                 : undefined
             }
           >
@@ -109,7 +109,7 @@ function Population() {
                   <th>Individual</th>
                   <th className="r">Date</th>
                   <th>Sex</th>
-                  <th className="r">Coverage</th>
+                  <th>Data</th>
                   <th className="r">SNPs</th>
                   <th>QC</th>
                 </tr>
@@ -117,15 +117,18 @@ function Population() {
               <tbody>
                 {p.samples.map((s) => (
                   <tr key={s.id}>
-                    <td>{s.name}</td>
+                    <td>
+                      {s.id}
+                      {s.locality ? <span className="block text-caption text-ink-3">{s.locality}</span> : null}
+                    </td>
                     <td className="r num whitespace-nowrap">
                       {bp(s.date_mean_bp)}
-                      {s.date_sd_bp ? <span className="text-ink-3"> &plusmn; {int(s.date_sd_bp)}</span> : null}
+                      {s.date_sd ? <span className="text-ink-3"> &plusmn; {int(s.date_sd)}</span> : null}
                     </td>
                     <td>{s.sex ?? "—"}</td>
-                    <td className="r num">{s.coverage !== null && s.coverage !== undefined ? `${fixed(s.coverage, 2)}×` : "—"}</td>
+                    <td>{s.data_type ?? "—"}</td>
                     <td className="r num">{int(s.n_snps)}</td>
-                    <td className="text-ink-2">{s.qc_flags?.length ? s.qc_flags.join(", ") : "pass"}</td>
+                    <td className="text-ink-2">{s.assessment ?? "\u2014"}</td>
                   </tr>
                 ))}
               </tbody>

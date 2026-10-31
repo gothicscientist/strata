@@ -14,8 +14,11 @@ REDACTED = "[redacted: genotype-like payload]"
 
 _PATTERNS = [
     # 23andMe / Ancestry rows: rs123 <tab> 1 <tab> 12345 <tab> AG  (or A G)
-    re.compile(r"\b(?:rs|i)\d{3,}\s*[\t,; ]\s*(?:chr)?[0-9XYMT]{1,2}\s*[\t,; ]\s*\d+"
-               r"\s*[\t,; ]\s*[ACGTDI\-0]{1,2}\b", re.I),
+    re.compile(
+        r"\b(?:rs|i)\d{3,}\s*[\t,; ]\s*(?:chr)?[0-9XYMT]{1,2}\s*[\t,; ]\s*\d+"
+        r"\s*[\t,; ]\s*[ACGTDI\-0]{1,2}\b",
+        re.I,
+    ),
     # rsID immediately followed by a genotype call: rs123 AG / rs123:AG / "rs123": "AG"
     re.compile(r"\brs\d{3,}\W{1,4}[ACGT]{2}\b"),
     # VCF data lines: CHROM POS ID REF ALT ... GT
@@ -40,9 +43,7 @@ class GenotypeRedactionFilter(logging.Filter):
             msg = record.getMessage()
         except Exception:  # noqa: BLE001 - malformed format args: drop them
             msg = str(record.msg)
-        if looks_like_genotypes(msg) or (
-            record.exc_text and looks_like_genotypes(record.exc_text)
-        ):
+        if looks_like_genotypes(msg) or (record.exc_text and looks_like_genotypes(record.exc_text)):
             record.msg = REDACTED
             record.args = None
             record.exc_info = None

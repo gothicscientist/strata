@@ -16,10 +16,17 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 def job_out(job: Job) -> JobOut:
     aid = (job.payload or {}).get("analysis_id")
     return JobOut(
-        id=job.id, kind=job.kind, status=job.status, error=job.error,  # type: ignore[arg-type]
-        created_at=job.created_at, started_at=job.started_at, finished_at=job.finished_at,
-        attempts=job.attempts, max_attempts=job.max_attempts,
-        analysis_id=uuid.UUID(str(aid)) if aid else None, result=job.result,
+        id=job.id,
+        kind=job.kind,
+        status=job.status,
+        error=job.error,  # type: ignore[arg-type]
+        created_at=job.created_at,
+        started_at=job.started_at,
+        finished_at=job.finished_at,
+        attempts=job.attempts,
+        max_attempts=job.max_attempts,
+        analysis_id=uuid.UUID(str(aid)) if aid else None,
+        result=job.result,
     )
 
 

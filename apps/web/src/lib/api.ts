@@ -14,6 +14,7 @@ import type {
   ChatEvent,
   ChatSession,
   ChatSessionCreate,
+  ChatSessionDetail,
   CoordinateSpaceInfo,
   Dataset,
   ExampleDetail,
@@ -199,8 +200,8 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
   // An expired or revoked guest token: issue a fresh guest workspace once and retry.
   if (res.status === 401 && !opts.anonymous && readGuest()) {
     clearGuest();
-    headers.Authorization = `Bearer ${await ensureToken()}`;
-    res = await fetchOrThrow(url, init);
+    const retryHeaders = { ...headers, Authorization: `Bearer ${await ensureToken()}` };
+    res = await fetchOrThrow(url, { ...init, headers: retryHeaders });
   }
 
   if (!res.ok) {
@@ -276,6 +277,9 @@ export const api = {
   example: (slug: string, signal?: AbortSignal) =>
     request<ExampleDetail>(`/examples/${encodeURIComponent(slug)}`, { signal }),
 
+  chatSessions: (signal?: AbortSignal) => request<ChatSession[]>("/chat/sessions", { signal }),
+  chatSession: (id: string, signal?: AbortSignal) =>
+    request<ChatSessionDetail>(`/chat/sessions/${encodeURIComponent(id)}`, { signal }),
   createChat: (body: ChatSessionCreate = {}) =>
     request<ChatSession>("/chat/sessions", { method: "POST", json: body }),
 };

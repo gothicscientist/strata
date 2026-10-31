@@ -62,8 +62,12 @@ def test_metadata_chunks_render_records() -> None:
 
 def test_bm25_retrieves_the_relevant_chunk() -> None:
     chunks = [
-        Chunk("a#1", "Right populations", "Right populations must be differentially related "
-                                          "to the sources.", "x"),
+        Chunk(
+            "a#1",
+            "Right populations",
+            "Right populations must be differentially related to the sources.",
+            "x",
+        ),
         Chunk("a#2", "Shrinkage", "Projected samples are pulled toward the origin.", "x"),
         Chunk("a#3", "Consumer arrays", "SNP overlap with the 1240k panel limits power.", "x"),
     ]
@@ -101,10 +105,12 @@ def test_dense_retriever_with_stub_embeddings() -> None:
         out = []
         for t in texts:
             low = t.lower()
-            out.append([
-                float("fruit" in low or "apple" in low),
-                float("machine" in low or "engine" in low or "torque" in low),
-            ])
+            out.append(
+                [
+                    float("fruit" in low or "apple" in low),
+                    float("machine" in low or "engine" in low or "torque" in low),
+                ]
+            )
         return out
 
     dense = DenseRetriever(chunks, embed)

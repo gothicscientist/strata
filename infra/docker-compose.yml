@@ -1,0 +1,105 @@
+# Local full stack: Postgres (+pgvector) · API · queue worker (R + ADMIXTOOLS 2) · web.
+#   cp .env.example .env   # then set STRATA_DATA_KEY etc.
+#   docker compose -f infra/docker-compose.yml --env-file .env up --build
+# Schema: supabase/migrations/*.sql run automatically on first start of the db volume.
+name: strata
+
+x-backend-env: &backend-env
+  STRATA_ENV: ${STRATA_ENV:-dev}
+  DATABASE_URL: postgresql+psycopg://strata:${POSTGRES_PASSWORD:-strata}@db:5432/strata
+  STRATA_DATA_KEY: ${STRATA_DATA_KEY:?set STRATA_DATA_KEY (openssl rand -base64 32)}
+  STRATA_DATA_KEY_PREVIOUS: ${STRATA_DATA_KEY_PREVIOUS:-}
+  STRATA_GUEST_TOKEN_SECRET: ${STRATA_GUEST_TOKEN_SECRET:-}
+  STRATA_JOB_MODE: queue
+  STRATA_STORAGE_BACKEND: ${STRATA_STORAGE_BACKEND:-db}
+  STRATA_DATA_DIR: /app/data
+  STRATA_DERIVED_DIR: /app/data/derived
+  STRATA_EXAMPLES_DIR: /app/data/examples
+  SUPABASE_URL: ${SUPABASE_URL:-}
+  SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-}
+  SUPABASE_JWKS_URL: ${SUPABASE_JWKS_URL:-}
+  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  STRATA_LLM_PROVIDER: ${STRATA_LLM_PROVIDER:-anthropic}
+  STRATA_LLM_MODEL: ${STRATA_LLM_MODEL:-}
+  STRATA_LOG_LEVEL: ${STRATA_LOG_LEVEL:-INFO}
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: strata
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-strata}
+      POSTGRES_DB: strata
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../supabase/migrations:/docker-entrypoint-initdb.d:ro
+    ports: ["127.0.0.1:5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U strata -d strata"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  api:
+    build: { context: .., dockerfile: services/api/Dockerfile }
+    environment:
+      <<: *backend-env
+      STRATA_CORS_ORIGINS: ${STRATA_CORS_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      STRATA_TRUST_PROXY_HEADERS: ${STRATA_TRUST_PROXY_HEADERS:-false}
+    volumes:
+      - ../data/derived:/app/data/derived:ro
+      - ../data/examples:/app/data/examples:ro
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=4).status == 200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+    read_only: true
+    tmpfs: ["/tmp"]
+    restart: unless-stopped
+
+  worker:
+    build: { context: .., dockerfile: services/worker/Dockerfile }
+    # The image ENTRYPOINT is `python -m strata.jobs.worker`; these are its arguments.
+    command: ["--concurrency", "${STRATA_WORKER_CONCURRENCY:-2}"]
+    environment:
+      <<: *backend-env
+      STRATA_WORKER_HEALTH_FILE: /tmp/worker-alive
+      STRATA_F2_DIR: ${STRATA_F2_DIR:-}
+    volumes:
+      - ../data/derived:/app/data/derived:ro
+    depends_on:
+      db: { condition: service_healthy }
+    healthcheck:
+      # The worker loop rewrites this file every second; stale for >60 s means wedged.
+      test: ["CMD-SHELL", "test $$(( $$(date +%s) - $$(stat -c %Y /tmp/worker-alive) )) -lt 60"]
+      interval: 20s
+      timeout: 3s
+      start_period: 30s
+      retries: 3
+    stop_grace_period: 2m   # SIGTERM -> finish in-flight jobs
+    # Exit code 3 = a job overran its timeout; restart gives a clean process.
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/docker/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  pgdata:

@@ -127,8 +127,13 @@ def verify_supabase_jwt(
             if not hs256_secret:
                 raise AuthError("HS256 token but SUPABASE_JWT_SECRET is not configured")
             claims = jwt.decode(
-                token, hs256_secret, algorithms=["HS256"], audience=audience,
-                issuer=issuer, options=opts, leeway=leeway_s,
+                token,
+                hs256_secret,
+                algorithms=["HS256"],
+                audience=audience,
+                issuer=issuer,
+                options=opts,
+                leeway=leeway_s,
             )
         elif alg in ("RS256", "ES256"):
             cache = jwks or (_jwks_for(jwks_url) if jwks_url else None)
@@ -136,8 +141,13 @@ def verify_supabase_jwt(
                 raise AuthError("asymmetric token but SUPABASE_JWKS_URL is not configured")
             key = cache.signing_key(token)
             claims = jwt.decode(
-                token, key, algorithms=[alg], audience=audience,
-                issuer=issuer, options=opts, leeway=leeway_s,
+                token,
+                key,
+                algorithms=[alg],
+                audience=audience,
+                issuer=issuer,
+                options=opts,
+                leeway=leeway_s,
             )
         else:
             raise AuthError(f"unsupported token algorithm {alg!r}")

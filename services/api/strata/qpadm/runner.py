@@ -57,11 +57,11 @@ class QpAdmError(RuntimeError):
     """Base class for every failure of the R bridge."""
 
 
-class QpAdmUnavailable(QpAdmError):
+class QpAdmUnavailable(QpAdmError):  # noqa: N818 - "Unavailable" reads better than "Error"
     """R or ADMIXTOOLS 2 is not installed or not reachable."""
 
 
-class QpAdmTimeout(QpAdmError):
+class QpAdmTimeout(QpAdmError):  # noqa: N818 - "Timeout" reads better than "TimeoutError"
     """The R process exceeded its time budget."""
 
 
@@ -300,7 +300,9 @@ def _invoke(
             ) from exc
 
     if not isinstance(payload, dict):
-        raise QpAdmProtocolError(f"{script} returned a {type(payload).__name__}, expected an object")
+        raise QpAdmProtocolError(
+            f"{script} returned a {type(payload).__name__}, expected an object"
+        )
 
     if not payload.get("ok", False):
         err = payload.get("error") or {}

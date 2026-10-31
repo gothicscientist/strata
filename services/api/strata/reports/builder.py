@@ -24,8 +24,7 @@ EXPLORATORY_CAVEATS = [
     "projection shrinkage and to the dimensions used. Small distances do not imply that "
     "the sources are the true ancestral populations.",
     "Populations are reference labels for sampled individuals, not ethnic identities.",
-    "Confirm candidate models with formal f-statistics tests (qpAdm) before drawing "
-    "conclusions.",
+    "Confirm candidate models with formal f-statistics tests (qpAdm) before drawing conclusions.",
 ]
 FORMAL_CAVEATS = [
     "qpAdm tests whether the target is consistent with a mixture of the left populations "
@@ -38,9 +37,12 @@ FORMAL_CAVEATS = [
 ]
 
 _TEMPLATES = Path(__file__).with_name("templates")
-_env = Environment(loader=FileSystemLoader(_TEMPLATES),
-                   autoescape=select_autoescape(["html", "j2"]),
-                   trim_blocks=True, lstrip_blocks=True)
+_env = Environment(
+    loader=FileSystemLoader(_TEMPLATES),
+    autoescape=select_autoescape(["html", "j2"]),
+    trim_blocks=True,
+    lstrip_blocks=True,
+)
 
 
 def _fmt(v: Any, digits: int = 4) -> str:
@@ -59,8 +61,9 @@ _env.filters["tojson_pretty"] = lambda v: json.dumps(v, indent=2, sort_keys=True
 
 
 def canonical_json(obj: Any) -> bytes:
-    return json.dumps(obj, sort_keys=True, separators=(",", ":"), default=str,
-                      ensure_ascii=False).encode()
+    return json.dumps(
+        obj, sort_keys=True, separators=(",", ":"), default=str, ensure_ascii=False
+    ).encode()
 
 
 def classification(kind: str, result: dict[str, Any] | None) -> str:
@@ -82,8 +85,17 @@ def _uncertainty(result: dict[str, Any]) -> dict[str, Any]:
                     row[k] = w[k]
             rows.append(row)
         out["weights"] = rows
-    for k in ("n_bootstrap", "p_value", "chisq", "dof", "distance", "feasible", "n_snps",
-              "n_snps_used", "sensitivity"):
+    for k in (
+        "n_bootstrap",
+        "p_value",
+        "chisq",
+        "dof",
+        "distance",
+        "feasible",
+        "n_snps",
+        "n_snps_used",
+        "sensitivity",
+    ):
         if result.get(k) is not None:
             out[k] = result[k]
     if not out:
@@ -113,8 +125,10 @@ def _reproduce_steps(bundle: dict[str, Any]) -> list[str]:
         "(replace dataset_id with the new dataset id)."
     )
     if bundle["provenance"].get("seed") is not None:
-        steps.append(f"The random seed {bundle['provenance']['seed']} is part of the "
-                     "parameters; results are deterministic given the same inputs.")
+        steps.append(
+            f"The random seed {bundle['provenance']['seed']} is part of the "
+            "parameters; results are deterministic given the same inputs."
+        )
     steps.append(f"Compare the result with `results` in this bundle (analysis kind {a['kind']}).")
     return steps
 
@@ -127,26 +141,51 @@ def build_bundle(analysis: Any, datasets: list[Any], *, generated_at: datetime) 
         caveats.insert(0, result["caveat"])
     for n in result.get("notes", []) or []:
         caveats.append(str(n))
-    inputs = [{
-        "dataset_id": str(d.id), "name": d.name, "kind": d.kind,
-        "input_sha256": d.input_sha256, "payload_sha256": d.payload_sha256,
-        "payload_format": d.payload_format, "panel_version": d.panel_version,
-        "qc": {k: d.qc_report.get(k) for k in ("vendor", "build", "n_variants", "call_rate",
-                                               "panel_overlap", "n_samples", "n_dims",
-                                               "scaled") if k in d.qc_report},
-    } for d in datasets]
+    inputs = [
+        {
+            "dataset_id": str(d.id),
+            "name": d.name,
+            "kind": d.kind,
+            "input_sha256": d.input_sha256,
+            "payload_sha256": d.payload_sha256,
+            "payload_format": d.payload_format,
+            "panel_version": d.panel_version,
+            "qc": {
+                k: d.qc_report.get(k)
+                for k in (
+                    "vendor",
+                    "build",
+                    "n_variants",
+                    "call_rate",
+                    "panel_overlap",
+                    "n_samples",
+                    "n_dims",
+                    "scaled",
+                )
+                if k in d.qc_report
+            },
+        }
+        for d in datasets
+    ]
     params = dict(analysis.params or {})
-    api_request = {"kind": analysis.kind, "title": analysis.title,
-                   "dataset_id": str(analysis.dataset_ids[0]) if analysis.dataset_ids else None,
-                   "target": params.pop("target", None), "params": params}
+    api_request = {
+        "kind": analysis.kind,
+        "title": analysis.title,
+        "dataset_id": str(analysis.dataset_ids[0]) if analysis.dataset_ids else None,
+        "target": params.pop("target", None),
+        "params": params,
+    }
     bundle: dict[str, Any] = {
         "report_version": REPORT_VERSION,
         "generated_at": generated_at.isoformat(),
-        "analysis": {"id": str(analysis.id), "kind": analysis.kind, "title": analysis.title,
-                     "status": analysis.status,
-                     "created_at": analysis.created_at.isoformat(),
-                     "finished_at": analysis.finished_at.isoformat()
-                     if analysis.finished_at else None},
+        "analysis": {
+            "id": str(analysis.id),
+            "kind": analysis.kind,
+            "title": analysis.title,
+            "status": analysis.status,
+            "created_at": analysis.created_at.isoformat(),
+            "finished_at": analysis.finished_at.isoformat() if analysis.finished_at else None,
+        },
         "classification": cls,
         "inputs": inputs,
         "parameters": analysis.params or {},

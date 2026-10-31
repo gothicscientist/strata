@@ -45,7 +45,7 @@ export function PcaPlot({ space, targets = [], height = 520, compact = false, hi
       const pts = groups.get(g)!;
       const slot = g === "Other regions" ? { color: OTHER, symbol: "circle" } : slots.get(g)!;
       return {
-        type: "scattergl",
+        type: "scatter",
         mode: "markers",
         name: g,
         x: pts.map((p) => p.coords[x] ?? null),
@@ -113,14 +113,17 @@ export function PcaPlot({ space, targets = [], height = 520, compact = false, hi
         layout={{
           ...journalLayout,
           height,
-          showlegend: !compact,
-          legend: { ...journalLayout.legend, orientation: "v", x: 1.01, y: 1, xanchor: "left" },
+          margin: { ...journalLayout.margin, t: compact ? 12 : 36 },
+          showlegend: true,
+          legend: compact
+            ? { ...journalLayout.legend, orientation: "h", x: 0, y: -0.22, xanchor: "left", yanchor: "top" }
+            : { ...journalLayout.legend, orientation: "v", x: 1.01, y: 1, xanchor: "left" },
           xaxis: journalAxis(pcLabel(space, x)),
           yaxis: journalAxis(pcLabel(space, y), { scaleanchor: undefined }),
           hovermode: "closest",
           dragmode: compact ? false : "zoom",
         }}
-        config={{ ...plotConfig, displayModeBar: !compact, staticPlot: false }}
+        config={{ ...plotConfig, displayModeBar: compact ? false : "hover" }}
         style={{ width: "100%" }}
         useResizeHandler
       />

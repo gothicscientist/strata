@@ -17,7 +17,7 @@ const KNOWN: Array<[keyof Dataset["qc"], string, (v: unknown) => string]> = [
 ];
 
 /** QC report as a two-column table, then warnings as numbered notes. */
-export function QcReport({ dataset, n = 1 }: { dataset: Dataset; n?: number }) {
+export function QcReport({ dataset, n = 1 }: { dataset: Dataset; n?: number | string }) {
   const qc = dataset.qc;
   const rows: Array<[string, string]> = [];
   for (const [key, label, fmt] of KNOWN) {

@@ -97,8 +97,9 @@ def llm_providers() -> list[str]:
         from strata.config import get_settings
 
         s = get_settings()
-        return [p for p, k in (("anthropic", s.anthropic_api_key),
-                               ("openai", s.openai_api_key)) if k]
+        return [
+            p for p, k in (("anthropic", s.anthropic_api_key), ("openai", s.openai_api_key)) if k
+        ]
 
 
 def reset_caches() -> None:

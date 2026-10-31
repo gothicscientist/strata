@@ -32,8 +32,15 @@ EXIT_RESTART = 3
 
 
 class Worker:
-    def __init__(self, engine: Engine, settings: Settings, *, kinds: list[str] | None = None,
-                 concurrency: int = 1, maintenance_every_s: float = 60.0) -> None:
+    def __init__(
+        self,
+        engine: Engine,
+        settings: Settings,
+        *,
+        kinds: list[str] | None = None,
+        concurrency: int = 1,
+        maintenance_every_s: float = 60.0,
+    ) -> None:
         self.engine = engine
         self.settings = settings
         self.kinds = kinds
@@ -54,8 +61,11 @@ class Worker:
         from strata.security.vault import vault_from_settings
 
         with Session(self.engine) as s, s.begin():
-            n = queue.reap_stale(s, stale_after_s=self.settings.job_stale_after_s,
-                                 backoff_base_s=self.settings.job_backoff_base_s)
+            n = queue.reap_stale(
+                s,
+                stale_after_s=self.settings.job_stale_after_s,
+                backoff_base_s=self.settings.job_backoff_base_s,
+            )
             if n:
                 log.warning("requeued %d stale job(s)", n)
         with Session(self.engine) as s, s.begin():
@@ -85,14 +95,25 @@ class Worker:
                 self.stopping.wait(self.settings.worker_poll_s)
 
     def run_forever(self) -> int:
-        log.info("worker %s started (concurrency=%d, kinds=%s)", self.id, self.concurrency,
-                 self.kinds or "all")
-        threads = [threading.Thread(target=self._loop, name=f"worker-{i}", daemon=True)
-                   for i in range(self.concurrency)]
+        log.info(
+            "worker %s started (concurrency=%d, kinds=%s)",
+            self.id,
+            self.concurrency,
+            self.kinds or "all",
+        )
+        threads = [
+            threading.Thread(target=self._loop, name=f"worker-{i}", daemon=True)
+            for i in range(self.concurrency)
+        ]
         for t in threads:
             t.start()
+        health = os.environ.get("STRATA_WORKER_HEALTH_FILE")
         while not self.stopping.is_set():
             now = time.monotonic()
+            if health:
+                # Liveness for container healthchecks: refreshed while the loop is alive.
+                with open(health, "w") as fh:
+                    fh.write(f"{self.id} {time.time():.0f}\n")
             if now - self._last_maint >= self.maintenance_every_s:
                 self._last_maint = now
                 try:
@@ -112,8 +133,9 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="python -m strata.jobs.worker")
     p.add_argument("--once", action="store_true", help="run queued jobs until empty, then exit")
     p.add_argument("--kinds", default="", help="comma separated job kinds to accept")
-    p.add_argument("--concurrency", type=int,
-                   default=int(os.environ.get("STRATA_WORKER_CONCURRENCY", "1")))
+    p.add_argument(
+        "--concurrency", type=int, default=int(os.environ.get("STRATA_WORKER_CONCURRENCY", "1"))
+    )
     args = p.parse_args(argv)
     settings = get_settings()
     install_log_redaction(settings.log_level)

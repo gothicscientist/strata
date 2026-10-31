@@ -37,7 +37,7 @@ export function OriginsMap({
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<string | null>(null);
   const valid = points.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon));
-  const height = fixedHeight ?? Math.round(width * 0.5);
+  const height = fixedHeight ?? Math.min(480, Math.round(width * 0.5));
 
   const { path, project, graticule } = useMemo(() => {
     const proj = geoEqualEarth();

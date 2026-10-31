@@ -1,0 +1,10 @@
+# Cloudflare Pages project for the Strata web app (static export).
+# Deploy: pnpm build && npx wrangler pages deploy out --project-name strata-web
+name = "strata-web"
+compatibility_date = "2025-06-01"
+pages_build_output_dir = "out"
+
+[vars]
+# Build-time variables are read by `next build`; set them in the Pages dashboard
+# (Settings -> Environment variables) or export them before building locally.
+# NEXT_PUBLIC_API_URL = "https://api.strata.example"

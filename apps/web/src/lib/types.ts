@@ -10,15 +10,24 @@ export type ISODate = string;
 export interface Capabilities {
   qpadm: boolean;
   llm_providers: string[];
+  llm_configured: boolean;
   reference_version: string | null;
-  job_mode?: string;
-  [key: string]: unknown;
+  reference_loaded: boolean;
+  snp_panel_loaded: boolean;
+  pca_space: string | null;
+  job_mode: string;
+  job_kinds: string[];
+  storage_backend: string;
+  database: string;
+  auth: Record<string, boolean>;
+  examples: number;
 }
 
 export interface Health {
-  status: string;
+  status: "ok" | "degraded";
   version: string;
   capabilities: Capabilities;
+  notes: string[];
 }
 
 /* ------------------------------------------------------------------- auth */
@@ -40,39 +49,47 @@ export interface Publication {
   url?: string | null;
 }
 
+/** strata.reference.library.Population */
 export interface PopulationSummary {
   id: string;
+  group_id: string | null;
   name: string;
   region: string | null;
-  country?: string | null;
+  country: string | null;
+  lat: number | null;
+  lon: number | null;
   period: string | null;
+  culture: string | null;
   date_mean_bp: number | null;
+  date_sd: number | null;
   date_min_bp: number | null;
   date_max_bp: number | null;
   n_samples: number;
-  lat: number | null;
-  lon: number | null;
-  source_dataset: string | null;
+  data_source: string;
   publication_ids: string[];
-  spaces?: string[];
+  spaces: string[];
 }
 
+/** strata.reference.library.Sample */
 export interface Sample {
   id: string;
-  name: string;
-  date_mean_bp: number | null;
-  date_sd_bp?: number | null;
+  population_id: string;
+  master_id: string | null;
   sex: string | null;
+  date_mean_bp: number | null;
+  date_sd: number | null;
   lat: number | null;
   lon: number | null;
-  coverage?: number | null;
-  n_snps?: number | null;
+  country: string | null;
+  locality: string | null;
+  data_type: string | null;
+  n_snps: number | null;
+  pseudohaploid: boolean | null;
   publication_id: string | null;
-  qc_flags?: string[];
+  assessment: string | null;
 }
 
 export interface PopulationDetail extends PopulationSummary {
-  description?: string | null;
   samples: Sample[];
   publications: Publication[];
 }
@@ -80,6 +97,7 @@ export interface PopulationDetail extends PopulationSummary {
 export interface Facets {
   region: string[];
   period: string[];
+  country: string[];
   source_dataset: string[];
 }
 
@@ -95,6 +113,7 @@ export interface PopulationQuery {
   q?: string;
   region?: string;
   period?: string;
+  country?: string;
   source_dataset?: string;
   min_bp?: number;
   max_bp?: number;
@@ -116,8 +135,12 @@ export interface CoordinateSpaceInfo {
   name: string;
   version: string;
   n_dims: number;
+  dim_names: string[];
+  level: string;
   description: string;
-  explained_variance?: number[] | null;
+  explained_variance_ratio: number[] | null;
+  explained_variance: number[] | null;
+  provenance: Record<string, unknown>;
   populations: SpacePopulationPoint[];
 }
 
@@ -151,6 +174,10 @@ export interface Dataset {
   created_at: ISODate;
   expires_at: ISODate | null;
   qc: QCReport;
+  summary: Record<string, unknown>;
+  input_sha256: string;
+  payload_sha256: string;
+  size_bytes: number;
 }
 
 /* ---------------------------------------------------------- analyses/jobs */
@@ -222,6 +249,7 @@ export interface PcaProjectionResult {
   space: string;
   targets: ProjectedPoint[];
   n_snps_used?: number | null;
+  note?: string | null;
   caveat: string;
 }
 
@@ -229,6 +257,7 @@ export interface NearestHit {
   population_id: string;
   name: string;
   distance: number;
+  rank?: number;
   region?: string | null;
 }
 
@@ -255,11 +284,26 @@ export interface SensitivityRow {
   distance: number;
   delta_distance: number;
   weights?: Record<string, number>;
+  max_abs_weight_change?: number;
 }
 
 export interface Sensitivity {
   leave_one_source_out: SensitivityRow[];
   leave_one_dimension_out: SensitivityRow[];
+  jitter?: { sd: number; n: number; max_weight_sd: number } | null;
+  stable?: boolean;
+  stability_note?: string;
+}
+
+/** strata.analysis.types.FitQuality */
+export interface FitQuality {
+  label: "good" | "fair" | "poor";
+  distance: number;
+  relative_distance: number;
+  best_single_source: string;
+  best_single_distance: number;
+  improvement_over_single: number;
+  caveat: string;
 }
 
 export interface AdmixtureFitResult {
@@ -273,6 +317,9 @@ export interface AdmixtureFitResult {
   residuals: number[];
   n_bootstrap?: number | null;
   sensitivity?: Sensitivity | null;
+  quality?: FitQuality | null;
+  converged?: boolean;
+  notes?: string[];
   caveat: string;
 }
 
@@ -281,7 +328,8 @@ export interface RotationModel {
   sources: string[];
   weights: number[];
   distance: number;
-  pruned?: string[];
+  n_sources?: number;
+  pruned?: string[] | null;
 }
 
 export interface RotationResult {
@@ -291,6 +339,12 @@ export interface RotationResult {
   target: string;
   models: RotationModel[];
   n_models_evaluated: number;
+  n_candidates?: number;
+  strategy?: string;
+  preferred_rank?: number | null;
+  tolerance?: number;
+  min_weight?: number;
+  k_range?: [number, number];
   caveat: string;
 }
 
@@ -311,14 +365,17 @@ export interface RankTest {
   p_nested?: number | null;
 }
 
+/** strata.qpadm.types.F4Row */
 export interface F4Residual {
   pop1: string;
   pop2: string;
   pop3: string;
   pop4: string;
-  est: number;
-  se: number;
-  z: number;
+  est: number | null;
+  se: number | null;
+  z: number | null;
+  p?: number | null;
+  n?: number | null;
   fit?: number | null;
 }
 
@@ -336,11 +393,15 @@ export interface QpAdmResult {
   rank_tests: RankTest[];
   f4?: F4Residual[];
   n_snps?: number | null;
+  verdict?: string | null;
   notes?: string[];
+  caveat?: string;
 }
 
 export interface QpAdmRotateModel {
   left: string[];
+  right?: string[];
+  verdict?: string | null;
   p_value: number;
   chisq: number;
   dof: number;
@@ -353,7 +414,12 @@ export interface QpAdmRotateResult {
   kind: "formal";
   target: string;
   right: string[];
+  leftright?: string[];
   models: QpAdmRotateModel[];
+  n_models_enumerated?: number;
+  n_models_tested?: number;
+  caveat?: string;
+  rotation_caveat?: string;
 }
 
 export type AnalysisResult =
@@ -391,6 +457,26 @@ export interface ChatSession {
   title?: string | null;
 }
 
+export interface ChatMessage {
+  id: string;
+  seq: number;
+  role: "user" | "assistant";
+  content: string;
+  tool_calls: Array<Record<string, unknown>>;
+  tool_results: Array<Record<string, unknown>>;
+  grounding: Grounding | null;
+  citations: string[];
+  usage: Record<string, unknown> | null;
+  error: string | null;
+  created_at: ISODate;
+}
+
+export interface ChatSessionDetail extends ChatSession {
+  dataset_ids: string[];
+  updated_at: ISODate;
+  messages: ChatMessage[];
+}
+
 export interface ChatSessionCreate {
   title?: string;
   dataset_ids?: string[];
@@ -403,6 +489,7 @@ export interface UngroundedValue {
 
 export interface Grounding {
   ok: boolean;
+  checked?: number;
   ungrounded: UngroundedValue[];
 }
 

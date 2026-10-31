@@ -116,7 +116,8 @@ class AnalysisCreate(Schema):
         None, description="User dataset providing the target (omit for reference-only runs)"
     )
     target: str | None = Field(
-        None, max_length=200,
+        None,
+        max_length=200,
         description="Sample name within the dataset, or a reference population id",
     )
     params: dict[str, Any] = Field(default_factory=dict)

@@ -28,14 +28,15 @@ def purge_expired(session: Session, vault: DatasetVault, now: datetime | None = 
     ):
         vault.shred(session, ds)
         counts["datasets"] += 1
-    for model, key in ((Analysis, "analyses"), (ChatSession, "chat_sessions"),
-                       (ModelComparison, "comparisons")):
+    for model, key in (
+        (Analysis, "analyses"),
+        (ChatSession, "chat_sessions"),
+        (ModelComparison, "comparisons"),
+    ):
         for row in session.scalars(select(model).where(model.expires_at < now)):
             session.delete(row)
             counts[key] += 1
-    for user in session.scalars(
-        select(User).where(User.is_guest.is_(True), User.expires_at < now)
-    ):
+    for user in session.scalars(select(User).where(User.is_guest.is_(True), User.expires_at < now)):
         session.delete(user)  # ON DELETE CASCADE removes jobs, analyses, chats
         counts["guests"] += 1
     session.flush()

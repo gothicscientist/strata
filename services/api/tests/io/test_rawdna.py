@@ -1,0 +1,181 @@
+"""Raw DNA parser tests on SYNTHETIC fixture files with realistic vendor headers."""
+
+from __future__ import annotations
+
+import gzip
+import io
+import time
+import zipfile
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+from strata.io import InputFormatError, parse_raw_dna
+
+FIX = Path(__file__).parent / "fixtures"
+
+
+def load(name: str):
+    return parse_raw_dna((FIX / name).read_bytes(), name)
+
+
+def calls(r):
+    return {
+        str(s): (str(c), int(p), a + b)
+        for s, c, p, a, b in zip(r.rsid, r.chrom, r.pos, r.allele1, r.allele2, strict=True)
+    }
+
+
+def test_23andme_v5():
+    r = load("23andme_v5.txt")
+    assert r.vendor == "23andme" and r.build == "GRCh37" and r.qc.build_source == "header"
+    c = calls(r)
+    assert c["rs3131972"] == ("1", 752721, "AG")
+    assert c["rs12567639"][2] == "--"
+    assert c["rs5939319"] == ("X", 2700157, "GG")  # hemizygous call stored homozygous
+    assert "i5000001" not in c  # indel (DI) dropped
+    assert "i713426" in c  # internal id kept for position matching
+    q = r.qc
+    assert q.n_indels_dropped == 1 and q.n_duplicates_dropped == 1
+    assert q.n_internal_ids == 1 and q.n_haploid_calls == 4
+    assert q.n_markers == 15 and q.n_nocalls == 1
+    assert q.sex_chromosomes.x == 2 and q.sex_chromosomes.y == 1 and q.sex_chromosomes.mt == 1
+    assert q.inferred_sex.call == "undetermined" and q.inferred_sex.heuristic
+    assert q.autosomal_het_rate == pytest.approx(3 / 10)
+    assert "23andMe export" in (q.vendor_detail or "")
+
+
+def test_23andme_v3_build36():
+    r = load("23andme_v3_build36.txt")
+    assert r.build == "NCBI36" and r.qc.call_rate == pytest.approx(0.8)
+
+
+@pytest.mark.parametrize("name", ["ancestrydna_v2.txt", "ancestrydna_v2.zip"])
+def test_ancestry(name):
+    r = load(name)
+    assert r.vendor == "ancestrydna" and r.build == "GRCh37"
+    c = calls(r)
+    assert c["rs12567639"][2] == "--"  # "0 0" no-call
+    assert c["rs5939319"][0] == "X" and c["rs2032651"][0] == "Y"
+    assert c["rs28357984"][0] == "MT" and c["rs6655122"][0] == "XY"
+    assert "2.0" in (r.qc.vendor_detail or "")
+
+
+def test_ftdna_repeated_header_and_landmark_build():
+    r = load("ftdna_build37.csv")
+    assert r.vendor == "ftdna" and r.n == 8
+    assert r.build == "GRCh37" and r.qc.build_source == "landmarks"
+    assert calls(r)["rs4988235"] == ("2", 136608646, "AG")
+
+
+def test_myheritage():
+    r = load("myheritage.csv")
+    assert r.vendor == "myheritage" and r.build == "GRCh37" and r.qc.n_nocalls == 1
+
+
+@pytest.mark.parametrize("name", ["sample_grch38.vcf", "sample_grch38.vcf.gz"])
+def test_vcf(name):
+    r = load(name)
+    assert r.vendor == "vcf" and r.build == "GRCh38"
+    c = calls(r)
+    assert c["rs3094315"][2] == "GA"
+    assert c["rs3131972"][2] == "GG"  # phased 1|1
+    assert c["chr1:900000"][2] == "CC"  # missing ID -> chrom:pos
+    assert c["rs99999902"][2] == "AT"  # multi-allelic 1/2
+    assert c["rs1426654"][2] == "--"
+    assert c["rs99999903"][2] == "TT"  # gVCF-style <NON_REF>
+    assert c["rs99999904"] == ("X", 5000000, "AA")  # haploid GT
+    assert "rs99999901" not in c and r.qc.n_indels_dropped == 1
+    assert r.qc.n_haploid_calls == 1
+
+
+def test_vcf_multisample_and_selection():
+    text = (FIX / "sample_grch38.vcf").read_text()
+    lines = [
+        ln + ("\tSAMPLE2" if ln.startswith("#CHROM") else "" if ln.startswith("#") else "\t1/1:50")
+        for ln in text.splitlines()
+    ]
+    data = ("\n".join(lines) + "\n").encode()
+    with pytest.raises(InputFormatError, match="2 samples"):
+        parse_raw_dna(data, "multi.vcf")
+    r = parse_raw_dna(data, "multi.vcf", vcf_sample="SAMPLE2")
+    assert calls(r)["rs3094315"][2] == "AA"
+
+
+def test_vcf_gt_not_first():
+    data = (
+        b"##fileformat=VCFv4.2\n##reference=GRCh37\n"
+        b"#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS\n"
+        b"1\t100\trs1\tA\tG\t.\t.\t.\tGQ:GT\t30:0/1\n"
+        b"1\t200\trs2\tC\tT\t.\t.\t.\tGT\t1/1\n"
+    )
+    r = parse_raw_dna(data, "x.vcf")
+    assert calls(r) == {"rs1": ("1", 100, "AG"), "rs2": ("1", 200, "TT")}
+    assert r.build == "GRCh37"
+
+
+def test_zip_with_two_files_rejected():
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("a.txt", "x")
+        z.writestr("b.txt", "y")
+    with pytest.raises(InputFormatError, match="exactly one"):
+        parse_raw_dna(buf.getvalue(), "x.zip")
+
+
+def test_gzipped_text_and_garbage():
+    gz = gzip.compress((FIX / "23andme_v5.txt").read_bytes())
+    assert parse_raw_dna(gz, "genome.txt.gz").vendor == "23andme"
+    with pytest.raises(InputFormatError):
+        parse_raw_dna(b"hello world\nthis is not dna\n", "x.txt")
+    with pytest.raises(InputFormatError):
+        parse_raw_dna(b"", "x.txt")
+
+
+def _synthetic_23andme(sex: str, n_x: int = 400) -> bytes:
+    rng = np.random.default_rng(1)
+    rows = [
+        "# This data file generated by 23andMe at: SYNTHETIC",
+        "# We are using reference human assembly build 37",
+        "# rsid\tchromosome\tposition\tgenotype",
+    ]
+    for i in range(200):
+        rows.append(f"rs{i}\t1\t{1000 + i}\t{rng.choice(['AA', 'AG', 'GG'])}")
+    for i in range(n_x):
+        g = rng.choice(["A", "G"]) if sex == "XY" else rng.choice(["AA", "AG", "GG"])
+        rows.append(f"rsx{i}\tX\t{3_000_000 + i}\t{g}")
+    for i in range(50):
+        rows.append(f"rsy{i}\tY\t{3_000_000 + i}\t{'C' if sex == 'XY' else '--'}")
+    return ("\n".join(rows) + "\n").encode()
+
+
+@pytest.mark.parametrize("sex", ["XY", "XX"])
+def test_sex_inference(sex):
+    r = parse_raw_dna(_synthetic_23andme(sex), "s.txt")
+    assert r.qc.inferred_sex.call == sex
+    assert "heuristic" in r.qc.inferred_sex.method
+
+
+def test_qc_dump_has_no_genotypes():
+    r = load("23andme_v5.txt")
+    dumped = r.model_dump(mode="json")
+    assert set(dumped) == {"vendor", "build", "qc"}
+
+
+def test_performance_700k_lines():
+    rng = np.random.default_rng(0)
+    n = 700_000
+    chrom = np.repeat([str(c) for c in range(1, 23)], n // 22 + 1)[:n]
+    g = rng.choice(["AA", "AG", "GG", "CT", "--", "TT", "CC"], n)
+    body = "\n".join(
+        f"rs{i}\t{c}\t{i + 1}\t{x}" for i, (c, x) in enumerate(zip(chrom, g, strict=True))
+    )
+    data = (
+        "# 23andMe\n# build 37\n# rsid\tchromosome\tposition\tgenotype\n" + body + "\n"
+    ).encode()
+    t = time.perf_counter()
+    r = parse_raw_dna(data, "big.txt")
+    elapsed = time.perf_counter() - t
+    assert r.n == n
+    assert elapsed < 3.0, elapsed

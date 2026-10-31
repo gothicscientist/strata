@@ -11,14 +11,6 @@ alter table public.chat_sessions     enable row level security;
 alter table public.chat_messages     enable row level security;
 alter table public.model_comparisons enable row level security;
 
-alter table public.profiles          force row level security;
-alter table public.datasets          force row level security;
-alter table public.dataset_keys      force row level security;
-alter table public.analyses          force row level security;
-alter table public.jobs              force row level security;
-alter table public.chat_sessions     force row level security;
-alter table public.chat_messages     force row level security;
-alter table public.model_comparisons force row level security;
 
 do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'authenticated') then
@@ -28,6 +20,10 @@ do $$ begin
     create role anon nologin;
   end if;
 end $$;
+
+grant usage on schema public to anon, authenticated;
+grant usage on schema auth to anon, authenticated;
+grant execute on function auth.uid() to anon, authenticated;
 
 -- profiles
 drop policy if exists profiles_select_own on public.profiles;

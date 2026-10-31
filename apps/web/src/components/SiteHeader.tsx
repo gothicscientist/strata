@@ -70,8 +70,8 @@ export function SiteHeader() {
           <SessionLine />
         </p>
       </div>
-      <nav aria-label="Primary" className="border-b border-rule">
-        <ul className="-mx-2 flex flex-wrap gap-x-1 py-1.5">
+      <nav aria-label="Primary" className="-mx-5 overflow-x-auto border-b border-rule px-5 sm:mx-0 sm:px-0">
+        <ul className="-mx-2 flex gap-x-1 py-1.5 whitespace-nowrap sm:flex-wrap">
           {NAV.map((n) => {
             const active = isActive(path, n.href);
             return (

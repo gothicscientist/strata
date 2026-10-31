@@ -29,11 +29,15 @@ def health(db: DbDep, settings: SettingsDep) -> Health:
     qpadm = science.qpadm_available()
     providers = science.llm_providers()
     if lib is None:
-        notes.append("reference library not loaded: analyses against reference populations "
-                     "are unavailable (build data/derived with the data pipeline)")
+        notes.append(
+            "reference library not loaded: analyses against reference populations "
+            "are unavailable (build data/derived with the data pipeline)"
+        )
     if not qpadm:
-        notes.append("qpAdm unavailable: formal f-statistics tests need R + ADMIXTOOLS 2 "
-                     "(services/worker image)")
+        notes.append(
+            "qpAdm unavailable: formal f-statistics tests need R + ADMIXTOOLS 2 "
+            "(services/worker image)"
+        )
     if not settings.llm_configured:
         notes.append(f"research assistant disabled: no API key for {settings.llm_provider}")
     if not settings.data_key:
@@ -42,14 +46,24 @@ def health(db: DbDep, settings: SettingsDep) -> Health:
 
     pca_space = science.default_pca_space()
     caps = Capabilities(
-        qpadm=qpadm, llm_providers=providers, llm_configured=settings.llm_configured,
-        reference_version=science.reference_version(), reference_loaded=lib is not None,
-        snp_panel_loaded=panel is not None, pca_space=pca_space, job_mode=settings.job_mode,
-        job_kinds=kinds(), storage_backend=settings.storage_backend,
+        qpadm=qpadm,
+        llm_providers=providers,
+        llm_configured=settings.llm_configured,
+        reference_version=science.reference_version(),
+        reference_loaded=lib is not None,
+        snp_panel_loaded=panel is not None,
+        pca_space=pca_space,
+        job_mode=settings.job_mode,
+        job_kinds=kinds(),
+        storage_backend=settings.storage_backend,
         database="postgres" if settings.is_postgres else "sqlite",
-        auth={"guest": True, "supabase_hs256": bool(settings.supabase_jwt_secret),
-              "supabase_jwks": bool(settings.supabase_jwks_url or settings.supabase_url)},
+        auth={
+            "guest": True,
+            "supabase_hs256": bool(settings.supabase_jwt_secret),
+            "supabase_jwks": bool(settings.supabase_jwks_url or settings.supabase_url),
+        },
         examples=len(list_examples(settings.examples_dir)),
     )
-    return Health(status="ok" if db_ok else "degraded", version=__version__,
-                  capabilities=caps, notes=notes)
+    return Health(
+        status="ok" if db_ok else "degraded", version=__version__, capabilities=caps, notes=notes
+    )

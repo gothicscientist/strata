@@ -152,6 +152,10 @@ class PcaSpaceConfig:
     # drift define the axes.
     fit_on_modern_only: bool = True
     fit_regions: tuple[str, ...] = ("West Eurasia", "South Asia", "Central Asia")
+    # Folds for out-of-fold scoring of the fit individuals. In-sample scores
+    # are inflated relative to lsq-projected samples when n_snps >>
+    # n_individuals, which biases any admixture fit that mixes the two.
+    n_folds: int = 5
     # SNP filters applied before fitting.
     max_snp_missingness: float = 0.02
     min_maf: float = 0.01
@@ -247,13 +251,17 @@ def paths(root: Path | None = None) -> Paths:
 
 # Using the AADR requires citing both the Dataverse release and the manuscript.
 AADR_CITATIONS: tuple[str, ...] = (
-    "Mallick, S., & Reich, D. (2026). The Allen Ancient DNA Resource (AADR): "
-    f"A curated compendium of ancient human genomes, {AADR_VERSION}. "
-    "Harvard Dataverse. https://doi.org/10.7910/DVN/FFIDCW",
-    "Mallick, S., Micco, A., Mah, M., Ringbauer, H., Lazaridis, I., Olalde, I., "
-    "Patterson, N., & Reich, D. (2024). The Allen Ancient DNA Resource (AADR): "
-    "a curated compendium of ancient human genomes. Scientific Data, 11(1). "
-    "https://doi.org/10.1038/s41597-024-03031-7",
+    (
+        "Mallick, S., & Reich, D. (2026). The Allen Ancient DNA Resource (AADR): "
+        f"A curated compendium of ancient human genomes, {AADR_VERSION}. "
+        "Harvard Dataverse. https://doi.org/10.7910/DVN/FFIDCW"
+    ),
+    (
+        "Mallick, S., Micco, A., Mah, M., Ringbauer, H., Lazaridis, I., Olalde, I., "
+        "Patterson, N., & Reich, D. (2024). The Allen Ancient DNA Resource (AADR): "
+        "a curated compendium of ancient human genomes. Scientific Data, 11(1). "
+        "https://doi.org/10.1038/s41597-024-03031-7"
+    ),
 )
 
 ADMIXTOOLS2_CITATION = (

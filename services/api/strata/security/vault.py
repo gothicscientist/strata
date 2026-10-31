@@ -66,21 +66,30 @@ class SupabaseBlobStore:
         r = httpx.post(
             f"{self.base}/{self.bucket}/{path}",
             content=data,
-            headers={**self.headers, "Content-Type": "application/octet-stream",
-                     "x-upsert": "true"},
+            headers={
+                **self.headers,
+                "Content-Type": "application/octet-stream",
+                "x-upsert": "true",
+            },
             timeout=60,
         )
         r.raise_for_status()
 
     def get(self, path: str) -> bytes:
-        r = httpx.get(f"{self.base}/authenticated/{self.bucket}/{path}", headers=self.headers,
-                      timeout=60)
+        r = httpx.get(
+            f"{self.base}/authenticated/{self.bucket}/{path}", headers=self.headers, timeout=60
+        )
         r.raise_for_status()
         return r.content
 
     def delete(self, path: str) -> None:
-        r = httpx.request("DELETE", f"{self.base}/{self.bucket}", json={"prefixes": [path]},
-                          headers=self.headers, timeout=30)
+        r = httpx.request(
+            "DELETE",
+            f"{self.base}/{self.bucket}",
+            json={"prefixes": [path]},
+            headers=self.headers,
+            timeout=30,
+        )
         if r.status_code not in (200, 404):
             r.raise_for_status()
 
@@ -112,7 +121,9 @@ class DatasetVault:
         if dataset.id is None:
             dataset.id = uuid.uuid4()
         enc = encrypt_payload(
-            plaintext, dataset_id=str(dataset.id), owner_id=str(dataset.owner_id),
+            plaintext,
+            dataset_id=str(dataset.id),
+            owner_id=str(dataset.owner_id),
             keyring=self.keyring,
         )
         dataset.payload_sha256 = hashlib.sha256(plaintext).hexdigest()
@@ -126,8 +137,10 @@ class DatasetVault:
             dataset.ciphertext = None
             dataset.storage_path = path
         dataset.key = DatasetKey(
-            dataset_id=dataset.id, owner_id=dataset.owner_id,
-            wrapped_key=enc.wrapped_key, kek_id=enc.kek_id,
+            dataset_id=dataset.id,
+            owner_id=dataset.owner_id,
+            wrapped_key=enc.wrapped_key,
+            kek_id=enc.kek_id,
         )
         session.add(dataset)
 
@@ -142,8 +155,13 @@ class DatasetVault:
         else:
             raise DatasetShreddedError(str(dataset.id))
         pt = decrypt_payload(
-            ct, dataset.nonce, key.wrapped_key, key.kek_id,
-            dataset_id=str(dataset.id), owner_id=str(dataset.owner_id), keyring=self.keyring,
+            ct,
+            dataset.nonce,
+            key.wrapped_key,
+            key.kek_id,
+            dataset_id=str(dataset.id),
+            owner_id=str(dataset.owner_id),
+            keyring=self.keyring,
         )
         if hashlib.sha256(pt).hexdigest() != dataset.payload_sha256:
             raise DatasetShreddedError("payload hash mismatch")

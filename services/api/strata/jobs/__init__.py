@@ -5,5 +5,11 @@ from strata.jobs.registry import JobContext, kinds, register
 from strata.jobs.runner import run_inline, submit
 
 __all__ = [
-    "JobContext", "PermanentJobError", "enqueue", "kinds", "register", "run_inline", "submit",
+    "JobContext",
+    "PermanentJobError",
+    "enqueue",
+    "kinds",
+    "register",
+    "run_inline",
+    "submit",
 ]

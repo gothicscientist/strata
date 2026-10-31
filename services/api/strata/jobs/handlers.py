@@ -131,12 +131,18 @@ def project_dataset(payload: DatasetPayload, space: str) -> dict[str, Any] | Non
         raise PermanentJobError(
             f"too few SNPs overlap the PCA model ({proj.n_snps_used[0]}) to project this sample"
         )
-    return {"space": proj.space, "coords": coords, "n_snps_used": proj.n_snps_used[0],
-            "explained_variance_ratio": proj.explained_variance_ratio, "note": proj.note}
+    return {
+        "space": proj.space,
+        "coords": coords,
+        "n_snps_used": proj.n_snps_used[0],
+        "explained_variance_ratio": proj.explained_variance_ratio,
+        "note": proj.note,
+    }
 
 
-def _resolve_target(ctx: JobContext, analysis: Analysis | None, params: dict[str, Any]
-                    ) -> tuple[str, np.ndarray, str, dict[str, Any]]:
+def _resolve_target(
+    ctx: JobContext, analysis: Analysis | None, params: dict[str, Any]
+) -> tuple[str, np.ndarray, str, dict[str, Any]]:
     """Returns (label, coords, space, info). Target from the user's dataset or a reference
     population id."""
     dataset_ids = list(analysis.dataset_ids) if analysis else []
@@ -145,8 +151,11 @@ def _resolve_target(ctx: JobContext, analysis: Analysis | None, params: dict[str
     info: dict[str, Any] = {}
     if did is not None and str(did) != str(params.get("source_dataset_id")):
         ds, payload = _open_dataset(ctx, did)
-        info["dataset"] = {"id": str(ds.id), "input_sha256": ds.input_sha256,
-                           "payload_sha256": ds.payload_sha256}
+        info["dataset"] = {
+            "id": str(ds.id),
+            "input_sha256": ds.input_sha256,
+            "payload_sha256": ds.payload_sha256,
+        }
         if payload.format == "g25-json-v1":
             names: list[str] = payload.meta["names"]
             if target is None:
@@ -180,8 +189,9 @@ def _reference_table(space: str) -> Any:
         raise _unavailable(exc) from exc
 
 
-def _group_sheet(names: list[str], matrix: np.ndarray) -> tuple[list[str], np.ndarray,
-                                                                 dict[str, np.ndarray]]:
+def _group_sheet(
+    names: list[str], matrix: np.ndarray
+) -> tuple[list[str], np.ndarray, dict[str, np.ndarray]]:
     """G25 sample sheets name rows "Population:Sample"; average rows per population and keep
     the individuals for bootstrap. Rows without ":" are populations on their own."""
     groups: dict[str, list[int]] = {}
@@ -193,8 +203,9 @@ def _group_sheet(names: list[str], matrix: np.ndarray) -> tuple[list[str], np.nd
     return pops, means, samples
 
 
-def _source_table(ctx: JobContext, params: dict[str, Any], space: str, key: str
-                  ) -> tuple[Any, dict[str, np.ndarray], dict[str, Any]]:
+def _source_table(
+    ctx: JobContext, params: dict[str, Any], space: str, key: str
+) -> tuple[Any, dict[str, np.ndarray], dict[str, Any]]:
     """Sources from a user G25 source sheet and/or reference populations in `space`."""
     from strata.analysis.types import CoordinateTable
 
@@ -237,13 +248,26 @@ def _source_table(ctx: JobContext, params: dict[str, Any], space: str, key: str
     return CoordinateTable(space=space, names=names, matrix=np.vstack(rows)), samples, info
 
 
-def _finish(ctx: JobContext, analysis: Analysis | None, result: dict[str, Any],
-            params: dict[str, Any], info: dict[str, Any], t0: float,
-            extra: dict[str, Any] | None = None) -> dict[str, Any]:
+def _finish(
+    ctx: JobContext,
+    analysis: Analysis | None,
+    result: dict[str, Any],
+    params: dict[str, Any],
+    info: dict[str, Any],
+    t0: float,
+    extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     prov = base_provenance(params.get("seed"), science.reference_version())
-    prov.update({"job_id": str(ctx.job_id), "attempt": ctx.attempt,
-                 "started_at": (utcnow()).isoformat(),
-                 "elapsed_s": round(time.monotonic() - t0, 3), "inputs": info, **(extra or {})})
+    prov.update(
+        {
+            "job_id": str(ctx.job_id),
+            "attempt": ctx.attempt,
+            "started_at": (utcnow()).isoformat(),
+            "elapsed_s": round(time.monotonic() - t0, 3),
+            "inputs": info,
+            **(extra or {}),
+        }
+    )
     if analysis is not None:
         analysis.result = result
         analysis.provenance = prov
@@ -293,7 +317,9 @@ def pca_project(ctx: JobContext) -> dict[str, Any]:
     label, coords, space, info = _resolve_target(ctx, analysis, params)
     proj = info.get("projection", {})
     result = {
-        "type": "pca_project", "kind": "exploratory", "space": space,
+        "type": "pca_project",
+        "kind": "exploratory",
+        "space": space,
         "targets": [{"name": label, "coords": [float(x) for x in coords]}],
         "n_snps_used": proj.get("n_snps_used"),
         "note": proj.get("note"),
@@ -317,15 +343,19 @@ def nearest(ctx: JobContext) -> dict[str, Any]:
     if not analysis or not analysis.dataset_ids:
         exclude.append(label)  # a reference population is trivially nearest to itself
     try:
-        res = dist.nearest(coords, table, k=k, metric=metric, target_name=label,
-                           exclude=exclude)
+        res = dist.nearest(coords, table, k=k, metric=metric, target_name=label, exclude=exclude)
     except ValueError as exc:
         raise PermanentJobError(str(exc)) from exc
     result = {
-        "type": "nearest", "kind": "exploratory", "space": space, "target": label,
+        "type": "nearest",
+        "kind": "exploratory",
+        "space": space,
+        "target": label,
         "metric": res.metric,
-        "hits": [{"population_id": n.name, "name": n.name, "distance": n.distance,
-                  "rank": n.rank} for n in res.neighbors],
+        "hits": [
+            {"population_id": n.name, "name": n.name, "distance": n.distance, "rank": n.rank}
+            for n in res.neighbors
+        ],
         "caveat": EXPLORATORY_CAVEAT,
     }
     return _finish(ctx, analysis, result, params, info, t0)
@@ -347,26 +377,46 @@ def admixture_fit(ctx: JobContext) -> dict[str, Any]:
         ctx.check()
         boot = None
         if n_boot and all(n in samples and len(samples[n]) >= 2 for n in sources.names):
-            boot = adm.bootstrap(coords, {n: samples[n] for n in sources.names}, n=n_boot,
-                                 seed=seed, method=method, space=space, target_name=label)
+            boot = adm.bootstrap(
+                coords,
+                {n: samples[n] for n in sources.names},
+                n=n_boot,
+                seed=seed,
+                method=method,
+                space=space,
+                target_name=label,
+            )
         ctx.check()
-        sens = (adm.sensitivity(coords, sources, method=method, seed=seed, target_name=label)
-                if params.get("sensitivity", True) and len(sources.names) >= 2 else None)
+        sens = (
+            adm.sensitivity(coords, sources, method=method, seed=seed, target_name=label)
+            if params.get("sensitivity", True) and len(sources.names) >= 2
+            else None
+        )
     except ValueError as exc:
         raise PermanentJobError(str(exc)) from exc
     ci = {w.name: w for w in boot.weights} if boot else {}
     notes = []
     if n_boot and boot is None:
-        notes.append("Bootstrap skipped: individual-level coordinates are not available for "
-                     "every source (needs >= 2 individuals each). Weights have no CI.")
+        notes.append(
+            "Bootstrap skipped: individual-level coordinates are not available for "
+            "every source (needs >= 2 individuals each). Weights have no CI."
+        )
     result = {
-        "type": "admixture_fit", "kind": "exploratory", "space": space, "target": label,
+        "type": "admixture_fit",
+        "kind": "exploratory",
+        "space": space,
+        "target": label,
         "method": fit.method,
-        "weights": [{"source": s.name, "weight": s.weight,
-                     "se": ci[s.name].se if s.name in ci else None,
-                     "ci_low": ci[s.name].ci_low if s.name in ci else None,
-                     "ci_high": ci[s.name].ci_high if s.name in ci else None}
-                    for s in fit.sources],
+        "weights": [
+            {
+                "source": s.name,
+                "weight": s.weight,
+                "se": ci[s.name].se if s.name in ci else None,
+                "ci_low": ci[s.name].ci_low if s.name in ci else None,
+                "ci_high": ci[s.name].ci_high if s.name in ci else None,
+            }
+            for s in fit.sources
+        ],
         "distance": fit.distance,
         "residuals": fit.residuals,
         "quality": fit.quality.model_dump(mode="json") if fit.quality else None,
@@ -382,14 +432,24 @@ def admixture_fit(ctx: JobContext) -> dict[str, Any]:
 
 def _sensitivity_out(sens: Any) -> dict[str, Any]:
     def rows(xs: list[Any]) -> list[dict[str, Any]]:
-        return [{"dropped": r.dropped, "distance": r.distance, "delta_distance": r.delta_distance,
-                 "weights": {w.name: w.weight for w in r.weights},
-                 "max_abs_weight_change": r.max_abs_weight_change} for r in xs]
+        return [
+            {
+                "dropped": r.dropped,
+                "distance": r.distance,
+                "delta_distance": r.delta_distance,
+                "weights": {w.name: w.weight for w in r.weights},
+                "max_abs_weight_change": r.max_abs_weight_change,
+            }
+            for r in xs
+        ]
 
-    return {"leave_one_source_out": rows(sens.leave_one_source_out),
-            "leave_one_dimension_out": rows(sens.leave_one_dimension_out),
-            "jitter": sens.jitter.model_dump(mode="json") if sens.jitter else None,
-            "stable": sens.stable, "stability_note": sens.stability_note}
+    return {
+        "leave_one_source_out": rows(sens.leave_one_source_out),
+        "leave_one_dimension_out": rows(sens.leave_one_dimension_out),
+        "jitter": sens.jitter.model_dump(mode="json") if sens.jitter else None,
+        "stable": sens.stable,
+        "stability_note": sens.stability_note,
+    }
 
 
 @register("admixture_rotate", timeout_s=1800, description="Exploratory source rotation")
@@ -404,22 +464,42 @@ def admixture_rotate(ctx: JobContext) -> dict[str, Any]:
     k_max = _int(params, "k_max", 3, k_min, 8)
     try:
         res = adm.rotate(
-            coords, cands, (k_min, k_max), max_models=_int(params, "max_models", 20000, 1, 200000),
-            seed=_seed(params), min_weight=float(params.get("min_weight", 0.01)),
-            top_n=_int(params, "top_n", 25, 1, 200), method=params.get("method", "qp"),
+            coords,
+            cands,
+            (k_min, k_max),
+            max_models=_int(params, "max_models", 20000, 1, 200000),
+            seed=_seed(params),
+            min_weight=float(params.get("min_weight", 0.01)),
+            top_n=_int(params, "top_n", 25, 1, 200),
+            method=params.get("method", "qp"),
             target_name=label,
         )
     except ValueError as exc:
         raise PermanentJobError(str(exc)) from exc
     result = {
-        "type": "admixture_rotate", "kind": "exploratory", "space": space, "target": label,
-        "models": [{"rank": m.rank, "sources": [s.name for s in m.sources],
-                    "weights": [s.weight for s in m.sources], "distance": m.distance,
-                    "n_sources": m.n_sources, "pruned": m.pruned_from} for m in res.models],
-        "n_models_evaluated": res.n_models_evaluated, "n_candidates": res.n_candidates,
-        "strategy": res.strategy, "preferred_rank": res.preferred_rank,
-        "tolerance": res.tolerance, "min_weight": res.min_weight,
-        "k_range": list(res.k_range), "caveat": res.caveat,
+        "type": "admixture_rotate",
+        "kind": "exploratory",
+        "space": space,
+        "target": label,
+        "models": [
+            {
+                "rank": m.rank,
+                "sources": [s.name for s in m.sources],
+                "weights": [s.weight for s in m.sources],
+                "distance": m.distance,
+                "n_sources": m.n_sources,
+                "pruned": m.pruned_from,
+            }
+            for m in res.models
+        ],
+        "n_models_evaluated": res.n_models_evaluated,
+        "n_candidates": res.n_candidates,
+        "strategy": res.strategy,
+        "preferred_rank": res.preferred_rank,
+        "tolerance": res.tolerance,
+        "min_weight": res.min_weight,
+        "k_range": list(res.k_range),
+        "caveat": res.caveat,
     }
     return _finish(ctx, analysis, result, params, info, t0)
 
@@ -442,15 +522,57 @@ def _data_source(mod: Any, params: dict[str, Any]) -> dict[str, Any]:
         # Clients may not point R at arbitrary server paths; only the configured cache.
         f2 = mod.default_f2_dir()
         if params.get("f2_dir") and (f2 is None or str(params["f2_dir"]) != str(f2)):
-            raise PermanentJobError("custom f2_dir/geno_prefix is not allowed; omit it to use "
-                                    "the reference f2 cache")
+            raise PermanentJobError(
+                "custom f2_dir/geno_prefix is not allowed; omit it to use the reference f2 cache"
+            )
         if params.get("geno_prefix"):
             raise PermanentJobError("geno_prefix is not accepted from API clients")
     f2 = mod.default_f2_dir()
     if f2 is None:
-        raise PermanentJobError("no reference f2 cache is built on this server "
-                                "(see data/pipeline; STRATA_F2_DIR)")
+        raise PermanentJobError(
+            "no reference f2 cache is built on this server (see data/pipeline; STRATA_F2_DIR)"
+        )
     return {"f2_dir": str(f2)}
+
+
+_POP_FIELDS = (
+    "target",
+    "left",
+    "right",
+    "candidates",
+    "leftright",
+    "rightfix",
+    "pop1",
+    "pop2",
+    "pop3",
+    "pop4",
+)
+
+
+def _to_group_ids(spec_args: dict[str, Any]) -> dict[str, str]:
+    """qpAdm labels are AADR group ids (the f2 cache's population names). Map Strata
+    population ids to them; names that are not library ids pass through unchanged."""
+    lib = science.try_reference_library()
+    if lib is None:
+        return {}
+    pops = {p.id: p for p in lib.populations()}
+    mapping: dict[str, str] = {}
+
+    def conv(name: Any) -> Any:
+        p = pops.get(str(name))
+        gid = getattr(p, "group_id", None) if p is not None else None
+        if gid and gid != name:
+            mapping[str(name)] = gid
+            return gid
+        return name
+
+    for k in _POP_FIELDS:
+        v = spec_args.get(k)
+        if isinstance(v, list):
+            spec_args[k] = [conv(x) for x in v]
+        elif isinstance(v, str):
+            spec_args[k] = conv(v)
+    return mapping
 
 
 def _formal_error(exc: Exception, mod: Any) -> Exception:
@@ -485,6 +607,7 @@ def qpadm(ctx: JobContext) -> dict[str, Any]:
     if "sources" in spec_args and "left" not in spec_args:
         spec_args["left"] = spec_args.pop("sources")
     spec_args.update(_data_source(mod, spec_args))
+    group_map = _to_group_ids(spec_args)
     try:
         spec = mod.QpAdmSpec(**spec_args)
         res = mod.run_qpadm(spec)
@@ -492,20 +615,43 @@ def qpadm(ctx: JobContext) -> dict[str, Any]:
         raise _formal_error(exc, mod) from exc
     feas = res.feasibility
     result = {
-        "type": "qpadm", "kind": "formal", "target": res.target, "left": res.left,
-        "right": res.right, "weights": _weights_out(res.weights), "p_value": res.p,
-        "chisq": res.chisq, "dof": res.dof, "feasible": _feasible(feas, res.weights),
+        "type": "qpadm",
+        "kind": "formal",
+        "target": res.target,
+        "left": res.left,
+        "right": res.right,
+        "weights": _weights_out(res.weights),
+        "p_value": res.p,
+        "chisq": res.chisq,
+        "dof": res.dof,
+        "feasible": _feasible(feas, res.weights),
         "verdict": feas.verdict if feas else None,
-        "rank_tests": [{"rank": r.f4rank, "dof": r.dof, "chisq": r.chisq, "p": r.p,
-                        "dofdiff": r.dofdiff, "chisqdiff": r.chisqdiff, "p_nested": r.p_nested}
-                       for r in res.rankdrop],
+        "rank_tests": [
+            {
+                "rank": r.f4rank,
+                "dof": r.dof,
+                "chisq": r.chisq,
+                "p": r.p,
+                "dofdiff": r.dofdiff,
+                "chisqdiff": r.chisqdiff,
+                "p_nested": r.p_nested,
+            }
+            for r in res.rankdrop
+        ],
         "f4": [f.model_dump(mode="json") for f in res.f4],
         "notes": list(feas.reasons) if feas else [],
         "caveat": res.caveat,
         "detail": res.model_dump(mode="json", exclude={"provenance"}),
     }
-    return _finish(ctx, analysis, result, params, {"f2_dir": spec_args["f2_dir"]}, t0,
-                   {"r": res.provenance.model_dump(mode="json")})
+    return _finish(
+        ctx,
+        analysis,
+        result,
+        params,
+        {"f2_dir": spec_args["f2_dir"], "group_ids": group_map},
+        t0,
+        {"r": res.provenance.model_dump(mode="json")},
+    )
 
 
 @register("qpadm_rotate", timeout_s=7200, description="Formal qpAdm model rotation")
@@ -515,23 +661,45 @@ def qpadm_rotate(ctx: JobContext) -> dict[str, Any]:
     mod = _qpadm_mod()
     spec_args = {k: v for k, v in params.items() if k not in _SPEC_DROP | {"rotate_right"}}
     spec_args.update(_data_source(mod, spec_args))
+    group_map = _to_group_ids(spec_args)
     try:
         spec = mod.QpAdmRotateSpec(**spec_args)
         res = mod.run_qpadm_rotate(spec)
     except Exception as exc:  # noqa: BLE001
         raise _formal_error(exc, mod) from exc
     result = {
-        "type": "qpadm_rotate", "kind": "formal", "target": res.target,
-        "right": res.rightfix, "leftright": res.leftright,
-        "models": [{"left": m.left, "right": m.right, "p_value": m.p, "chisq": m.chisq,
-                    "dof": m.dof, "feasible": _feasible(m.feasibility, m.weights),
-                    "verdict": m.feasibility.verdict if m.feasibility else None,
-                    "weights": _weights_out(m.weights)} for m in res.models],
-        "n_models_enumerated": res.n_models_enumerated, "n_models_tested": res.n_models_tested,
-        "caveat": res.caveat, "rotation_caveat": res.rotation_caveat,
+        "type": "qpadm_rotate",
+        "kind": "formal",
+        "target": res.target,
+        "right": res.rightfix,
+        "leftright": res.leftright,
+        "models": [
+            {
+                "left": m.left,
+                "right": m.right,
+                "p_value": m.p,
+                "chisq": m.chisq,
+                "dof": m.dof,
+                "feasible": _feasible(m.feasibility, m.weights),
+                "verdict": m.feasibility.verdict if m.feasibility else None,
+                "weights": _weights_out(m.weights),
+            }
+            for m in res.models
+        ],
+        "n_models_enumerated": res.n_models_enumerated,
+        "n_models_tested": res.n_models_tested,
+        "caveat": res.caveat,
+        "rotation_caveat": res.rotation_caveat,
     }
-    return _finish(ctx, analysis, result, params, {"f2_dir": spec_args["f2_dir"]}, t0,
-                   {"r": res.provenance.model_dump(mode="json")})
+    return _finish(
+        ctx,
+        analysis,
+        result,
+        params,
+        {"f2_dir": spec_args["f2_dir"], "group_ids": group_map},
+        t0,
+        {"r": res.provenance.model_dump(mode="json")},
+    )
 
 
 @register("f4", timeout_s=1800, description="Formal f4-statistics (ADMIXTOOLS 2)")
@@ -541,14 +709,22 @@ def f4(ctx: JobContext) -> dict[str, Any]:
     mod = _qpadm_mod()
     spec_args = {k: v for k, v in params.items() if k not in _SPEC_DROP}
     spec_args.update(_data_source(mod, spec_args))
+    group_map = _to_group_ids(spec_args)
     try:
         res = mod.run_f4(mod.F4Spec(**spec_args))
     except Exception as exc:  # noqa: BLE001
         raise _formal_error(exc, mod) from exc
     result = {"type": "f4", **res.model_dump(mode="json", exclude={"provenance"})}
     result["kind"] = "formal"
-    return _finish(ctx, analysis, result, params, {"f2_dir": spec_args["f2_dir"]}, t0,
-                   {"r": res.provenance.model_dump(mode="json")})
+    return _finish(
+        ctx,
+        analysis,
+        result,
+        params,
+        {"f2_dir": spec_args["f2_dir"], "group_ids": group_map},
+        t0,
+        {"r": res.provenance.model_dump(mode="json")},
+    )
 
 
 # ------------------------------------------------------------------ reports
@@ -564,8 +740,11 @@ def report(ctx: JobContext) -> dict[str, Any]:
         raise PermanentJobError("analysis not found")
     if a.status != "succeeded":
         raise PermanentJobError(f"analysis is {a.status}")
-    datasets = [d for d in (ctx.session.get(Dataset, uuid.UUID(str(i))) for i in a.dataset_ids)
-                if d is not None]
+    datasets = [
+        d
+        for d in (ctx.session.get(Dataset, uuid.UUID(str(i))) for i in a.dataset_ids)
+        if d is not None
+    ]
     bundle = build_bundle(a, datasets, generated_at=utcnow())
     out: dict[str, Any] = {"analysis_id": str(a.id), "bundle": bundle}
     if ctx.payload.get("format", "json") == "html":
