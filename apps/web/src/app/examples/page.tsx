@@ -4,7 +4,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { analysisLabel } from "@/lib/format";
 import { useResource } from "@/lib/useResource";
-import { Empty, ErrorNote, KindMark, Loading, PageHeader } from "@/components/typography";
+import { Caveat, Empty, ErrorNote, KindMark, Loading, PageHeader } from "@/components/typography";
 
 export default function ExamplesPage() {
   const ex = useResource((s) => api.examples(s), []);
@@ -26,6 +26,12 @@ export default function ExamplesPage() {
           <Link href="/data/">Data</Link>.
         </Empty>
       ) : (
+        <>
+        {[...new Set(ex.data.map((e) => e.caveats?.[0]).filter((c): c is string => !!c))].map((c) => (
+          <Caveat key={c} title="About these examples">
+            {c}
+          </Caveat>
+        ))}
         <ol className="max-w-[52rem] border-t border-ink">
           {ex.data.map((e, i) => (
             <li key={e.slug} className="grid grid-cols-[2.5rem_1fr] gap-2 border-b border-rule py-5">
@@ -43,6 +49,7 @@ export default function ExamplesPage() {
             </li>
           ))}
         </ol>
+        </>
       )}
     </>
   );

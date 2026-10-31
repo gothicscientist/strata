@@ -27,3 +27,8 @@ Additions to the ARCHITECTURE.md contract (all backwards compatible):
 * Docker: compose uses `services/api/Dockerfile` and `services/worker/Dockerfile` (owned by
   qpadm-data). The web image is `infra/docker/web.Dockerfile` (nginx serving the static
   export).
+* Examples: `ExampleSummary`/`ExampleDetail` carry `caveats: list[str]`, which must be shown
+  with the example. `kind` is free-form, and the committed examples use qpadm, qpadm_rotate, f4
+  and qpwave.
+* Reports: formal weights are printed as raw estimates with SE and z, never as percentages.
+  Infeasible models (any weight outside [0, 1]) carry an explicit warning.

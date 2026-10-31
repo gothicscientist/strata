@@ -353,7 +353,7 @@ def build_populations(
                 id=slugify(group_id),
                 group_id=group_id,
                 name=group_id.replace("_", " "),
-                region=_REGION_BY_BLOCK.get(block or "", None),
+                region=_REGION_BY_BLOCK.get(block or ""),
                 country=next((m.country for m in members if m.country), None),
                 lat=_mean([m.lat for m in members]),  # type: ignore[list-item]
                 lon=_mean([m.lon for m in members]),  # type: ignore[list-item]
