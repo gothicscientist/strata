@@ -524,10 +524,10 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
                   <td className="r num">{t.rank}</td>
                   <td className="r num">{t.dof}</td>
                   <td className="r num">{fixed(t.chisq, 2)}</td>
-                  <td className="r num">{pv(t.p)}</td>
+                  <td className="r num whitespace-nowrap">{pv(t.p)}</td>
                   <td className="r num">{t.dofdiff ?? "—"}</td>
                   <td className="r num">{t.chisqdiff !== null && t.chisqdiff !== undefined ? fixed(t.chisqdiff, 2) : "—"}</td>
-                  <td className="r num">{pv(t.p_nested)}</td>
+                  <td className="r num whitespace-nowrap">{pv(t.p_nested)}</td>
                 </tr>
               ))}
             </tbody>
@@ -648,7 +648,7 @@ function QpAdmRotateView({ r }: { r: QpAdmRotateResult }) {
                       <span className="mt-0.5 block text-caption text-ink-3">{m.feasibility.reasons.join(" ")}</span>
                     ) : null}
                   </td>
-                  <td className="r num">{pv(m.p_value)}</td>
+                  <td className="r num whitespace-nowrap">{pv(m.p_value)}</td>
                   <td className="r num">{fixed(m.chisq, 2)}</td>
                   <td className="r num">{m.dof}</td>
                   <td className={`italic ${verdictClass(v)}`}>{v}</td>
@@ -674,7 +674,8 @@ function F4View({ r }: { r: F4StatResult }) {
         <KindMark kind="formal" /> <span className="num">{rows.length}</span> f4-statistic{rows.length === 1 ? "" : "s"},
         f4(A, B; C, D), with block-jackknife standard errors.
       </p>
-      {rows.some((f) => f.z !== null) ? (
+      {/* A figure only earns its place with enough statistics to compare; a few read better as a table. */}
+      {rows.filter((f) => f.z !== null).length >= 6 ? (
         <Figure
           n={1}
           caption="z-scores of each statistic (estimate / SE). Dashed lines mark |z| = 3, a common threshold for a significant departure from zero."
@@ -715,7 +716,7 @@ function F4View({ r }: { r: F4StatResult }) {
                 <td className="r num">{fixed(f.est, 5)}</td>
                 <td className="r num">{fixed(f.se, 5)}</td>
                 <td className="r num">{fixed(f.z, 2)}</td>
-                <td className="r num">{pv(f.p)}</td>
+                <td className="r num whitespace-nowrap">{pv(f.p)}</td>
               </tr>
             ))}
           </tbody>
@@ -770,8 +771,8 @@ function QpWaveView({ r }: { r: QpWaveResult }) {
                 <td className="r num">{t.rank}</td>
                 <td className="r num">{t.dof}</td>
                 <td className="r num">{fixed(t.chisq, 2)}</td>
-                <td className="r num">{pv(t.p)}</td>
-                <td className="r num">{pv(t.p_nested)}</td>
+                <td className="r num whitespace-nowrap">{pv(t.p)}</td>
+                <td className="r num whitespace-nowrap">{pv(t.p_nested)}</td>
               </tr>
             ))}
           </tbody>
