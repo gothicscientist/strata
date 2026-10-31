@@ -34,7 +34,7 @@ function Comparison({ ids }: { ids: string[] }) {
   return (
     <TableFigure
       n={3}
-      caption="Selected models side by side. Weights in percent; formal models show ± SE, exploratory models the 95% bootstrap interval where available."
+      caption="Selected models side by side. Exploratory weights are percentages with the 95% bootstrap interval where available; qpAdm weights are unconstrained proportions ± SE."
       notes={
         mixed
           ? "Exploratory distances and qpAdm tail probabilities measure different things and cannot be ranked against each other."

@@ -615,7 +615,7 @@ function QpAdmRotateView({ r }: { r: QpAdmRotateResult }) {
             ? "qpAdm models in the order ranked by the engine. The verdict combines the tail probability with the feasibility of the weights; a high p does not rescue weights outside [0, 1]."
             : "qpAdm models ordered with feasible, non-rejected models first, then by tail probability."
         }
-        notes="Weights are percent \u00b1 SE. Verdicts follow standard qpAdm reporting conventions; they are not a model-selection procedure."
+        notes="Weights are unconstrained estimates (proportions, ± SE). Verdicts follow standard qpAdm reporting conventions; they are not a model-selection procedure."
       >
         <table className="booktabs">
           <thead>
