@@ -205,6 +205,19 @@ class F2Config:
     afprod: bool = True
     fst: bool = False  # not used downstream; skipping it halves the cache size
     n_cores: int = 1
+    # Individual-level coverage floor for the f2 cache, on 1240K autosomal
+    # targets. This is not a quality filter — those individuals passed QC and
+    # are in samples.parquet and the PCA — it is what makes `maxmiss = 0`
+    # possible at all. With maxmiss = 0 a SNP is kept only where *every*
+    # population has an observation, so one sparse individual in a
+    # single-individual population removes every SNP it is missing. On AADR
+    # v66.p1 the curated panel of 171 populations shares **zero** autosomal
+    # SNPs with no floor, 11,208 at 400k, and 229,196 at 800k (measured, not
+    # estimated). The alternative is to relax maxmiss, which lets different
+    # statistics rest on different SNP sets; keeping the SNP set identical for
+    # every statistic and dropping the sparsest individuals is the choice
+    # ADMIXTOOLS' own error message recommends.
+    min_snps_for_f2: int = 800_000
 
 
 F2 = F2Config()

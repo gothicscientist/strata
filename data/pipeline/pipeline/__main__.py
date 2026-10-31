@@ -480,6 +480,7 @@ def cmd_manifest(args: argparse.Namespace) -> int:
                 "maxmiss": F2.maxmiss,
                 "auto_only": F2.auto_only,
                 "adjust_pseudohaploid": F2.adjust_pseudohaploid,
+                "min_snps_for_f2": F2.min_snps_for_f2,
             },
         },
         panel=curate_state.get("panel", {}),

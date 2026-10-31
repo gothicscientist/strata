@@ -109,10 +109,24 @@ def build_f2(
     # Origins individuals have no 1240K genotypes, so keep only the
     # individuals this genotype file actually carries.
     in_file = {r.id for r in read_ind(f"{prefix}.ind")}
-    members = [s for s in samples if s.group_id in wanted and s.id in in_file]
-    dropped = sum(1 for s in samples if s.group_id in wanted and s.id not in in_file)
-    if dropped:
-        log.info("%d curated individuals are not in %s.ind and are skipped", dropped, prefix.name)
+    in_panel = [s for s in samples if s.group_id in wanted]
+    present = [s for s in in_panel if s.id in in_file]
+    if len(present) < len(in_panel):
+        log.info(
+            "%d curated individuals are not in %s.ind and are skipped",
+            len(in_panel) - len(present),
+            prefix.name,
+        )
+
+    # See F2Config.min_snps_for_f2: with maxmiss = 0 the sparsest individual
+    # in the panel decides how many SNPs survive for everyone.
+    members = [s for s in present if (s.n_snps or 0) >= config.min_snps_for_f2]
+    if len(members) < len(present):
+        log.info(
+            "%d individuals below the %d-SNP f2 coverage floor are excluded",
+            len(present) - len(members),
+            config.min_snps_for_f2,
+        )
     if not members:
         raise ValueError("no curated individuals fall in the requested populations")
 
