@@ -2,7 +2,7 @@
   "version": "strata-ref-v1",
   "schema_version": "1",
   "pipeline_version": "0.1.0",
-  "built_at": "2026-10-31T21:20:09Z",
+  "built_at": "2026-10-31T21:52:46Z",
   "aadr_version": "v66.p1",
   "aadr_doi": "10.7910/DVN/FFIDCW",
   "sources": [
@@ -356,11 +356,27 @@
     }
   ],
   "f2": {
+    "f2_dir": "data/derived/f2/strata-ref-v1",
+    "n_pops": 136,
+    "n_snps": 228853.0,
+    "n_blocks": 704.0,
+    "cache_id": "sha256:1e0a65a5d8afb5c1d1dc0b761a90c90542c4fcefb6bbb66479a9420b913787a9",
+    "options": {
+      "blgsize": 0.05,
+      "maxmiss": 0,
+      "minmaf": 0,
+      "maxmaf": 0.5,
+      "auto_only": true,
+      "transitions": true,
+      "transversions": true,
+      "adjust_pseudohaploid": true
+    },
     "config": {
       "blgsize": 0.05,
       "maxmiss": 0.0,
       "auto_only": true,
-      "adjust_pseudohaploid": true
+      "adjust_pseudohaploid": true,
+      "min_snps_for_f2": 800000
     }
   },
   "tools": {

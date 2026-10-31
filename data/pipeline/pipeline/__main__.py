@@ -388,6 +388,17 @@ def cmd_f2(args: argparse.Namespace) -> int:
     ]
     eligible = curate_mod.f2_eligible(populations)
 
+    # Resumability: a finished cache is left alone unless --force. extract_f2
+    # itself refuses a non-empty out_dir, and `all` must not fail on a rerun.
+    # extract_f2.R treats any subdirectory of out_dir as an existing cache.
+    cached = p.work / "f2.json"
+    f2_dir = p.f2_dir(args.reference_version)
+    has_cache = f2_dir.is_dir() and any(child.is_dir() for child in f2_dir.iterdir())
+    if not args.force and has_cache and cached.is_file():
+        print(cached.read_text(encoding="utf-8"), end="")
+        print(f"f2 cache already built in {f2_dir}; pass --force to rebuild.", file=sys.stderr)
+        return 0
+
     try:
         build = build_f2(
             prefix=prefix,
@@ -403,7 +414,9 @@ def cmd_f2(args: argparse.Namespace) -> int:
         return 2
 
     summary = {
-        "f2_dir": str(build.f2_dir),
+        # Relative to the repo root: this lands in the committed MANIFEST, and
+        # the absolute path is a property of the build machine, not the cache.
+        "f2_dir": str(build.f2_dir.relative_to(p.root)),
         "n_pops": build.n_pops,
         "n_snps": build.n_snps,
         "n_blocks": build.n_blocks,
