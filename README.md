@@ -8,7 +8,7 @@ present-day reference populations; fits exploratory mixture models with bootstra
 uncertainty; runs formal qpAdm tests on f-statistics through ADMIXTOOLS 2; and lets an AI
 research agent plan, run and critique those analyses, citing every number it reports.
 
-![Strata worked example: a formal qpAdm model](docs/screenshots/example-qpadm-real.png)
+![Strata worked example: a formal qpAdm model](docs/screenshots/example-qpadm-two-source.png)
 
 ## What it does
 
