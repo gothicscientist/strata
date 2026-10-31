@@ -23,6 +23,7 @@ export function QcReport({ dataset, n = 1 }: { dataset: Dataset; n?: number | st
   for (const [key, label, fmt] of KNOWN) {
     const v = qc[key];
     if (v === null || v === undefined || v === "") continue;
+    if (key === "n_variants" && dataset.kind === "g25") continue;
     rows.push([label, fmt(v)]);
   }
   if (qc.panel_overlap && qc.panel_size) {
@@ -39,7 +40,8 @@ export function QcReport({ dataset, n = 1 }: { dataset: Dataset; n?: number | st
   const known = new Set<string>([...KNOWN.map((k) => k[0] as string), "sex_chrom_counts", "warnings"]);
   for (const [k, v] of Object.entries(qc)) {
     if (known.has(k) || v === null || v === undefined || typeof v === "object") continue;
-    rows.push([k.replace(/_/g, " "), typeof v === "number" ? (Number.isInteger(v) ? int(v) : fixed(v, 4)) : String(v)]);
+    const label = k.replace(/_/g, " ").replace(/^n /, "Number of ");
+    rows.push([label.charAt(0).toUpperCase() + label.slice(1), typeof v === "boolean" ? (v ? "yes" : "no") : typeof v === "number" ? (Number.isInteger(v) ? int(v) : fixed(v, 4)) : String(v)]);
   }
 
   return (

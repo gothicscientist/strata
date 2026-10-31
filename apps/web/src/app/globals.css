@@ -139,7 +139,7 @@
     line-height: 1.35;
     font-variant-numeric: tabular-nums lining-nums;
   }
-  .booktabs thead th {
+  .booktabs > thead > tr > th {
     border-top: 1.25px solid var(--color-ink);
     border-bottom: 0.75px solid var(--color-ink);
     font-weight: 500;
@@ -147,18 +147,18 @@
     padding: 0.45rem 0.75rem 0.4rem 0;
     vertical-align: bottom;
   }
-  .booktabs tbody td {
+  .booktabs > tbody > tr > td {
     padding: 0.38rem 0.75rem 0.38rem 0;
     vertical-align: top;
     border-bottom: 0.5px solid var(--color-rule-soft);
   }
-  .booktabs tbody tr:last-child td {
+  .booktabs > tbody > tr:last-child > td {
     border-bottom: 1.25px solid var(--color-ink);
   }
   .booktabs .r {
     text-align: right;
   }
-  .booktabs tbody tr[data-interactive]:hover td {
+  .booktabs > tbody > tr[data-interactive]:hover > td {
     background: var(--color-wash);
   }
 

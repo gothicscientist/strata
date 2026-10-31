@@ -37,6 +37,30 @@ for (const width of [1280, 390]) {
     console.log(file, errors.length ? `errors: ${errors.join(" | ")}` : "");
     errors.length = 0;
   }
+  if (width > 500 && process.env.UPLOAD_DEMO) {
+    // Exercise the upload path with one SYNTHETIC G25 row (the sample is named as such) and
+    // capture the QC report and the workspace that lists the dataset.
+    await page.goto(`${base}/upload/`, { waitUntil: "networkidle" });
+    const row = ["SYNTHETIC_upload_check", ...Array.from({ length: 25 }, (_, i) => (0.002 * ((i % 7) - 3)).toFixed(4))].join(",");
+    await page.getByLabel(/Dataset name/).fill("Synthetic G25 row (upload check)");
+    await page.getByLabel(/One sample per line/).fill(row);
+    await page.getByRole("button", { name: "Upload coordinates" }).click();
+    await page.getByRole("heading", { name: /Quality control/ }).waitFor({ timeout: 15000 });
+    await page.screenshot({ path: path.join(outDir, "upload-qc.png"), fullPage: true });
+    await page.goto(`${base}/workspace/`, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Synthetic G25 row (upload check)" }).first().click();
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(outDir, "workspace-dataset.png"), fullPage: true });
+    console.log("upload-qc.png, workspace-dataset.png");
+    // Submit a real analysis; without a built reference library the API fails it honestly.
+    await page.goto(`${base}/analyses/new/`, { waitUntil: "networkidle" });
+    await page.getByLabel(/Nearest populations/).check();
+    await page.getByRole("button", { name: /Run nearest populations/ }).click();
+    await page.waitForURL(/\/analysis\/\?id=/, { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: path.join(outDir, "analysis-status.png"), fullPage: true });
+    console.log("analysis-status.png");
+  }
   await ctx.close();
 }
 await browser.close();

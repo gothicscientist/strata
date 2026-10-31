@@ -49,6 +49,23 @@ class RLenientModel(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
+    @model_validator(mode="before")
+    @classmethod
+    def _drop_r_nulls(cls, data: Any) -> Any:
+        """Treat R's ``null`` as "field absent" so the declared default applies.
+
+        ADMIXTOOLS returns an absent table or scalar as JSON ``null`` -- e.g.
+        ``f4_var_singular_loadings`` is null whenever the f4 variance matrix is
+        well conditioned, and ``popdrop`` is null for a qpWave-style fit. A
+        declared ``list[...]`` field rejects an explicit ``None``, so without
+        this a perfectly healthy result would fail validation. Every nullable
+        field on these models already defaults to ``None``, so dropping the key
+        is equivalent for those and correct for the collection fields.
+        """
+        if isinstance(data, dict):
+            return {k: v for k, v in data.items() if v is not None}
+        return data
+
 
 # --------------------------------------------------------------------------
 # input specs

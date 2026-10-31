@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { api, pollJob, TERMINAL } from "@/lib/api";
+import { ApiError, api, pollJob, TERMINAL } from "@/lib/api";
 import { analysisLabel, dateTime } from "@/lib/format";
 import { useResource } from "@/lib/useResource";
 import type { Job } from "@/lib/types";
@@ -17,6 +17,21 @@ const STATUS_TEXT: Record<Job["status"], string> = {
   failed: "Failed.",
   cancelled: "Cancelled.",
 };
+
+/** Job failures: an unbuilt reference library is an expected state on a fresh server. */
+function FailureNote({ message }: { message: string }) {
+  const text = message.replace(/^\w+Error:\s*/, "");
+  if (/reference library is not installed/i.test(text))
+    return (
+      <ErrorNote error={new ApiError(503, text, { detail: text, code: "reference_unavailable" })} />
+    );
+  return (
+    <div role="alert" className="my-6 max-w-[44rem] border-l-2 border-alert py-1 pl-5 text-small">
+      <p className="text-alert">The analysis failed.</p>
+      <p className="mt-1 text-ink-2">{text}</p>
+    </div>
+  );
+}
 
 function AnalysisInner() {
   const id = useSearchParams().get("id");
@@ -76,7 +91,7 @@ function AnalysisInner() {
     return (
       <article>
         <PageHeader kicker={analysisLabel(a.kind)} title={a.title ?? analysisLabel(a.kind)} />
-        <ErrorNote error={new Error(a.error ?? job?.error ?? `The analysis was ${a.status}.`)} />
+        <FailureNote message={a.error ?? job?.error ?? `The analysis was ${a.status}.`} />
         <p className="text-small">
           <Link href="/analyses/new/">Compose another analysis</Link>
         </p>

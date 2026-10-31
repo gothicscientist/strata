@@ -213,6 +213,7 @@ function Composer() {
           </Section>
 
           <Section n={3} title="Parameters">
+            {spaces.error ? <ErrorNote error={spaces.error} /> : null}
             <div className="grid max-w-[44rem] gap-x-8 gap-y-6 sm:grid-cols-2">
               {!method.formal ? (
                 <label className="sm:col-span-2 sm:max-w-[20rem]">
@@ -223,7 +224,10 @@ function Composer() {
                         {s.name} ({s.n_dims} dimensions)
                       </option>
                     ))}
-                    {!spaces.data?.length ? <option value="">No coordinate space available</option> : null}
+                    {ds?.space && !spaces.data?.some((s) => s.id === ds.space) ? (
+                      <option value={ds.space}>{ds.space} (from the dataset)</option>
+                    ) : null}
+                    {!spaces.data?.length && !ds?.space ? <option value="">No coordinate space available</option> : null}
                   </select>
                 </label>
               ) : null}
