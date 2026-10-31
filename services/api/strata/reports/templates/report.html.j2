@@ -54,28 +54,34 @@
 {% set r = b.results %}
 {% if r.target %}<p>Target: <strong>{{ r.target }}</strong>{% if r.space %} · coordinate space <code>{{ r.space }}</code>{% endif %}</p>{% endif %}
 {% if r.weights and r.weights[0] is mapping %}
+{% set formal = b.classification == 'formal' %}
+{% if formal and r.feasible is defined and not r.feasible %}
+<p><strong>Infeasible model:</strong> at least one weight lies outside [0, 1], so these numbers
+are not admixture proportions{% if r.verdict %} (verdict: {{ r.verdict }}){% endif %}.</p>
+{% endif %}
 <table>
   <thead><tr><th>Source</th><th class="num">Weight</th><th class="num">SE</th>
-    <th class="num">95% interval</th>{% if r.weights[0].z is defined %}<th class="num">z</th>{% endif %}</tr></thead>
+    {% if formal %}<th class="num">z</th>{% else %}<th class="num">95% interval</th>{% endif %}</tr></thead>
   <tbody>
   {% for w in r.weights %}
-    <tr><td>{{ w.source or w.name }}</td><td class="num">{{ w.weight | pct }}</td>
-      <td class="num">{{ w.se | fmt }}</td>
-      <td class="num">{% if w.ci_low is not none and w.ci_high is not none %}{{ w.ci_low | pct }} – {{ w.ci_high | pct }}{% else %}–{% endif %}</td>
-      {% if r.weights[0].z is defined %}<td class="num">{{ w.z | fmt(2) }}</td>{% endif %}</tr>
+    <tr><td>{{ w.get('source') or w.get('name') }}</td>
+      <td class="num">{{ (w.get('weight') | fmt(3)) if formal else (w.get('weight') | pct) }}</td>
+      <td class="num">{{ w.get('se') | fmt(3) }}</td>
+      {% if formal %}<td class="num">{{ w.get('z') | fmt(2) }}</td>
+      {% else %}<td class="num">{% if w.get('ci_low') is not none and w.get('ci_high') is not none %}{{ w.get('ci_low') | pct }} – {{ w.get('ci_high') | pct }}{% else %}–{% endif %}</td>{% endif %}</tr>
   {% endfor %}
   </tbody>
 </table>
 {% endif %}
 {% if r.distance is defined and r.distance is not none %}<p>Fit distance: {{ r.distance | fmt }}</p>{% endif %}
-{% if r.p_value is defined %}<p>p-value {{ r.p_value | fmt }} · χ² {{ r.chisq | fmt(3) }} · dof {{ r.dof }}{% if r.feasible is defined %} · {{ 'feasible' if r.feasible else 'infeasible (weights outside [0, 1])' }}{% endif %}</p>{% endif %}
+{% if r.p_value is defined and r.p_value is not none %}<p>p-value {{ r.p_value | fmt }} · χ² {{ r.chisq | fmt(3) }} · dof {{ r.dof }}{% if r.feasible is defined %} · {{ 'feasible' if r.feasible else 'infeasible (weights outside [0, 1])' }}{% endif %}</p>{% endif %}
 {% if r.models %}
 <table>
   <thead><tr><th>#</th><th>Sources</th><th class="num">Weights</th><th class="num">{{ 'p-value' if b.classification == 'formal' else 'Distance' }}</th></tr></thead>
   <tbody>
   {% for m in r.models[:25] %}
     <tr><td>{{ m.rank or loop.index }}</td><td>{{ (m.sources or m.left or []) | join(' + ') }}</td>
-      <td class="num">{% if m.weights %}{% for w in m.weights %}{{ (w.weight if w is mapping else w) | pct }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</td>
+      <td class="num">{% if m.weights %}{% for w in m.weights %}{{ ((w.get('weight') | fmt(3)) if w is mapping else (w | pct)) }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</td>
       <td class="num">{{ (m.p_value if b.classification == 'formal' else m.distance) | fmt }}</td></tr>
   {% endfor %}
   </tbody>

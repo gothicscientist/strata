@@ -1,0 +1,208 @@
+{
+  "slug": "qpwave-archaic-ranks",
+  "title": "qpWave: admixture-wave lower bound for the archaic lineages",
+  "summary": "Rank test for 3 archaic genomes against 4 outgroups; smallest rank not rejected: none (every rank up to 1 is rejected).",
+  "kind": "qpwave",
+  "result_kind": "formal",
+  "tags": [
+    "qpwave",
+    "formal",
+    "archaic",
+    "rank-test"
+  ],
+  "description": "Fits low-rank approximations to the matrix of f4-statistics between three archaic genomes and four outgroups, testing ranks 0 and 1.\n\nThe rank-0 test asks whether the two sets form clades relative to each other. The smallest rank that is *not* rejected is a **lower bound** on the number of admixture waves, not an estimate of it: a bound of 1 does not mean exactly one wave occurred, only that zero is insufficient to explain these data.\n\nWhen every tested rank is rejected, as happens here, the honest reading is that this left set cannot be described as a low-rank mixture with respect to these outgroups at all -- the populations are too deeply structured for the model, which is expected for lineages that diverged hundreds of thousands of years ago.",
+  "caveats": [
+    "Computed from admixtools::example_f2_blocks, the f2-statistics bundled with ADMIXTOOLS 2 for seven populations (Altai Neanderthal, Vindija, Denisova, Mbuti, Chimp, Russia_Ust_Ishim, Switzerland_Bichon). These are real data and the statistics are genuine, but they are the package's demonstration populations -- archaic hominins and Palaeolithic modern humans. This is NOT a South Asian analysis and must not be presented as one. South Asian examples require the AADR reference panel built by data/pipeline/.",
+    "qpWave reports a lower bound on the number of admixture waves. Failing to reject a rank is not evidence that the rank is correct."
+  ],
+  "inputs": {
+    "f2_source": "admixtools::example_f2_blocks",
+    "f2_populations": [
+      "Altai_Neanderthal.DG",
+      "Chimp.REF",
+      "Denisova.DG",
+      "Mbuti.DG",
+      "Russia_Ust_Ishim.DG",
+      "Switzerland_Bichon.SG",
+      "Vindija.DG"
+    ],
+    "synthetic": false,
+    "note": "Real f2-statistics bundled with ADMIXTOOLS 2. No genotype data is redistributed by this example."
+  },
+  "params": {
+    "blgsize": 0.05,
+    "fudge": 0.0001,
+    "fudge_twice": false,
+    "auto_only": true,
+    "poly_only": false,
+    "constrained": false,
+    "boot": false,
+    "allsnps": false,
+    "threads": 1,
+    "f2_dir": "/tmp/strata-examples-z1einsod/f2",
+    "left": [
+      "Altai_Neanderthal.DG",
+      "Vindija.DG",
+      "Denisova.DG"
+    ],
+    "right": [
+      "Chimp.REF",
+      "Mbuti.DG",
+      "Russia_Ust_Ishim.DG",
+      "Switzerland_Bichon.SG"
+    ],
+    "alpha": 0.05
+  },
+  "result": {
+    "kind": "formal",
+    "engine": "admixtools2",
+    "analysis": "qpwave",
+    "caveat": "Formal f-statistic result (ADMIXTOOLS 2). qpAdm tests whether a proposed set of source populations can explain the target's allele-frequency relationships to the right (outgroup) populations. A model that is not rejected is consistent with the data, not proven: other untested models may fit equally well or better, and the p-value depends strongly on the choice of right populations, on SNP coverage, and on the jackknife block size. Admixture weights are estimates with standard errors, not exact ancestry percentages.",
+    "provenance": {
+      "admixtools_version": "2.0.10",
+      "r_version": "4.5.3",
+      "r_version_string": "R version 4.5.3 (2026-03-11)",
+      "platform": "x86_64-conda-linux-gnu",
+      "contract": "1",
+      "timestamp_utc": "2026-10-31T20:47:10Z"
+    },
+    "elapsed_seconds": 0.424169778823853,
+    "options": {
+      "allsnps": false,
+      "blgsize": 0.05,
+      "fudge": 0.0001,
+      "auto_only": true,
+      "constrained": false
+    },
+    "left": [
+      "Altai_Neanderthal.DG",
+      "Vindija.DG",
+      "Denisova.DG"
+    ],
+    "right": [
+      "Chimp.REF",
+      "Mbuti.DG",
+      "Russia_Ust_Ishim.DG",
+      "Switzerland_Bichon.SG"
+    ],
+    "data_source": "f2_dir",
+    "rankdrop": [
+      {
+        "f4rank": 1,
+        "dof": 2.0,
+        "chisq": 7.34514443992026,
+        "p": 0.0254110230701363,
+        "dofdiff": 4.0,
+        "chisqdiff": 1572.688184895,
+        "p_nested": 0.0
+      },
+      {
+        "f4rank": 0,
+        "dof": 6.0,
+        "chisq": 1580.03332933492,
+        "p": 0.0,
+        "dofdiff": null,
+        "chisqdiff": null,
+        "p_nested": null
+      }
+    ],
+    "f4": [
+      {
+        "pop1": "Altai_Neanderthal.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Chimp.REF",
+        "pop4": "Mbuti.DG",
+        "est": 0.000123850066687277,
+        "se": 0.000134651691716415,
+        "z": 0.919780992786284,
+        "p": 0.357687217928028,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Altai_Neanderthal.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Chimp.REF",
+        "pop4": "Russia_Ust_Ishim.DG",
+        "est": 0.000444866661794913,
+        "se": 0.000163574267704602,
+        "z": 2.71966164383688,
+        "p": 0.00653487463791198,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Altai_Neanderthal.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Chimp.REF",
+        "pop4": "Switzerland_Bichon.SG",
+        "est": 0.000421790004987128,
+        "se": 0.000172303480275154,
+        "z": 2.44794826148355,
+        "p": 0.0143672284790571,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Altai_Neanderthal.DG",
+        "pop2": "Denisova.DG",
+        "pop3": "Chimp.REF",
+        "pop4": "Mbuti.DG",
+        "est": -0.0129473666329491,
+        "se": 0.000363822126915831,
+        "z": -35.5870786164262,
+        "p": 2.21982087769716e-277,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Altai_Neanderthal.DG",
+        "pop2": "Denisova.DG",
+        "pop3": "Chimp.REF",
+        "pop4": "Russia_Ust_Ishim.DG",
+        "est": -0.0151959785079403,
+        "se": 0.000446338303625186,
+        "z": -34.0458759297996,
+        "p": 4.67121205011988e-254,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Altai_Neanderthal.DG",
+        "pop2": "Denisova.DG",
+        "pop3": "Chimp.REF",
+        "pop4": "Switzerland_Bichon.SG",
+        "est": -0.0149793143412448,
+        "se": 0.000463692099076458,
+        "z": -32.3044416134742,
+        "p": 6.05909393888912e-229,
+        "n": null,
+        "fit": null
+      }
+    ],
+    "alpha": 0.05,
+    "min_rank_not_rejected": null,
+    "f4_var_rcond": 0.00898181548115823,
+    "f4_var_singular_loadings": []
+  },
+  "provenance": {
+    "engine": "ADMIXTOOLS 2",
+    "admixtools_version": "2.0.10",
+    "r_version": "R version 4.5.3 (2026-03-11)",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "command": "run_qpwave(QpWaveSpec(...))",
+    "generated_at": "2026-10-31T20:47:10Z",
+    "generator": "data/examples/generate_examples.py",
+    "f2_source": "admixtools::example_f2_blocks",
+    "f2_n_pops": 7,
+    "f2_n_blocks": 708,
+    "f2_n_snps": 780009,
+    "f2_roundtrip_max_abs_diff": 0,
+    "params_sha256": "bb16a8f8eb80d87454257b0621b667a4c15587841eab8d1bc27d31b15065a7cc",
+    "result_sha256": "d976595834aa6528530e5102dae82db0ec76af3e83f18b83584fe96bb6db0d30",
+    "citations": [
+      "Maier, R., Flegontov, P., Flegontova, O., Isildak, U., Changmai, P., & Reich, D. (2023). On the limits of fitting complex models of population history to f-statistics. eLife, 12, e85492. https://doi.org/10.7554/eLife.85492"
+    ]
+  }
+}

@@ -171,6 +171,9 @@ class ExampleSummary(Schema):
     kind: str
     result_kind: Literal["exploratory", "formal"]
     tags: list[str] = []
+    caveats: list[str] = Field(
+        default_factory=list, description="Must be shown with the example (data scope etc.)"
+    )
 
 
 class ExampleDetail(ExampleSummary):

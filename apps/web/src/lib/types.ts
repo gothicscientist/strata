@@ -188,7 +188,9 @@ export type AnalysisKind =
   | "admixture_fit"
   | "admixture_rotate"
   | "qpadm"
-  | "qpadm_rotate";
+  | "qpadm_rotate"
+  | "f4"
+  | "qpwave";
 
 export type JobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
 
@@ -379,6 +381,21 @@ export interface F4Residual {
   fit?: number | null;
 }
 
+/** strata.qpadm.interpret feasibility summary (heuristic reporting conventions). */
+export type Verdict = "plausible" | "marginal" | "rejected" | "infeasible" | "undetermined";
+
+export interface Feasibility {
+  verdict: Verdict;
+  reasons: string[];
+  p_passes?: boolean | null;
+  weights_in_unit_interval?: boolean | null;
+  weights_well_determined?: boolean | null;
+  well_conditioned?: boolean | null;
+  p_threshold?: number;
+  marginal_p_threshold?: number;
+  note?: string;
+}
+
 export interface QpAdmResult {
   type: "qpadm";
   kind: "formal";
@@ -394,14 +411,17 @@ export interface QpAdmResult {
   f4?: F4Residual[];
   n_snps?: number | null;
   verdict?: string | null;
+  feasibility?: Feasibility | null;
   notes?: string[];
   caveat?: string;
 }
 
 export interface QpAdmRotateModel {
+  rank?: number;
   left: string[];
   right?: string[];
   verdict?: string | null;
+  feasibility?: Feasibility | null;
   p_value: number;
   chisq: number;
   dof: number;
@@ -422,13 +442,34 @@ export interface QpAdmRotateResult {
   rotation_caveat?: string;
 }
 
+export interface F4StatResult {
+  type: "f4";
+  kind: "formal";
+  f4: F4Residual[];
+  n_statistics?: number;
+  caveat?: string;
+}
+
+export interface QpWaveResult {
+  type: "qpwave";
+  kind: "formal";
+  left: string[];
+  right: string[];
+  rank_tests: RankTest[];
+  alpha?: number;
+  min_rank_not_rejected?: number | null;
+  caveat?: string;
+}
+
 export type AnalysisResult =
   | PcaProjectionResult
   | NearestResult
   | AdmixtureFitResult
   | RotationResult
   | QpAdmResult
-  | QpAdmRotateResult;
+  | QpAdmRotateResult
+  | F4StatResult
+  | QpWaveResult;
 
 /* --------------------------------------------------------------- examples */
 
@@ -443,6 +484,7 @@ export interface ExampleSummary {
 
 export interface ExampleDetail extends ExampleSummary {
   description?: string | null;
+  caveats?: string[];
   inputs: Record<string, unknown>;
   params: Record<string, unknown>;
   result: AnalysisResult;

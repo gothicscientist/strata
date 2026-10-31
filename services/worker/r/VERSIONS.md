@@ -14,8 +14,16 @@ install time, so a running container can report exactly what it has.
 
 ## Resolved versions
 
-Recorded from an actual `install_env.sh` run of the conda-forge solve
-(2026-10-30). `admixtools` itself is built from the pinned commit.
+**Verified**: this exact environment exists at `/opt/strata-r` and was used to
+run the real f-statistic tests (`pytest -m r`) and to generate every analysis
+under `data/examples/`. `admixtools 2.0.10` is installed in the site library
+(`/opt/strata-r/lib/R/library/admixtools`), built from the pinned commit
+`472d04e98ac8aa70e5c9cbe65722c7e5dfbe8200`, and `install_env.sh`'s own
+verification block (library load + a `qpadm()` smoke test on
+`example_f2_blocks`) passes against it.
+
+Recorded from the conda-forge solve on 2026-10-30; the version list below is
+the live output of `install_env.sh`'s manifest step.
 
 ```
 R version 4.5.3 (2026-03-11)

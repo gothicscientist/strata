@@ -281,24 +281,40 @@ def build_examples(f2_dir: Path) -> list[Example]:
     )
 
     # 5. qpWave: how many waves separate the two sets.
-    qw_spec = QpWaveSpec(left=NEANDERTHALS, right=DEEP_RIGHT, f2_dir=str(f2_dir))
+    # Three populations on the left, not two: qpWave tests ranks 0 to L-2, so a
+    # two-population left set yields only the rank-0 row and the rank table
+    # shows nothing about *how many* waves. With three it tests ranks 0 and 1.
+    qw_left = ["Altai_Neanderthal.DG", "Vindija.DG", "Denisova.DG"]
+    qw_spec = QpWaveSpec(left=qw_left, right=DEEP_RIGHT, f2_dir=str(f2_dir))
     qw = run_qpwave(qw_spec)
+    bound = (
+        str(qw.min_rank_not_rejected)
+        if qw.min_rank_not_rejected is not None
+        else f"none (every rank up to {len(qw_left) - 2} is rejected)"
+    )
     examples.append(
         Example(
-            slug="qpwave-neanderthal-ranks",
-            title="qpWave: admixture-wave lower bound for the Neanderthals",
+            slug="qpwave-archaic-ranks",
+            title="qpWave: admixture-wave lower bound for the archaic lineages",
             summary=(
-                "Rank test for two Neanderthals against four outgroups; smallest "
-                f"rank not rejected: {qw.min_rank_not_rejected}."
+                f"Rank test for {len(qw_left)} archaic genomes against "
+                f"{len(DEEP_RIGHT)} outgroups; smallest rank not rejected: {bound}."
             ),
             kind="qpwave",
             description=(
                 "Fits low-rank approximations to the matrix of f4-statistics "
-                "between the two Neanderthal genomes and the four outgroups. The "
-                "rank-0 test asks whether the two sets form two clades relative to "
-                "each other; the smallest rank that is not rejected is a *lower "
-                "bound* on the number of admixture waves, not an estimate of it. "
-                "A lower bound of 1 does not mean exactly one wave occurred."
+                "between three archaic genomes and four outgroups, testing ranks 0 "
+                "and 1.\n\n"
+                "The rank-0 test asks whether the two sets form clades relative to "
+                "each other. The smallest rank that is *not* rejected is a **lower "
+                "bound** on the number of admixture waves, not an estimate of it: "
+                "a bound of 1 does not mean exactly one wave occurred, only that "
+                "zero is insufficient to explain these data.\n\n"
+                "When every tested rank is rejected, as happens here, the honest "
+                "reading is that this left set cannot be described as a low-rank "
+                "mixture with respect to these outgroups at all -- the populations "
+                "are too deeply structured for the model, which is expected for "
+                "lineages that diverged hundreds of thousands of years ago."
             ),
             params=qw_spec.model_dump(mode="json", exclude_none=True),
             result=qw.model_dump(mode="json"),

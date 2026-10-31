@@ -116,13 +116,22 @@ class TestQpAdm:
         assert qpadm_fit.dof == pytest.approx(row.dof)
 
     def test_degrees_of_freedom_follow_the_formula(self, qpadm_fit) -> None:  # noqa: ANN001
-        """dof = (L - 1 - rank)(R - 1 - rank) for L sources and R outgroups."""
-        n_left, n_right = len(EXAMPLE_LEFT), len(EXAMPLE_RIGHT)
+        """dof = (L - 1 - rank)(R - 1 - rank), where L counts the target.
+
+        qpAdm prepends the target to the left set internally, so L is
+        ``len(left) + 1``: with 2 sources and 4 outgroups the rank-1 row has
+        dof (3-1-1)*(4-1-1) = 2 and the rank-0 row has (3-1-0)*(4-1-0) = 6.
+        """
+        n_left = len(EXAMPLE_LEFT) + 1
+        n_right = len(EXAMPLE_RIGHT)
+        checked = 0
         for row in qpadm_fit.rankdrop:
             if row.f4rank is None or row.dof is None:
                 continue
             expected = (n_left - 1 - row.f4rank) * (n_right - 1 - row.f4rank)
-            assert row.dof == pytest.approx(expected)
+            assert row.dof == pytest.approx(expected), f"rank {row.f4rank}"
+            checked += 1
+        assert checked >= 2, "expected at least the rank-0 and rank-1 rows"
 
     def test_chisq_and_p_are_consistent(self, qpadm_fit) -> None:  # noqa: ANN001
         from scipy.stats import chi2

@@ -1,0 +1,468 @@
+{
+  "slug": "qpadm-denisova-single-source",
+  "title": "qpAdm: Denisova from a single source (cladality test)",
+  "summary": "Single-source qpAdm for Denisova.DG from Vindija; p = 0.",
+  "kind": "qpadm",
+  "result_kind": "formal",
+  "tags": [
+    "qpadm",
+    "formal",
+    "archaic",
+    "cladality",
+    "single-source"
+  ],
+  "description": "With one source the model has rank 0 and the weight is fixed at 1 by construction, so the only thing being tested is whether target and source form a clade relative to the outgroups. Comparing this with the two-source fit shows why a weight vector on its own says nothing: the weight here is 100% regardless of how badly the model fits.",
+  "caveats": [
+    "Computed from admixtools::example_f2_blocks, the f2-statistics bundled with ADMIXTOOLS 2 for seven populations (Altai Neanderthal, Vindija, Denisova, Mbuti, Chimp, Russia_Ust_Ishim, Switzerland_Bichon). These are real data and the statistics are genuine, but they are the package's demonstration populations -- archaic hominins and Palaeolithic modern humans. This is NOT a South Asian analysis and must not be presented as one. South Asian examples require the AADR reference panel built by data/pipeline/.",
+    "qpAdm does not identify the true history. A model that is not rejected is consistent with these data given this outgroup set; other untested models may fit as well or better. p-values depend on the right populations, the SNP set and the jackknife block size."
+  ],
+  "inputs": {
+    "f2_source": "admixtools::example_f2_blocks",
+    "f2_populations": [
+      "Altai_Neanderthal.DG",
+      "Chimp.REF",
+      "Denisova.DG",
+      "Mbuti.DG",
+      "Russia_Ust_Ishim.DG",
+      "Switzerland_Bichon.SG",
+      "Vindija.DG"
+    ],
+    "synthetic": false,
+    "note": "Real f2-statistics bundled with ADMIXTOOLS 2. No genotype data is redistributed by this example."
+  },
+  "params": {
+    "blgsize": 0.05,
+    "fudge": 0.0001,
+    "fudge_twice": false,
+    "auto_only": true,
+    "poly_only": false,
+    "constrained": false,
+    "boot": false,
+    "allsnps": false,
+    "threads": 1,
+    "f2_dir": "/tmp/strata-examples-z1einsod/f2",
+    "target": "Denisova.DG",
+    "left": [
+      "Vindija.DG"
+    ],
+    "right": [
+      "Chimp.REF",
+      "Mbuti.DG",
+      "Russia_Ust_Ishim.DG",
+      "Switzerland_Bichon.SG"
+    ],
+    "getcov": true,
+    "return_f4": true
+  },
+  "result": {
+    "kind": "formal",
+    "engine": "admixtools2",
+    "analysis": "qpadm",
+    "caveat": "Formal f-statistic result (ADMIXTOOLS 2). qpAdm tests whether a proposed set of source populations can explain the target's allele-frequency relationships to the right (outgroup) populations. A model that is not rejected is consistent with the data, not proven: other untested models may fit equally well or better, and the p-value depends strongly on the choice of right populations, on SNP coverage, and on the jackknife block size. Admixture weights are estimates with standard errors, not exact ancestry percentages.",
+    "provenance": {
+      "admixtools_version": "2.0.10",
+      "r_version": "4.5.3",
+      "r_version_string": "R version 4.5.3 (2026-03-11)",
+      "platform": "x86_64-conda-linux-gnu",
+      "contract": "1",
+      "timestamp_utc": "2026-10-31T20:47:01Z"
+    },
+    "elapsed_seconds": 0.359123229980469,
+    "options": {
+      "allsnps": false,
+      "maxmiss": null,
+      "blgsize": 0.05,
+      "fudge": 0.0001,
+      "fudge_twice": false,
+      "auto_only": true,
+      "poly_only": false,
+      "constrained": false,
+      "boot": false
+    },
+    "target": "Denisova.DG",
+    "left": [
+      "Vindija.DG"
+    ],
+    "right": [
+      "Chimp.REF",
+      "Mbuti.DG",
+      "Russia_Ust_Ishim.DG",
+      "Switzerland_Bichon.SG"
+    ],
+    "data_source": "f2_dir",
+    "weights": [
+      {
+        "target": "Denisova.DG",
+        "left": "Vindija.DG",
+        "weight": 1.0,
+        "se": 1.77761265916786e-13,
+        "z": 5625522494130.55
+      }
+    ],
+    "f4": [
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Chimp.REF",
+        "pop4": "Mbuti.DG",
+        "est": 0.0130712166996364,
+        "se": 0.000373131230488262,
+        "z": 35.0311515938562,
+        "p": 7.55157940276714e-269,
+        "n": null,
+        "fit": null,
+        "weight": 1
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "fit",
+        "pop3": "Chimp.REF",
+        "pop4": "Mbuti.DG",
+        "est": 0.0130712166996364,
+        "se": 0.000373131230488262,
+        "z": 35.0311515938562,
+        "p": 7.55157940276714e-269,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Chimp.REF",
+        "pop4": "Russia_Ust_Ishim.DG",
+        "est": 0.0156408451697352,
+        "se": 0.000452855273468779,
+        "z": 34.5382864815276,
+        "p": 2.13698587932415e-261,
+        "n": null,
+        "fit": null,
+        "weight": 1
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "fit",
+        "pop3": "Chimp.REF",
+        "pop4": "Russia_Ust_Ishim.DG",
+        "est": 0.0156408451697352,
+        "se": 0.000452855273468779,
+        "z": 34.5382864815276,
+        "p": 2.13698587932415e-261,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Chimp.REF",
+        "pop4": "Switzerland_Bichon.SG",
+        "est": 0.0154011043462319,
+        "se": 0.000477783872734372,
+        "z": 32.2344583505738,
+        "p": 5.80930622765615e-228,
+        "n": null,
+        "fit": null,
+        "weight": 1
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "fit",
+        "pop3": "Chimp.REF",
+        "pop4": "Switzerland_Bichon.SG",
+        "est": 0.0154011043462319,
+        "se": 0.000477783872734372,
+        "z": 32.2344583505738,
+        "p": 5.80930622765615e-228,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Mbuti.DG",
+        "pop4": "Chimp.REF",
+        "est": -0.0130712166996364,
+        "se": 0.000373131230488232,
+        "z": -35.031151593859,
+        "p": 7.5515794020109e-269,
+        "n": null,
+        "fit": null,
+        "weight": 1
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "fit",
+        "pop3": "Mbuti.DG",
+        "pop4": "Chimp.REF",
+        "est": -0.0130712166996364,
+        "se": 0.000373131230488232,
+        "z": -35.031151593859,
+        "p": 7.5515794020109e-269,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Mbuti.DG",
+        "pop4": "Russia_Ust_Ishim.DG",
+        "est": 0.00256962847009883,
+        "se": 0.000354140810797002,
+        "z": 7.25595128196555,
+        "p": 3.98848632762063e-13,
+        "n": null,
+        "fit": null,
+        "weight": 1
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "fit",
+        "pop3": "Mbuti.DG",
+        "pop4": "Russia_Ust_Ishim.DG",
+        "est": 0.00256962847009883,
+        "se": 0.000354140810797002,
+        "z": 7.25595128196555,
+        "p": 3.98848632762063e-13,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Mbuti.DG",
+        "pop4": "Switzerland_Bichon.SG",
+        "est": 0.00232988764659554,
+        "se": 0.000363161279175842,
+        "z": 6.41557286030877,
+        "p": 1.4029429602921e-10,
+        "n": null,
+        "fit": null,
+        "weight": 1
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "fit",
+        "pop3": "Mbuti.DG",
+        "pop4": "Switzerland_Bichon.SG",
+        "est": 0.00232988764659554,
+        "se": 0.000363161279175842,
+        "z": 6.41557286030877,
+        "p": 1.4029429602921e-10,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Russia_Ust_Ishim.DG",
+        "pop4": "Chimp.REF",
+        "est": -0.0156408451697352,
+        "se": 0.000452855273468733,
+        "z": -34.5382864815312,
+        "p": 2.13698587906486e-261,
+        "n": null,
+        "fit": null,
+        "weight": 1
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "fit",
+        "pop3": "Russia_Ust_Ishim.DG",
+        "pop4": "Chimp.REF",
+        "est": -0.0156408451697352,
+        "se": 0.000452855273468733,
+        "z": -34.5382864815312,
+        "p": 2.13698587906486e-261,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Russia_Ust_Ishim.DG",
+        "pop4": "Mbuti.DG",
+        "est": -0.00256962847009883,
+        "se": 0.000354140810797052,
+        "z": -7.25595128196452,
+        "p": 3.98848632765123e-13,
+        "n": null,
+        "fit": null,
+        "weight": 1
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "fit",
+        "pop3": "Russia_Ust_Ishim.DG",
+        "pop4": "Mbuti.DG",
+        "est": -0.00256962847009883,
+        "se": 0.000354140810797052,
+        "z": -7.25595128196452,
+        "p": 3.98848632765123e-13,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Russia_Ust_Ishim.DG",
+        "pop4": "Switzerland_Bichon.SG",
+        "est": -0.000239740823503283,
+        "se": 0.000386836645689201,
+        "z": -0.619746929808455,
+        "p": 0.535424413303989,
+        "n": null,
+        "fit": null,
+        "weight": 1
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "fit",
+        "pop3": "Russia_Ust_Ishim.DG",
+        "pop4": "Switzerland_Bichon.SG",
+        "est": -0.000239740823503283,
+        "se": 0.000386836645689201,
+        "z": -0.619746929808455,
+        "p": 0.535424413303989,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Switzerland_Bichon.SG",
+        "pop4": "Chimp.REF",
+        "est": -0.0154011043462319,
+        "se": 0.000477783872734409,
+        "z": -32.2344583505712,
+        "p": 5.80930622812895e-228,
+        "n": null,
+        "fit": null,
+        "weight": 1
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "fit",
+        "pop3": "Switzerland_Bichon.SG",
+        "pop4": "Chimp.REF",
+        "est": -0.0154011043462319,
+        "se": 0.000477783872734409,
+        "z": -32.2344583505712,
+        "p": 5.80930622812895e-228,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Switzerland_Bichon.SG",
+        "pop4": "Mbuti.DG",
+        "est": -0.00232988764659555,
+        "se": 0.000363161279175825,
+        "z": -6.41557286030906,
+        "p": 1.40294296028936e-10,
+        "n": null,
+        "fit": null,
+        "weight": 1
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "fit",
+        "pop3": "Switzerland_Bichon.SG",
+        "pop4": "Mbuti.DG",
+        "est": -0.00232988764659555,
+        "se": 0.000363161279175825,
+        "z": -6.41557286030906,
+        "p": 1.40294296028936e-10,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "Vindija.DG",
+        "pop3": "Switzerland_Bichon.SG",
+        "pop4": "Russia_Ust_Ishim.DG",
+        "est": 0.000239740823503282,
+        "se": 0.00038683664568922,
+        "z": 0.619746929808421,
+        "p": 0.535424413304012,
+        "n": null,
+        "fit": null,
+        "weight": 1
+      },
+      {
+        "pop1": "Denisova.DG",
+        "pop2": "fit",
+        "pop3": "Switzerland_Bichon.SG",
+        "pop4": "Russia_Ust_Ishim.DG",
+        "est": 0.000239740823503282,
+        "se": 0.00038683664568922,
+        "z": 0.619746929808421,
+        "p": 0.535424413304012,
+        "n": null,
+        "fit": null
+      }
+    ],
+    "rankdrop": [
+      {
+        "f4rank": 0,
+        "dof": 3.0,
+        "chisq": 1510.36508363349,
+        "p": 0.0,
+        "dofdiff": null,
+        "chisqdiff": null,
+        "p_nested": null
+      }
+    ],
+    "popdrop": [
+      {
+        "pat": "0",
+        "wt": 0.0,
+        "dof": 3.0,
+        "chisq": 1510.36508363349,
+        "p": 0.0,
+        "f4rank": 0,
+        "feasible": true,
+        "Vindija.DG": 1
+      }
+    ],
+    "p": 0.0,
+    "chisq": 1510.36508363349,
+    "dof": 3.0,
+    "f4rank": 0,
+    "f4_var_rcond": 0.0843953908259594,
+    "f4_var_singular_loadings": [],
+    "feasibility": {
+      "verdict": "rejected",
+      "reasons": [
+        "The model is rejected: p = 0 <= 0.01, so the sources cannot explain the target's relationship to the right populations."
+      ],
+      "p_passes": false,
+      "weights_in_unit_interval": true,
+      "weights_well_determined": true,
+      "well_conditioned": true,
+      "p_threshold": 0.05,
+      "marginal_p_threshold": 0.01,
+      "max_relative_se": 0.5,
+      "note": "Heuristic summary of standard qpAdm reporting conventions, not a formal model-selection procedure. 'plausible' means the model was not rejected and its weights are physically interpretable; it does not mean the model is correct or that competing models were excluded."
+    }
+  },
+  "provenance": {
+    "engine": "ADMIXTOOLS 2",
+    "admixtools_version": "2.0.10",
+    "r_version": "R version 4.5.3 (2026-03-11)",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "command": "run_qpadm(QpAdmSpec(...))",
+    "generated_at": "2026-10-31T20:47:10Z",
+    "generator": "data/examples/generate_examples.py",
+    "f2_source": "admixtools::example_f2_blocks",
+    "f2_n_pops": 7,
+    "f2_n_blocks": 708,
+    "f2_n_snps": 780009,
+    "f2_roundtrip_max_abs_diff": 0,
+    "params_sha256": "63d85a8c446e603855114776293e7efc2b2444408d2765b4e4460370ca68e770",
+    "result_sha256": "a4be02adcca9a80e6e048ba8b580829a46f2c1d6419d7f851ed6889e7c672e4e",
+    "citations": [
+      "Maier, R., Flegontov, P., Flegontova, O., Isildak, U., Changmai, P., & Reich, D. (2023). On the limits of fitting complex models of population history to f-statistics. eLife, 12, e85492. https://doi.org/10.7554/eLife.85492"
+    ]
+  }
+}
