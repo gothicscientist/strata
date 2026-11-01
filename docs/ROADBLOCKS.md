@@ -264,7 +264,7 @@ change to this one.
 
 ---
 
-## 11. Present-day South Asian coverage is thin — *in progress*
+## 11. Present-day South Asian coverage is thin — *fixed here*
 
 Following the item 4 decision. The 25 South Asian populations v66.p1 ships
 total 434 individuals, and the Indian groups among them have one or two
@@ -282,5 +282,36 @@ It does not supply an Andamanese-related outgroup, so the `no_aasi_proxy` limit
 stands either way; what it changes is the exploratory side — PCA placement,
 distances and admixture fitting against groups with real sample counts.
 
-`ftp.1000genomes.ebi.ac.uk` is reachable from this container, so the download
-can run here rather than only on a runner.
+**Built.** `make onekg` (`python -m pipeline onekg`) streams each autosome's
+phase 3 VCF from EBI, keeps only the positions in the committed SNP panel, and
+writes the five populations on the same SNP set and allele orientation as
+everything else — 489 individuals, group IDs suffixed `_1000G` so they are
+never pooled with an AADR group of the same name. It then projects them into
+`strata-pca-v1` and appends the populations, samples and coordinates to the
+derived tables.
+
+Three things it is careful about, each of which is a way to get plausible
+numbers that are wrong:
+
+* **Allele orientation is checked per site**, never assumed. A site is kept only
+  when the VCF's REF/ALT pair is the panel's pair, in either order, or its
+  unambiguous strand complement. An A/T or C/G site that does not match
+  directly is dropped rather than resolved by guess, which would invert every
+  genotype at that site. The flip count is reported so a disagreement between
+  panel and callset is visible instead of silent.
+* **Positions are never matched across builds.** Phase 3 is GRCh37, the panel's
+  build; the extractor refuses a panel on any other.
+* **The coordinates are projected, not fitted.** A present-day cohort of ~500
+  added to the fit would dominate the axes and move every existing coordinate,
+  so these rows are projected and marked `projected`, like the ancient
+  individuals.
+
+`ftp.1000genomes.ebi.ac.uk` turned out to be reachable from this container, so
+the extraction ran here for real rather than only on a runner. chr22 alone:
+1,103,547 VCF sites scanned in 35 seconds, 5,797 of the panel's 5,798 chr22
+positions kept, no allele mismatches and no strand flips — which is itself
+evidence that the panel and the callset agree on orientation. The workflow
+gained an `include_1000_genomes` input for the full run.
+
+It does not supply an Andamanese-related outgroup, so `no_aasi_proxy` still
+applies; the gain is on the exploratory side.

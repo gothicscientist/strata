@@ -19,6 +19,7 @@ cd data/pipeline
 make all                      # download -> curate -> pca -> f2 -> manifest
 make curate                   # metadata only; no genotype maths
 make fetch-f2                 # download the published f2 cache instead of building it
+make onekg                    # add the 1000 Genomes South Asian panels (CHR=22 for one)
 make inspect ANNO=/path/to/v66.p1_1240K_public.anno
 ```
 
@@ -43,6 +44,7 @@ PYTHONPATH=.:../../services/api ../../services/api/.venv/bin/python -m pipeline 
 | `pca` | the HO `.geno`/`.snp`/`.ind` |
 | `f2` | the 1240K genotypes **and** ADMIXTOOLS 2 via `STRATA_RSCRIPT` |
 | `fetch-f2` | network access to `github.com` only |
+| `onekg` | `ftp.1000genomes.ebi.ac.uk`, and `pca` already run |
 
 The full build has been run end to end against AADR v66.p1 (see
 `data/derived/MANIFEST.json`). Some development containers cannot reach
@@ -131,3 +133,27 @@ not fatal** — AADR renames groups between releases, and
 and URLs) and `group_id` (the AADR label, verbatim). **Anything crossing into
 `strata.qpadm` uses `group_id`**, because that is the string stored in the f2
 cache and sent to ADMIXTOOLS.
+
+### The 1000 Genomes stage
+
+`make onekg` adds five South Asian panels from 1000 Genomes phase 3 (GIH, PJL,
+BEB, STU, ITU — 489 individuals) as a second reference source, on the same SNP
+set and allele orientation as everything else. It streams each autosome's VCF
+and keeps only panel positions, caching per chromosome under
+`data/work/onekg/`, so a partial run continues rather than restarting:
+
+```bash
+make onekg CHR=22        # one autosome, for a quick check
+make onekg               # all 22; roughly 45 minutes of streaming
+```
+
+It needs `pca` to have run, because it projects into the fitted space rather
+than changing it: a present-day cohort this size would otherwise dominate the
+axes and move every existing coordinate. Those rows are marked `projected`.
+
+Run `make manifest` afterwards — the stage appends to `populations.parquet`,
+`samples.parquet` and the coordinates table, and the manifest hashes must
+follow. `data/work/onekg.json` records the per-chromosome counts (sites seen,
+sites at a panel position, dropped as multi-allelic or on allele mismatch,
+strand-flipped) so a run can be judged rather than trusted. See
+`docs/DATA_PROVENANCE.md` §3b for what is and is not redistributed.

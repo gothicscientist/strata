@@ -25,8 +25,8 @@ export STRATA_ROOT := $(ROOT)
 
 PIPE := $(PYTHON) -m pipeline --root $(ROOT) --aadr-version $(AADR_VERSION) --reference-version $(REF_VERSION)
 
-.PHONY: help all download curate pca f2 fetch-f2 manifest verify citations inspect test \
-        clean-work distclean
+.PHONY: help all download curate pca f2 fetch-f2 onekg manifest verify citations inspect \
+        test clean-work distclean
 
 help:
 	@echo "targets:"
@@ -35,6 +35,7 @@ help:
 	@echo "  pca        fit $(REF_VERSION) PCA space, project individuals"
 	@echo "  f2         build the ADMIXTOOLS 2 f2 block cache (slow: hours)"
 	@echo "  fetch-f2   download the published f2 cache instead of building it"
+	@echo "  onekg      add the 1000 Genomes South Asian panels (CHR=22 for one autosome)"
 	@echo "  manifest   hash every artefact into MANIFEST.json"
 	@echo "  verify     re-hash artefacts against MANIFEST.json"
 	@echo "  all        the full build, in order"
@@ -62,6 +63,13 @@ f2:
 # it from the release the build workflow published. See docs/DATA_PROVENANCE.md.
 fetch-f2:
 	$(PIPE) fetch-f2 $(if $(REPO),--repo $(REPO),) $(if $(TAG),--tag $(TAG),)
+
+# Second reference source: the 1000 Genomes South Asian panels, projected into
+# the PCA space built by `pca`. Each chromosome is cached, so a partial run
+# (CHR=21,22) can be continued. Run `manifest` afterwards: this changes
+# populations/samples/coordinates.
+onekg:
+	$(PIPE) onekg $(if $(CHR),--chromosomes $(CHR),)
 
 manifest:
 	$(PIPE) manifest
