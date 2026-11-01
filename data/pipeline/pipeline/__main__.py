@@ -458,6 +458,7 @@ def cmd_onekg(args: argparse.Namespace) -> int:
     commensurate.
     """
     import numpy as np
+
     from strata.analysis.pca import project_array
     from strata.io import read_panel_parquet
 
