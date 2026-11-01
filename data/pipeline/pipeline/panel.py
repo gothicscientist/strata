@@ -23,6 +23,7 @@ because one label moved.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 # --------------------------------------------------------------------------
 # right / outgroup set
@@ -427,6 +428,108 @@ MODERN_GLOBAL: tuple[str, ...] = (
 )
 
 
+# --------------------------------------------------------------------------
+# relabelling: telling a rename apart from a real gap
+# --------------------------------------------------------------------------
+
+# Suffixes AADR used to mark the sequencing source of a present-day sample and
+# dropped in v66.p1 ("Mbuti.DG" -> "Mbuti"). A miss on a suffixed label is a
+# rename, not a gap, when the bare label resolved.
+ALIAS_SUFFIXES: tuple[str, ...] = (".DG", ".SG", ".REF", "_published", "_published_all")
+
+# Labels v66.p1 replaced outright, mapped to the labels that carry the same
+# individuals in the new scheme. Read off the v66.p1 `.ind` files on
+# 2026-10-31. This map exists only to classify a miss: resolution itself still
+# works off the panel labels, so an older `.p1` release keeps resolving. A
+# label absent from this map and absent from the release is a real gap.
+RELABELLED: dict[str, tuple[str, ...]] = {
+    # Swat Valley transect: per-site labels folded into period labels.
+    "Pakistan_SwatValleyProtohistoric*": ("Pakistan_IA", "Pakistan_LBA", "Pakistan_Historic*"),
+    "Pakistan_Swat*": ("Pakistan_IA", "Pakistan_LBA", "Pakistan_Historic*"),
+    "Pakistan_Aligrama*": ("Pakistan_IA", "Pakistan_Historic*"),
+    "Pakistan_Barikot*": ("Pakistan_IA", "Pakistan_Historic*"),
+    "Pakistan_Butkara*": ("Pakistan_IA", "Pakistan_Historic*"),
+    "Pakistan_Gogdara*": ("Pakistan_IA", "Pakistan_LBA"),
+    "Pakistan_Katelai*": ("Pakistan_IA", "Pakistan_LBA"),
+    "Pakistan_Loebanr*": ("Pakistan_IA", "Pakistan_LBA"),
+    "Pakistan_Udegram*": ("Pakistan_IA", "Pakistan_Historic*"),
+    "Pakistan_SaiduSharif_IA*": ("Pakistan_IA", "Pakistan_EarlyHistoric_H"),
+    "Pakistan_SaiduSharif_H_contact*": ("Pakistan_Historic*", "Pakistan_EarlyHistoric_H"),
+    # Indus periphery.
+    "Iran_ShahrISokhta_BA1": ("Iran_ShahriSokhta_BA1-1",),
+    "Iran_ShahrISokhta_BA2": ("Iran_ShahriSokhta_BA2-2",),
+    "Iran_ShahrISokhta_BA_o*": ("Iran_ShahriSokhta_BA3-3",),
+    "India_Rakhigarhi_H*": ("India_Harappan",),
+    "India_Roopkund_A": ("India_Roopkund-A",),
+    "India_Roopkund_B": ("India_Roopkund-B",),
+    "India_Roopkund_C": ("India_Roopkund-C",),
+    # Central Asia: site labels folded into country + period.
+    "Turkmenistan_Gonur1_BA*": ("Turkmenistan_BA*",),
+    "Turkmenistan_Gonur_BA_o*": ("Turkmenistan_BA*",),
+    "Turkmenistan_Namazga*": ("Turkmenistan_C", "Turkmenistan_Eneolithic"),
+    "Turkmenistan_Geoksyur_EN*": ("Turkmenistan_Eneolithic", "Turkmenistan_C"),
+    "Uzbekistan_Bustan_BA*": ("Uzbekistan_BA*",),
+    "Uzbekistan_Dzharkutan*": ("Uzbekistan_BA*",),
+    "Uzbekistan_Sappali_Tepe_BA*": ("Uzbekistan_BA*",),
+    "Tajikistan_Sarazm_EN*": ("Tajikistan_C",),
+    "Tajikistan_Ksirov_H*": ("Tajikistan_Khatlon_KushanPeriod",),
+    # Steppe and Siberia.
+    "Russia_Sintashta_MLBA*": ("Russia_MLBA_Sintashta", "Russia_Chelyabinsk_MLBA_Sintashta"),
+    "Kazakhstan_Sintashta_MLBA*": ("Kazakhstan_Andronovo",),
+    "Russia_Petrovka*": ("Russia_Chelyabinsk_Petrovka",),
+    "Kazakhstan_Petrovka*": ("Russia_Chelyabinsk_Petrovka", "Kazakhstan_Andronovo"),
+    "Kazakhstan_Kumsay_EBA*": ("Kazakhstan_KumsayKyrykOba_EBA_Yamnaya",),
+    "Russia_Poltavka*": ("Russia_Samara_MBA_Poltavka",),
+    "Russia_Potapovka*": ("Russia_Samara_MBA_Potapovka",),
+    "Russia_Srubnaya*": ("Russia_Samara_LBA_Srubnaya",),
+    "Russia_Yamnaya*": ("Russia_Samara_EBA_Yamnaya", "Russia_Kalmykia_EBA_Yamnaya"),
+    "Russia_Yamnaya_Samara": ("Russia_Samara_EBA_Yamnaya",),
+    "Russia_Krasnoyarsk_MLBA*": ("Russia_KrasnoyarskKrai_MLBA*",),
+    "Kyrgyzstan_*_MLBA*": ("Kyrgyzstan_MLBA_Andronovo", "Kyrgyzstan_EBA_MLBA_Andronovo"),
+    "Russia_Karelia_HG*": ("Russia_Karelia_Mesolithic*",),
+    "EHG": ("Russia_Karelia_Mesolithic_HG",),
+    "WHG": ("Luxembourg_Loschbour_Mesolithic", "Serbia_IronGates_Mesolithic"),
+    "WSHG": ("Russia_Tyumen_N_HG", "Russia_Tyumen_EN_Mesolithic"),
+    "ESHG": ("Russia_Irkutsk_N_Pribaikal",),
+    "Russia_Tyumen_HG": ("Russia_Tyumen_N_HG",),
+    "Russia_Sosnoviy_HG": ("Russia_Tyumen_N_HG",),
+    "Russia_Baikal_EN*": ("Russia_Irkutsk_N_Pribaikal",),
+    "Russia_Shamanka_EN*": ("Russia_Irkutsk_N_Pribaikal",),
+    "Russia_DevilsCave_N*": ("Russia_Irkutsk_N_Pribaikal",),
+    # Upper Palaeolithic / Mesolithic right-set members.
+    "Ust_Ishim_published.DG": ("Russia_UstIshim_IUP",),
+    "Russia_Ust_Ishim.DG": ("Russia_UstIshim_IUP",),
+    "Kostenki14_published.DG": ("Russia_Kostenki_UP",),
+    "MA1_published.SG": ("Russia_Malta_UP", "Russia_AfontovaGora_UP"),
+    "AfontovaGora3": ("Russia_AfontovaGora_UP",),
+    "GoyetQ116-1_published_all": ("Belgium_UP",),
+    "Vestonice16": ("Czechia_Gravettian",),
+    "ElMiron": ("Spain_Magdalenian",),
+    "Villabruna": ("Luxembourg_Loschbour_Mesolithic", "Serbia_IronGates_Mesolithic"),
+    "Vindija.DG": ("VindijaCave_Neanderthal",),
+    "Denisova.DG": ("Russia_Denisova",),
+    # West Asia.
+    "Anatolia_N": ("Turkey_N", "Turkey_Catalhoyuk_EN"),
+    "Turkey_Barcin_N*": ("Turkey_N", "Turkey_Catalhoyuk_EN"),
+    "Turkey_Boncuklu_N*": ("Turkey_PPN", "Turkey_N"),
+    "Natufian*": ("Israel_Natufian",),
+    "Israel_PPNB": ("Jordan_PPNB",),
+    "Levant_PPNB*": ("Jordan_PPNB",),
+    "Iran_Belt_Cave_M*": ("Iran_BeltCave_Mesolithic",),
+    "Iran_HotuIIIb_M*": ("Iran_HotuCave_Mesolithic_HotuIIIb",),
+    "Iran_HajjiFiruz_C*": ("Iran_HajjiFiruz_N",),
+    "Iran_Wezmeh_N*": ("Iran_WezmehCave_N",),
+    # Present-day groups renamed rather than dropped.
+    "Kyrgyz": ("Kyrgyz_Kyrgyzstan",),
+    "Uygur": ("Uyghur",),
+    "Vietnamese": ("Kinh_Vietnamese",),
+    "Yemenite_Jew": ("Jew_Yemenite",),
+    "Relli": ("Relli_1", "Relli_2"),
+    "Sindhi": ("Sindhi_1", "Sindhi_2", "Sindhi_Pakistan"),
+    "Sindhi.DG": ("Sindhi_1", "Sindhi_2", "Sindhi_Pakistan"),
+}
+
+
 @dataclass(frozen=True)
 class PanelGroup:
     """A named block of the reference panel."""
@@ -461,11 +564,92 @@ class Resolution:
 
     matched: dict[str, str] = field(default_factory=dict)  # group_id -> panel block
     unmatched: list[str] = field(default_factory=list)  # requested labels with no match
+    # Right-set labels with no match, kept apart from `unmatched` because the
+    # right set is applied to every panel, so mixing the two would make a
+    # caller's own panel look as if it had asked for the outgroups too.
+    unmatched_right: list[str] = field(default_factory=list)
     roles: dict[str, str] = field(default_factory=dict)  # group_id -> role
+    # Every group a BASE_RIGHT label resolved to, whatever role it ended up
+    # with. `roles` cannot carry this: a conventional outgroup is usually also
+    # a panel member (Mbuti and Papuan are in `modern_global`), and the panel
+    # block's role wins there, so the right set would otherwise be invisible
+    # to anything reading `roles` — including a caller assembling a right set.
+    right_set: list[str] = field(default_factory=list)
 
     @property
     def group_ids(self) -> list[str]:
         return sorted(self.matched)
+
+    def classify_unmatched(self) -> UnmatchedReport:
+        """Split the misses into renames and real gaps.
+
+        See :class:`UnmatchedReport` for why the distinction matters.
+        """
+        return classify_unmatched(
+            self.unmatched + self.unmatched_right, sorted(self.matched)
+        )
+
+
+@dataclass
+class UnmatchedReport:
+    """Which panel labels missed, and whether the miss matters.
+
+    The panel deliberately carries labels from several AADR releases, so most
+    misses on any one release are a label the release renamed and nothing is
+    lost. Reporting the two together overstates the gap: on v66.p1 the raw
+    count is 137 labels, of which only a minority are groups the release does
+    not contain at all. ``missing`` is the number a reviewer should act on.
+    """
+
+    superseded: list[str] = field(default_factory=list)  # renamed; replacement resolved
+    missing: list[str] = field(default_factory=list)  # absent from the release
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "superseded_labels": sorted(self.superseded),
+            "missing_labels": sorted(self.missing),
+            "n_superseded": len(self.superseded),
+            "n_missing": len(self.missing),
+        }
+
+
+def _strip_alias_suffix(label: str) -> str | None:
+    """``"Mbuti.DG"`` -> ``"Mbuti"``; ``None`` when the label carries no suffix."""
+    bare = label.removesuffix("*")
+    for suffix in ALIAS_SUFFIXES:
+        if bare.endswith(suffix) and len(bare) > len(suffix):
+            return bare[: -len(suffix)]
+    return None
+
+
+def classify_unmatched(unmatched: list[str], available: list[str]) -> UnmatchedReport:
+    """Decide, for each miss, whether another label already covers those samples.
+
+    A miss is *superseded* when the release carries the same individuals under
+    a different label: either the label is a sequencing-source alias whose bare
+    form resolved (``Mbuti.DG`` where ``Mbuti`` exists), or :data:`RELABELLED`
+    names a replacement that resolved. Everything else is *missing*.
+
+    Args:
+        unmatched: Panel labels that matched nothing.
+        available: The group IDs the release does contain.
+
+    Returns:
+        An :class:`UnmatchedReport`.
+    """
+    pool = sorted(set(available))
+    report = UnmatchedReport()
+    for label in sorted(set(unmatched)):
+        bare = _strip_alias_suffix(label)
+        if bare is not None and any(_matches(bare, g) for g in pool):
+            report.superseded.append(label)
+            continue
+        replacements = RELABELLED.get(label, ())
+        if any(_matches(r, g) for r in replacements for g in pool):
+            report.superseded.append(label)
+            continue
+        report.missing.append(label)
+    return report
 
 
 def _matches(label: str, group_id: str) -> bool:
@@ -505,9 +689,20 @@ def resolve(available: list[str], panel: tuple[PanelGroup, ...] = PANEL) -> Reso
     # is the AASI proxy *and* a conventional right population). setdefault, not
     # assignment: an explicit panel block's role wins, because that is the role
     # the panel was designed around.
+    #
+    # A right label that matches nothing is reported like any other miss. It
+    # used to be dropped silently, which hid the one miss that matters most:
+    # the right set is where a missing outgroup (Onge, the usual AASI proxy)
+    # changes what qpAdm can resolve, not just which populations are listed.
     for label in BASE_RIGHT:
-        for g in pool:
-            if _matches(label, g):
-                res.matched.setdefault(g, "right")
-                res.roles.setdefault(g, "right")
+        hits = [g for g in pool if _matches(label, g)]
+        if not hits:
+            res.unmatched_right.append(label)
+            continue
+        for g in hits:
+            res.matched.setdefault(g, "right")
+            res.roles.setdefault(g, "right")
+            if g not in res.right_set:
+                res.right_set.append(g)
+    res.right_set.sort()
     return res

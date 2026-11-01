@@ -18,8 +18,14 @@ AADR (Dataverse)  ->  curate  ->  populations/samples/publications.parquet
 cd data/pipeline
 make all                      # download -> curate -> pca -> f2 -> manifest
 make curate                   # metadata only; no genotype maths
+make fetch-f2                 # download the published f2 cache instead of building it
 make inspect ANNO=/path/to/v66.p1_1240K_public.anno
 ```
+
+Most clones do not need to run the build at all. The derived metadata and PCA
+coordinates are committed, and the f2 cache — the only expensive piece — is
+published as a release asset, so `make fetch-f2` is all it takes to run formal
+models against the same reference the manifest describes.
 
 Each stage is also a subcommand and each is idempotent, so an interrupted build
 resumes by rerunning it:
@@ -36,6 +42,7 @@ PYTHONPATH=.:../../services/api ../../services/api/.venv/bin/python -m pipeline 
 | `curate` | nothing beyond the downloaded `.anno` |
 | `pca` | the HO `.geno`/`.snp`/`.ind` |
 | `f2` | the 1240K genotypes **and** ADMIXTOOLS 2 via `STRATA_RSCRIPT` |
+| `fetch-f2` | network access to `github.com` only |
 
 The full build has been run end to end against AADR v66.p1 (see
 `data/derived/MANIFEST.json`). Some development containers cannot reach
@@ -54,8 +61,16 @@ On a 4-core, 15 GB machine: the download is ~11 GB, `pca` peaks at roughly
 8 GB (the fit runs in float32 on int8 genotypes), and `f2` first rewrites the
 1240K individuals it needs from AADR's transposed `TGENO` into ordinary `GENO`
 under `data/work/f2-input/` (ADMIXTOOLS 2 does not read `TGENO`). The f2 cache
-lands in `data/derived/f2/`, which is gitignored: it is distributed as a release
-asset, not committed.
+lands in `data/derived/f2/`, which is gitignored: at 147 MB it is distributed as
+a release asset, not committed.
+
+Rebuilding it takes roughly 45 minutes and the full 11 GB download, so
+`make fetch-f2` downloads the published asset instead. It verifies the tarball
+against the `.sha256` published beside it, refuses any archive member that
+would write outside the destination, and refuses a cache whose population count
+disagrees with the committed `MANIFEST.json` — a cache fixes the SNP set for
+every statistic computed from it, so the wrong cache would change p-values
+rather than fail. `REPO=` and `TAG=` point it at a fork or a mirror.
 
 ## Modules
 

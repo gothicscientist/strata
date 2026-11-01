@@ -170,16 +170,21 @@ def cmd_curate(args: argparse.Namespace) -> int:
 
     all_groups = [r.group_id for r in records_1240k] + [r.group_id for r in records_ho]
     resolution = panel_mod.resolve(all_groups)
+    unmatched = resolution.classify_unmatched()
     log.info(
-        "panel resolved: %d groups matched, %d requested labels unmatched",
+        "panel resolved: %d groups matched, %d labels superseded by a rename, "
+        "%d absent from the release",
         len(resolution.matched),
-        len(resolution.unmatched),
+        len(unmatched.superseded),
+        len(unmatched.missing),
     )
-    if resolution.unmatched:
+    # Only the real gaps are worth a note. The panel carries labels from
+    # several AADR releases on purpose, so a rename is expected, not news.
+    if unmatched.missing:
         ctx.note(
-            f"{len(resolution.unmatched)} panel labels matched nothing in "
-            f"AADR {args.aadr_version}: {', '.join(sorted(resolution.unmatched)[:20])}"
-            + (" ..." if len(resolution.unmatched) > 20 else "")
+            f"{len(unmatched.missing)} panel labels are absent from AADR "
+            f"{args.aadr_version}: {', '.join(unmatched.missing[:20])}"
+            + (" ..." if len(unmatched.missing) > 20 else "")
         )
 
     keep = set(resolution.matched) if not args.all_groups else None
@@ -230,6 +235,11 @@ def cmd_curate(args: argparse.Namespace) -> int:
         "panel": {
             "matched_groups": len(resolution.matched),
             "unmatched_labels": sorted(resolution.unmatched),
+            **unmatched.as_dict(),
+            # The conventional deep outgroup set, as it resolved in this
+            # release. Recorded explicitly so a caller does not have to
+            # reconstruct it from `roles`, where a panel block's role wins.
+            "right_set": list(resolution.right_set),
             "roles": {
                 role: sum(1 for r in resolution.roles.values() if r == role)
                 for role in sorted(set(resolution.roles.values()))
@@ -428,6 +438,50 @@ def cmd_f2(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_fetch_f2(args: argparse.Namespace) -> int:
+    """Obtain the published f2 cache instead of rebuilding it.
+
+    The cache is the only reference artefact that is neither committed nor
+    quick to rebuild, so a fresh clone has no way to run a formal model
+    without this. See `pipeline.fetchf2` for what is verified.
+    """
+    from .fetchf2 import DEFAULT_REPO, FetchError, fetch_f2
+
+    p = paths(args.root)
+    try:
+        result = fetch_f2(
+            derived=p.derived,
+            work=p.work / "f2-fetch",
+            reference_version=args.reference_version,
+            repo=args.repo or DEFAULT_REPO,
+            tag=args.tag,
+            force=args.force,
+        )
+    except FetchError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    if result.skipped:
+        print(
+            f"f2 cache already present in {result.f2_dir} "
+            f"({result.n_pops} populations); pass --force to replace it.",
+            file=sys.stderr,
+        )
+    print(
+        json.dumps(
+            {
+                "f2_dir": str(result.f2_dir),
+                "n_pops": result.n_pops,
+                "asset": result.asset,
+                "sha256": result.sha256,
+                "fetched": not result.skipped,
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
 def cmd_manifest(args: argparse.Namespace) -> int:
     p = paths(args.root)
     derived = p.derived
@@ -576,6 +630,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--force", action="store_true", help="overwrite an existing cache")
     s.add_argument("--timeout", type=float, default=None)
     s.set_defaults(func=cmd_f2)
+
+    s = sub.add_parser(
+        "fetch-f2", help="download the published f2 cache instead of rebuilding it"
+    )
+    s.add_argument("--repo", default=None, help="owner/name whose release carries the asset")
+    s.add_argument("--tag", default=None, help="release tag (default: reference-<version>)")
+    s.add_argument("--force", action="store_true", help="replace a cache already in place")
+    s.set_defaults(func=cmd_fetch_f2)
 
     s = sub.add_parser("manifest", help="hash artefacts and write MANIFEST.json")
     s.set_defaults(func=cmd_manifest)
