@@ -43,6 +43,35 @@ def test_health_with_reference(ref_client):
     assert caps["pca_space"] == "strata-pca-v1"
 
 
+def test_panel_endpoint_reports_composition_and_limits(ref_client):
+    r = ref_client.get(f"{V}/reference/panel")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["reference_version"] == SYNTHETIC_VERSION
+    # The standing outgroup set is served so a caller does not invent one.
+    assert body["right_set"] == ["PopC"]
+    assert body["limits"] == []
+    assert body["unavailable_labels"] == {}
+
+
+def test_panel_endpoint_is_unavailable_without_reference_data(client):
+    """503 rather than an empty panel, which would read as "no limits"."""
+    r = client.get(f"{V}/reference/panel")
+    assert r.status_code == 503
+    assert r.json()["code"] == "reference_unavailable"
+
+
+def test_health_states_a_panel_limit(ref_client, monkeypatch):
+    """An operator has to see what the installed panel cannot answer."""
+    monkeypatch.setattr(
+        "strata.api.science.reference_limits",
+        lambda: [{"id": "no_aasi_proxy", "summary": "no Andamanese-related population"}],
+    )
+    notes = ref_client.get(f"{V}/health").json()["notes"]
+
+    assert any("no_aasi_proxy" in n and "Andamanese" in n for n in notes)
+
+
 def test_auth_required_and_bad_tokens(client):
     assert client.get(f"{V}/datasets").status_code == 401
     r = client.get(f"{V}/datasets", headers={"Authorization": "Bearer nope"})
@@ -171,16 +200,20 @@ def test_delete_shreds_key(client):
     from strata.db.session import get_sessionmaker
 
     h = guest(client)
+    # A long label, not a two-letter one: the assertion below is that the label does
+    # not survive in the ciphertext, and a short needle turns up in ~1500 random bytes
+    # by chance often enough to fail a green build (p ≈ 2% for two bytes).
+    label = "Sample_Shred_Marker_01"
     did = client.post(
         f"{V}/datasets",
         headers=h,
-        data={"kind": "g25", "g25_text": _g25_line("Me", np.linspace(0.1, 0.001, 25))},
+        data={"kind": "g25", "g25_text": _g25_line(label, np.linspace(0.1, 0.001, 25))},
     ).json()["id"]
     import uuid
 
     with get_sessionmaker()() as s:
         ds = s.get(Dataset, uuid.UUID(did))
-        assert ds.ciphertext and b"Me" not in ds.ciphertext  # encrypted at rest
+        assert ds.ciphertext and label.encode() not in ds.ciphertext  # encrypted at rest
         assert s.get(DatasetKey, uuid.UUID(did)) is not None
     assert client.delete(f"{V}/datasets/{did}", headers=h).status_code == 204
     with get_sessionmaker()() as s:

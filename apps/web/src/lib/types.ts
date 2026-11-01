@@ -23,6 +23,28 @@ export interface Capabilities {
   examples: number;
 }
 
+/** A question the installed reference panel cannot answer. */
+export interface PanelLimit {
+  id: string;
+  severity?: string;
+  summary: string;
+  labels?: string[];
+  /** Analysis kinds the limit applies to; absent means all of them. */
+  affects?: string[];
+}
+
+export interface ReferencePanel {
+  reference_version: string | null;
+  aadr_version?: string | null;
+  /** The standing deep-outgroup set as it resolved in this release. */
+  right_set: string[];
+  limits: PanelLimit[];
+  matched_groups?: number | null;
+  roles?: Record<string, number>;
+  unavailable_labels?: Record<string, string>;
+  missing_labels?: string[];
+}
+
 export interface Health {
   status: "ok" | "degraded";
   version: string;

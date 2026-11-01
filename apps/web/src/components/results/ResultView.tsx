@@ -16,6 +16,7 @@ import type {
   RotationResult,
   Sensitivity,
 } from "@/lib/types";
+import { PanelLimits } from "@/components/results/PanelLimits";
 import { PcaPlot } from "@/components/charts/PcaPlot";
 import { ResidualsChart } from "@/components/charts/ResidualsChart";
 import { WeightsChart } from "@/components/charts/WeightsChart";
@@ -412,6 +413,7 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
   const drawable = weightsDrawable(r);
   return (
     <div>
+      <PanelLimits kind="qpadm" />
       <p className="mb-4 text-small text-ink-2">
         <KindMark kind="formal" /> qpAdm, target <em>{r.target}</em>; {r.left.length} source
         {r.left.length === 1 ? "" : "s"} and {r.right.length} right populations
@@ -596,6 +598,7 @@ function QpAdmRotateView({ r }: { r: QpAdmRotateResult }) {
   const tested = r.n_models_tested ?? models.length;
   return (
     <div>
+      <PanelLimits kind="qpadm_rotate" />
       <p className="mb-2 text-small text-ink-2">
         <KindMark kind="formal" /> qpAdm rotation for <em>{r.target}</em> against {r.right.length} fixed right
         populations; <span className="num">{tested}</span> model{tested === 1 ? "" : "s"} tested

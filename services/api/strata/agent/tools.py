@@ -44,6 +44,10 @@ class ReferenceBackend(Protocol):
     ``population_samples(space, population_ids) -> dict[str, ndarray]`` (per-individual
     coordinates). It is optional: without it, bootstrap confidence intervals are reported as
     unavailable rather than replaced by a point estimate.
+
+    ``panel() -> dict`` (the curated panel's composition and limits) is optional in the same
+    way: without it, ``describe_reference_panel`` says the panel is not described rather than
+    describing an empty one, which would read as a panel with no limits.
     """
 
     def search(
@@ -284,6 +288,49 @@ async def get_population(args: dict[str, Any], ctx: ToolContext) -> dict[str, An
     return {"population": _jsonable(row)}
 
 
+async def describe_reference_panel(args: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
+    """The curated panel's composition and its limits.
+
+    Exists so the model starts a right set from the panel's own standing
+    outgroup set instead of choosing outgroups itself, and so it knows what
+    the panel cannot answer before it builds a model rather than after.
+    """
+    ref = _reference(ctx)
+    describe = getattr(ref, "panel", None)
+    if describe is None:
+        raise ToolUnavailableError(
+            "this deployment's reference adapter does not describe the panel; "
+            "supply a right set explicitly"
+        )
+    panel = await _call(describe)
+    if not panel:
+        raise ToolUnavailableError(
+            "the reference manifest does not record the panel's composition "
+            "(it predates panel reporting); supply a right set explicitly"
+        )
+    limits = list(panel.get("limits") or [])
+    return {
+        "right_set": list(panel.get("right_set") or []),
+        "limits": limits,
+        "matched_groups": panel.get("matched_groups"),
+        "roles": panel.get("roles") or {},
+        # Labels the release does not carry, with the reason. Useful because a
+        # population named in the literature may simply not be here, and the
+        # model should say so rather than substitute something else silently.
+        "unavailable_labels": panel.get("unavailable_labels") or {},
+        "guidance": (
+            "Use right_set as the starting point for a qpAdm right set; it is the standing "
+            "deep-outgroup set for this panel. Each entry in limits is a question this panel "
+            "cannot answer: say so in the answer rather than reporting the numbers alone."
+        )
+        if limits
+        else (
+            "Use right_set as the starting point for a qpAdm right set; it is the standing "
+            "deep-outgroup set for this panel."
+        ),
+    }
+
+
 async def list_user_datasets(args: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
     if ctx.list_datasets is None:
         raise ToolUnavailableError("dataset listing is not available in this context")
@@ -432,6 +479,27 @@ def _formal_data_source(mod: Any) -> dict[str, str]:
     return {"f2_dir": str(f2_dir)}
 
 
+def _panel_limits(kind: str) -> list[dict[str, Any]]:
+    """Panel limits that apply to this tool, as the reference library reports them.
+
+    A limit names the analyses it affects; one that names none is taken to
+    affect all of them, so a limit added later cannot be dropped by forgetting
+    to list a tool.
+    """
+    try:
+        from strata.api import science
+
+        limits = science.reference_limits()
+    except Exception:  # noqa: BLE001 - never fail a computed result over its caveat
+        return []
+    out = []
+    for limit in limits:
+        affects = limit.get("affects")
+        if not affects or kind in affects:
+            out.append({k: limit[k] for k in ("id", "summary") if k in limit})
+    return out
+
+
 async def _run_formal(kind: str, payload: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
     mod = _qpadm(require_local=ctx.run_job is None)
     spec_name, fn_name = _SPEC_FOR[kind]
@@ -462,6 +530,14 @@ async def _run_formal(kind: str, payload: dict[str, Any], ctx: ToolContext) -> d
     feas = out.get("feasibility")
     if isinstance(feas, dict) and feas.get("reasons"):
         out["interpretation"] = feas["reasons"]
+    # A limit of the panel travels with every formal result, because the model
+    # cannot see it in the numbers: an under-identified weight looks like any
+    # other weight, and a rejected fit looks like a rejected model. Attached
+    # here, at the one place every formal tool goes through, so no tool can be
+    # added that quietly omits it.
+    limits = _panel_limits(kind)
+    if limits:
+        out["panel_limits"] = limits
     if kind == "qpadm_rotate":
         summarize = getattr(mod, "summarize_rotation", None)
         models = getattr(res, "models", None)
@@ -818,6 +894,16 @@ TOOLS: list[Tool] = [
         "Full metadata for one reference population: samples, dates, location, publication.",
         _obj({"population_id": {"type": "string"}}, ["population_id"]),
         get_population,
+    ),
+    Tool(
+        "describe_reference_panel",
+        "What the installed reference panel is made of, and what it cannot answer. Returns "
+        "`right_set`, the curated deep-outgroup set as it resolved in this release — start a "
+        "qpAdm right set from it rather than choosing outgroups yourself — plus `limits`, the "
+        "questions this panel cannot answer, and the labels the release does not carry. Call "
+        "this before the first formal model of a conversation.",
+        _obj({}, []),
+        describe_reference_panel,
     ),
     Tool(
         "list_user_datasets",

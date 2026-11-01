@@ -33,6 +33,12 @@ def health(db: DbDep, settings: SettingsDep) -> Health:
             "reference library not loaded: analyses against reference populations "
             "are unavailable (build data/derived with the data pipeline)"
         )
+    else:
+        # What the loaded panel cannot answer belongs next to what this
+        # deployment can do: a limit the operator never sees is a limit the
+        # user never sees either.
+        for limit in science.reference_limits():
+            notes.append(f"reference panel limit [{limit['id']}]: {limit['summary']}")
     if not qpadm:
         notes.append(
             "qpAdm unavailable: formal f-statistics tests need R + ADMIXTOOLS 2 "

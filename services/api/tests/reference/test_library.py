@@ -203,3 +203,42 @@ def test_panel_and_pca_model(root):
     lib = ReferenceLibrary(root)
     assert list(lib.snp_panel().rsid) == ["rs1", "rs2"]
     assert lib.pca_model().n_components == 2
+
+
+# --------------------------------------------------------------- panel limits
+
+
+def _with_panel(root, panel):
+    (root / "MANIFEST.json").write_text(
+        json.dumps({"version": "synthetic-test-1", "panel": panel})
+    )
+    return ReferenceLibrary(root)
+
+
+def test_panel_limits_are_passed_through(root):
+    lib = _with_panel(
+        root,
+        {
+            "right_set": ["SynC"],
+            "limits": [{"id": "no_aasi_proxy", "summary": "no proxy", "affects": ["qpadm"]}],
+        },
+    )
+
+    assert [lim["id"] for lim in lib.limits()] == ["no_aasi_proxy"]
+    assert lib.panel()["right_set"] == ["SynC"]
+    assert lib.status()["limits"] == lib.limits()
+
+
+def test_a_manifest_without_limits_reports_none(root):
+    """Reporting a limit the pipeline never computed would invent a caveat."""
+    lib = ReferenceLibrary(root)
+
+    assert lib.limits() == []
+    assert lib.panel() == {}
+
+
+def test_a_malformed_limits_block_is_ignored_not_trusted(root):
+    """An older or hand-edited manifest must not crash the library."""
+    lib = _with_panel(root, {"limits": ["not-a-dict", {"summary": "no id"}, {"id": "ok"}]})
+
+    assert [lim["id"] for lim in lib.limits()] == ["ok"]

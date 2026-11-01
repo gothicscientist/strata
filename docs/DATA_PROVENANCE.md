@@ -129,14 +129,29 @@ is widely repeated and plausible, but could not be confirmed against a primary
 source from here. It does not affect Strata either way: Strata uses only what the
 public Dataverse release contains, and redistributes none of it.
 
-**[verified]** for v66.p1 — most of the present-day Indian groups from the
-Reich-lab Human Origins panel (Chamar, Kol, Gond, Santhal, Paniya and others in
-`panel.py`) and the Andamanese (Onge, Jarawa, Great Andamanese) are **absent
-from the public release**: no `.ind` row in either the HO or 1240K dataset
-carries those labels. They are reported in `MANIFEST.json`
-`panel.unmatched_labels`. AASI-related ancestry therefore has no direct
-present-day proxy in this build; `India_Harappan` (one individual) and the
-Shahr-i-Sokhta / Turkmenistan BA outlier groups carry it indirectly.
+**[verified]** for v66.p1, re-measured 2026-11-01 — 39 panel labels are absent
+from the public release: 33 present-day Indian groups from the Reich-lab Human
+Origins panel (Chamar, Kol, Gond, Santhal, Paniya and others), the three
+Andamanese labels (Onge, Jarawa, Great Andamanese), and three the 1000 Genomes
+Project publishes instead (Bengali, Tamil, Telugu). No `.ind` row in either the
+HO or the 1240K dataset carries them. Each is recorded with its reason in
+`panel.UNAVAILABLE_IN_PUBLIC_AADR` and reported in `MANIFEST.json`
+`panel.unavailable_labels`.
+
+An earlier revision of this section said the present-day Indian groups were
+absent as a class. That overstated it: the release **does** carry 25 South Asian
+populations (434 individuals), 10 of them Indian — `Irula`, `Mala`, `Madiga`,
+`Kapu`, `Khonda_Dora`, `Relli_1`, `Relli_2`, `Brahmin`, `Yadava`, plus `Sherpa`
+and `Tharu` from Nepal — alongside the four Gujarati panels and nine Pakistani
+groups.
+
+What is genuinely missing is an **Andamanese-related outgroup**. Ancestry
+related to the deep indigenous South Asian component therefore has no direct
+present-day proxy in this build: `India_Harappan` (one individual) and the
+Shahr-i-Sokhta / Turkmenistan BA outlier groups carry it only indirectly, and a
+formal model apportioning that component is under-identified. That consequence
+is computed by `panel.panel_limits()` and travels with every formal result as
+the `no_aasi_proxy` limit, rather than living only in this document.
 
 ### 1.4 What the pipeline excludes, and why
 
@@ -237,6 +252,55 @@ evidence. See `docs/ARCHITECTURE.md`.
 
 ---
 
+## 3b. 1000 Genomes Project, phase 3
+
+**[verified]** — read from the release itself on 2026-11-01.
+
+Strata adds five South Asian panels from the phase 3 callset
+(`release/20130502`, GRCh37): Gujarati (GIH), Punjabi (PJL), Bengali (BEB), Sri
+Lankan Tamil (STU) and Indian Telugu (ITU). They exist as a second source
+because AADR's present-day South Asian groups have one or two individuals each,
+and three of these populations are ones AADR does not carry at all.
+
+* **Access:** the callset is published openly over
+  `ftp.1000genomes.ebi.ac.uk` with no access committee, registration or data
+  use agreement. The project's stated policy is that its data are available
+  without restriction on use.
+* **Citation:** The 1000 Genomes Project Consortium (2015), *A global reference
+  for human genetic variation*, Nature 526, 68–74,
+  [10.1038/nature15393](https://doi.org/10.1038/nature15393). Recorded as
+  publication `1000g-phase3-2015` and emitted by `make citations`.
+* **What is redistributed:** nothing. As with AADR, only derived metadata and
+  projected coordinates are committed; the extracted genotypes stay in
+  `data/work/`, which is gitignored.
+* **These genotypes are imputed by the project.** Phase 3 calls come from
+  low-coverage sequencing plus imputation and phasing, so they are not directly
+  comparable in error structure to the AADR's own calls. Strata imputes nothing
+  of its own: a call missing in the VCF stays missing here.
+* **Coordinates are projected, not fitted.** The individuals are projected into
+  `strata-pca-v1` rather than added to its fit, because a present-day cohort of
+  ~500 would otherwise dominate the axes and move every existing coordinate.
+  Projected coordinates are shrunk towards the origin and are marked
+  `projected` in the coordinates table, as the ancient individuals already are.
+* **Group IDs carry a `_1000G` suffix** (`Gujarati_1000G`, `Punjabi_1000G`,
+  `Bengali_1000G`, `Tamil_SriLanka_1000G`, `Telugu_1000G`) so a population from
+  this source is never pooled with an AADR group of the same name: the two
+  differ in coverage, in error structure and in provenance.
+* **Sampling localities are the project's**, not genetic centroids. GIH, STU and
+  ITU are diaspora cohorts (Houston and the UK); each sample's `locality` field
+  records where it was collected and the ancestral region the project states.
+
+Allele orientation is checked per site rather than assumed: a site is kept only
+when the VCF's REF/ALT pair is the panel's pair, in either order, or its
+unambiguous strand complement. A strand-ambiguous site (A/T or C/G) that does
+not match directly is dropped, because resolving it by guess would invert every
+genotype at that site. The per-chromosome counts — sites seen, sites at a panel
+position, dropped as multi-allelic, dropped on allele mismatch, strand-flipped
+— are written to `data/work/onekg.json` so a run can be judged rather than
+trusted.
+
+---
+
 ## 4. Consumer DNA files and user privacy
 
 Users may upload raw data from 23andMe, AncestryDNA, FTDNA/MyHeritage, or a
@@ -281,6 +345,7 @@ retention of raw uploads for any purpose.
 | `data/derived/pca/*.npz` | no | too large; a workflow artefact |
 | `data/derived/f2/` | no | large; a release asset or rebuilt in the worker |
 | `data/examples/*/example.json` | yes | real computations on ADMIXTOOLS 2's bundled data |
+| `data/work/onekg/` | no (gitignored) | 1000 Genomes extraction and its EIGENSTRAT output |
 
 `MANIFEST.json` records the AADR release, the sha256 of every source file, the
 QC thresholds, the exclusion counts, the f2 `cache_id` and the required

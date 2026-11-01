@@ -41,6 +41,11 @@ on:
         required: true
         default: true
         type: boolean
+      include_1000_genomes:
+        description: "Also add the 1000 Genomes South Asian panels (needs stages=metadata+pca or full)"
+        required: false
+        default: false
+        type: boolean
       publish_f2_release:
         description: "Attach the f2 cache to a release (requires stages=full)"
         required: false
@@ -162,6 +167,17 @@ jobs:
         working-directory: data/pipeline
         run: |
           make pca \
+            AADR_VERSION='${{ inputs.aadr_version }}' \
+            REF_VERSION='${{ inputs.reference_version }}'
+
+      - name: Add the 1000 Genomes South Asian panels
+        if: inputs.stages != 'metadata' && inputs.include_1000_genomes
+        working-directory: data/pipeline
+        # Streams all 22 autosomes from EBI (~45 minutes) and projects the
+        # individuals into the space fitted above. Appends to the derived
+        # tables, so it has to run before `manifest`.
+        run: |
+          make onekg \
             AADR_VERSION='${{ inputs.aadr_version }}' \
             REF_VERSION='${{ inputs.reference_version }}'
 

@@ -174,7 +174,24 @@ def build_synthetic_reference(root: Path) -> Path:
     }
     (root / "spaces.json").write_text(json.dumps(spaces))
     (root / "MANIFEST.json").write_text(
-        json.dumps({"version": SYNTHETIC_VERSION, "synthetic": True})
+        json.dumps(
+            {
+                "version": SYNTHETIC_VERSION,
+                "synthetic": True,
+                # Shaped like the real pipeline's panel block. `limits` is
+                # empty on purpose: a limit here would attach a caveat to
+                # every other test's results, and the limit paths are tested
+                # directly instead.
+                "panel": {
+                    "matched_groups": len(POPS),
+                    "right_set": [POPS[-1]],
+                    "roles": {"context": len(POPS)},
+                    "limits": [],
+                    "unavailable_labels": {},
+                    "missing_labels": [],
+                },
+            }
+        )
     )
     np.save(root / "_g25_centers.npy", np.vstack([centers[p] for p in POPS]))
     return root

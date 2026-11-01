@@ -170,17 +170,29 @@ def cmd_curate(args: argparse.Namespace) -> int:
 
     all_groups = [r.group_id for r in records_1240k] + [r.group_id for r in records_ho]
     resolution = panel_mod.resolve(all_groups)
+    unmatched = resolution.classify_unmatched()
+    limits = panel_mod.panel_limits(resolution)
     log.info(
-        "panel resolved: %d groups matched, %d requested labels unmatched",
+        "panel resolved: %d groups matched, %d renamed, %d known unavailable, "
+        "%d absent and unexplained",
         len(resolution.matched),
-        len(resolution.unmatched),
+        len(unmatched.superseded),
+        len(unmatched.unavailable),
+        len(unmatched.missing),
     )
-    if resolution.unmatched:
+    # Only the unexplained gaps are worth a note. A rename is expected (the
+    # panel carries labels from several releases on purpose), and a group the
+    # public AADR does not carry is already understood — what that one costs
+    # is reported as a limit below, not as something to chase.
+    if unmatched.missing:
         ctx.note(
-            f"{len(resolution.unmatched)} panel labels matched nothing in "
-            f"AADR {args.aadr_version}: {', '.join(sorted(resolution.unmatched)[:20])}"
-            + (" ..." if len(resolution.unmatched) > 20 else "")
+            f"{len(unmatched.missing)} panel labels are absent from AADR "
+            f"{args.aadr_version} for no recorded reason: "
+            f"{', '.join(unmatched.missing[:20])}"
+            + (" ..." if len(unmatched.missing) > 20 else "")
         )
+    for limit in limits:
+        ctx.note(f"panel limit [{limit['id']}]: {limit['summary']}")
 
     keep = set(resolution.matched) if not args.all_groups else None
 
@@ -230,6 +242,14 @@ def cmd_curate(args: argparse.Namespace) -> int:
         "panel": {
             "matched_groups": len(resolution.matched),
             "unmatched_labels": sorted(resolution.unmatched),
+            **unmatched.as_dict(),
+            # The conventional deep outgroup set, as it resolved in this
+            # release. Recorded explicitly so a caller does not have to
+            # reconstruct it from `roles`, where a panel block's role wins.
+            "right_set": list(resolution.right_set),
+            # What this panel cannot answer. Served to the API, the agent and
+            # the UI so a question it cannot answer is not answered silently.
+            "limits": limits,
             "roles": {
                 role: sum(1 for r in resolution.roles.values() if r == role)
                 for role in sorted(set(resolution.roles.values()))
@@ -428,6 +448,311 @@ def cmd_f2(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_onekg(args: argparse.Namespace) -> int:
+    """Add the 1000 Genomes South Asian panels as a second reference source.
+
+    Runs after `pca`, because it projects into the fitted space rather than
+    changing it: a present-day cohort of this size would otherwise dominate
+    the axes and move every existing coordinate. Projected rows are marked as
+    such, so nothing downstream compares them to fitted ones as if they were
+    commensurate.
+    """
+    import numpy as np
+
+    from strata.analysis.pca import project_array
+    from strata.io import read_panel_parquet
+
+    from . import onekg
+
+    p = paths(args.root)
+    derived = p.derived
+    panel_path = derived / "snp_panel.parquet"
+    if not panel_path.is_file():
+        print(
+            f"error: {panel_path} not found. Run `python -m pipeline pca` first.",
+            file=sys.stderr,
+        )
+        return 2
+    panel = read_panel_parquet(panel_path)
+    work = p.work / "onekg"
+
+    chromosomes = (
+        [c.strip() for c in args.chromosomes.split(",") if c.strip()]
+        if args.chromosomes
+        else list(onekg.AUTOSOMES)
+    )
+    unknown = [c for c in chromosomes if c not in onekg.AUTOSOMES]
+    if unknown:
+        print(f"error: not autosomes: {', '.join(unknown)}", file=sys.stderr)
+        return 2
+
+    try:
+        samples = onekg.fetch_sample_panel(cache=work / "samples.panel")
+        extracts = [
+            onekg.fetch_chromosome(
+                c, panel=panel, samples=samples, cache_dir=work, force=args.force
+            )
+            for c in chromosomes
+        ]
+        sample_ids = sorted(samples)
+        # The extraction keeps the VCF's own column order; take the ids from
+        # the first extract that saw the header rather than assuming one.
+        geno, snp_idx = onekg.assemble(
+            extracts, panel=panel, sample_ids=sample_ids, samples=samples
+        )
+    except onekg.OneKgError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    prefix = onekg.write_dataset(
+        work / "onekg-sas",
+        panel=panel,
+        geno=geno,
+        snp_idx=snp_idx,
+        sample_ids=sample_ids,
+        samples=samples,
+    )
+    build = onekg.OneKgBuild(
+        prefix=prefix,
+        sample_ids=sample_ids,
+        populations={
+            onekg.POPULATION_BY_CODE[code].group_id: sum(1 for v in samples.values() if v == code)
+            for code in sorted({v for v in samples.values()})
+        },
+        n_snps_panel=panel.n,
+        n_snps_called=int(snp_idx.shape[0]),
+        per_chromosome={e.chrom: e.stats for e in extracts},
+    )
+    summary = build.as_dict()
+    summary["chromosomes"] = chromosomes
+    summary["complete"] = sorted(chromosomes) == sorted(onekg.AUTOSOMES)
+
+    if args.merge:
+        model = _load_pca_model(derived, args.reference_version)
+        if model is None:
+            print(
+                f"error: no PCA model for {args.reference_version}; run `pca` first.",
+                file=sys.stderr,
+            )
+            return 2
+        dosage = onekg.panel_dosage(geno, snp_idx, panel.n)
+        coords = np.zeros((dosage.shape[0], model.n_components), dtype=float)
+        used = np.zeros(dosage.shape[0], dtype=int)
+        for start in range(0, dosage.shape[0], 64):
+            block = dosage[start : start + 64]
+            coords[start : start + 64], used[start : start + 64] = project_array(block, model)
+        merged = _merge_onekg_metadata(
+            derived=derived,
+            onekg_mod=onekg,
+            samples=samples,
+            sample_ids=sample_ids,
+            coords=coords,
+            n_snps_used=used,
+            space=args.reference_version,
+            n_called=int(snp_idx.shape[0]),
+        )
+        summary["merged"] = merged
+        nan_rows = int(np.isnan(coords[:, 0]).sum())
+        summary["projection"] = {
+            "space": args.reference_version,
+            "n_projected": int(coords.shape[0]) - nan_rows,
+            "n_without_coordinates": nan_rows,
+            "median_snps_used": int(np.median(used)) if used.size else 0,
+        }
+        print(
+            "note: the 1000 Genomes individuals are PROJECTED into "
+            f"{args.reference_version}, not part of its fit; projected coordinates are "
+            "shrunk towards the origin and are marked `projected` in the coordinates table.",
+            file=sys.stderr,
+        )
+        if not summary["complete"]:
+            print(
+                "note: this run covered "
+                f"{len(chromosomes)} of {len(onekg.AUTOSOMES)} autosomes, so the "
+                "coordinates rest on a subset of the panel. Rerun for the rest before "
+                "treating them as final.",
+                file=sys.stderr,
+            )
+
+    (p.work / "onekg.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(json.dumps(summary, indent=2))
+    return 0
+
+
+def _load_pca_model(derived: Path, space: str) -> Any | None:
+    from strata.analysis.pca import PCAModel
+
+    path = derived / "pca" / f"{space}.npz"
+    if not path.is_file():
+        return None
+    return PCAModel.load(path)
+
+
+def _merge_onekg_metadata(
+    *,
+    derived: Path,
+    onekg_mod: Any,
+    samples: dict[str, str],
+    sample_ids: list[str],
+    coords: Any,
+    n_snps_used: Any,
+    space: str,
+    n_called: int,
+) -> dict[str, int]:
+    """Append the 1000 Genomes populations, samples and coordinates to the library.
+
+    Appends rather than rewrites: the AADR-derived rows are not touched, and a
+    row from this source is identifiable by `data_source` so the two are never
+    pooled by accident. Rerunning replaces only this source's rows.
+    """
+    import numpy as np
+    import pandas as pd
+
+    pops_path, samples_path = derived / "populations.parquet", derived / "samples.parquet"
+    coords_path = derived / "coordinates" / f"{space}.parquet"
+    if not pops_path.is_file() or not samples_path.is_file():
+        raise SystemExit(f"error: {pops_path} or {samples_path} missing; run `curate` first.")
+
+    pdf = pd.read_parquet(pops_path)
+    sdf = pd.read_parquet(samples_path)
+    source = onekg_mod.DATA_SOURCE
+    pdf = pdf[pdf["data_source"] != source]
+    keep_ids = set(sdf.loc[sdf["id"].isin(sample_ids), "id"])
+    sdf = sdf[~sdf["id"].isin(keep_ids)]
+
+    by_code: dict[str, list[str]] = {}
+    for sid in sample_ids:
+        by_code.setdefault(samples[sid], []).append(sid)
+
+    pop_rows, sample_rows = [], []
+    for code, ids in sorted(by_code.items()):
+        pop = onekg_mod.POPULATION_BY_CODE[code]
+        pop_rows.append(
+            {
+                "id": pop.group_id,
+                "group_id": pop.group_id,
+                "name": pop.name,
+                "region": pop.region,
+                "country": pop.country,
+                "lat": pop.lat,
+                "lon": pop.lon,
+                "period": "Modern",
+                "culture": None,
+                "date_mean_bp": 0.0,
+                "date_sd": 0.0,
+                "date_min_bp": 0.0,
+                "date_max_bp": 0.0,
+                "n_samples": len(ids),
+                "data_source": source,
+                "publication_ids": [onekg_mod.PUBLICATION_ID],
+                "spaces": [space],
+                "role": "target_cline",
+                "panel_block": "modern_south_asia",
+            }
+        )
+        for sid in ids:
+            sample_rows.append(
+                {
+                    "id": sid,
+                    "population_id": pop.group_id,
+                    "group_id": pop.group_id,
+                    "master_id": sid,
+                    "sex": "U",
+                    "date_mean_bp": 0.0,
+                    "date_sd": 0.0,
+                    "lat": pop.lat,
+                    "lon": pop.lon,
+                    "country": pop.country,
+                    "locality": pop.locality,
+                    "data_type": "Shotgun",
+                    "n_snps": n_called,
+                    "pseudohaploid": False,
+                    "publication_id": onekg_mod.PUBLICATION_ID,
+                    "assessment": "PASS",
+                }
+            )
+
+    out_pops = pd.concat([pdf, pd.DataFrame(pop_rows)[pdf.columns]], ignore_index=True)
+    out_pops = out_pops.sort_values("id").reset_index(drop=True)
+    out_pops.to_parquet(pops_path, index=False)
+    out_samples = pd.concat([sdf, pd.DataFrame(sample_rows)[sdf.columns]], ignore_index=True)
+    out_samples = out_samples.sort_values(["group_id", "id"]).reset_index(drop=True)
+    out_samples.to_parquet(samples_path, index=False)
+
+    n_coords = 0
+    if coords_path.is_file():
+        cdf = pd.read_parquet(coords_path)
+        cdf = cdf[~cdf["sample_id"].isin(sample_ids)]
+        dims = [c for c in cdf.columns if c.startswith("PC")]
+        rows = []
+        for i, sid in enumerate(sample_ids):
+            if not np.isfinite(coords[i][0]):
+                continue  # too few observed SNPs to place; no row rather than a NaN row
+            row = {
+                "sample_id": sid,
+                "population_id": onekg_mod.POPULATION_BY_CODE[samples[sid]].group_id,
+                "n_snps_used": int(n_snps_used[i]),
+                "projected": True,
+            }
+            for j, d in enumerate(dims):
+                row[d] = float(coords[i][j])
+            rows.append(row)
+        if rows:
+            out = pd.concat([cdf, pd.DataFrame(rows)[cdf.columns]], ignore_index=True)
+            out.to_parquet(coords_path, index=False)
+            n_coords = len(rows)
+
+    return {
+        "populations": len(pop_rows),
+        "samples": len(sample_rows),
+        "coordinates": n_coords,
+    }
+
+
+def cmd_fetch_f2(args: argparse.Namespace) -> int:
+    """Obtain the published f2 cache instead of rebuilding it.
+
+    The cache is the only reference artefact that is neither committed nor
+    quick to rebuild, so a fresh clone has no way to run a formal model
+    without this. See `pipeline.fetchf2` for what is verified.
+    """
+    from .fetchf2 import DEFAULT_REPO, FetchError, fetch_f2
+
+    p = paths(args.root)
+    try:
+        result = fetch_f2(
+            derived=p.derived,
+            work=p.work / "f2-fetch",
+            reference_version=args.reference_version,
+            repo=args.repo or DEFAULT_REPO,
+            tag=args.tag,
+            force=args.force,
+        )
+    except FetchError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    if result.skipped:
+        print(
+            f"f2 cache already present in {result.f2_dir} "
+            f"({result.n_pops} populations); pass --force to replace it.",
+            file=sys.stderr,
+        )
+    print(
+        json.dumps(
+            {
+                "f2_dir": str(result.f2_dir),
+                "n_pops": result.n_pops,
+                "asset": result.asset,
+                "sha256": result.sha256,
+                "fetched": not result.skipped,
+            },
+            indent=2,
+        )
+    )
+    return 0
+
+
 def cmd_manifest(args: argparse.Namespace) -> int:
     p = paths(args.root)
     derived = p.derived
@@ -576,6 +901,32 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--force", action="store_true", help="overwrite an existing cache")
     s.add_argument("--timeout", type=float, default=None)
     s.set_defaults(func=cmd_f2)
+
+    s = sub.add_parser(
+        "onekg", help="add the 1000 Genomes South Asian panels as a second source"
+    )
+    s.add_argument(
+        "--chromosomes",
+        default=None,
+        help="comma-separated autosomes (default: all 22). A partial run is "
+        "cached per chromosome and can be continued.",
+    )
+    s.add_argument(
+        "--merge",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="append the populations, samples and projected coordinates to data/derived",
+    )
+    s.add_argument("--force", action="store_true", help="re-extract cached chromosomes")
+    s.set_defaults(func=cmd_onekg)
+
+    s = sub.add_parser(
+        "fetch-f2", help="download the published f2 cache instead of rebuilding it"
+    )
+    s.add_argument("--repo", default=None, help="owner/name whose release carries the asset")
+    s.add_argument("--tag", default=None, help="release tag (default: reference-<version>)")
+    s.add_argument("--force", action="store_true", help="replace a cache already in place")
+    s.set_defaults(func=cmd_fetch_f2)
 
     s = sub.add_parser("manifest", help="hash artefacts and write MANIFEST.json")
     s.set_defaults(func=cmd_manifest)

@@ -180,7 +180,36 @@ class ReferenceLibrary:
             "missing": self.missing,
             "n_populations": len(self._populations),
             "spaces": [s.id for s in self.spaces()],
+            "limits": self.limits(),
         }
+
+    def panel(self) -> dict[str, Any]:
+        """How the curated panel resolved against the release it was built from.
+
+        The pipeline records this; the API only passes it on. It carries the
+        standing outgroup set as it resolved, the panel's limits, and the
+        labels the release renamed, does not carry, or does not carry for any
+        recorded reason — so a caller can see what the panel is made of rather
+        than inferring it from the population list.
+        """
+        panel = self.manifest.get("panel")
+        if not isinstance(panel, dict):
+            return {}
+        return panel
+
+    def limits(self) -> list[dict[str, Any]]:
+        """Questions this panel cannot answer, as the pipeline computed them.
+
+        Returned with every formal result and reported by `/health`, because a
+        number returned for a question the panel cannot answer is worse than
+        no number. Empty when the panel resolved with no known limits — or
+        when the manifest predates limit reporting, which is why the shape is
+        validated rather than trusted.
+        """
+        limits = self.panel().get("limits")
+        if not isinstance(limits, list):
+            return []
+        return [limit for limit in limits if isinstance(limit, dict) and limit.get("id")]
 
     @cached_property
     def _populations(self) -> dict[str, Population]:

@@ -18,8 +18,15 @@ AADR (Dataverse)  ->  curate  ->  populations/samples/publications.parquet
 cd data/pipeline
 make all                      # download -> curate -> pca -> f2 -> manifest
 make curate                   # metadata only; no genotype maths
+make fetch-f2                 # download the published f2 cache instead of building it
+make onekg                    # add the 1000 Genomes South Asian panels (CHR=22 for one)
 make inspect ANNO=/path/to/v66.p1_1240K_public.anno
 ```
+
+Most clones do not need to run the build at all. The derived metadata and PCA
+coordinates are committed, and the f2 cache — the only expensive piece — is
+published as a release asset, so `make fetch-f2` is all it takes to run formal
+models against the same reference the manifest describes.
 
 Each stage is also a subcommand and each is idempotent, so an interrupted build
 resumes by rerunning it:
@@ -36,6 +43,8 @@ PYTHONPATH=.:../../services/api ../../services/api/.venv/bin/python -m pipeline 
 | `curate` | nothing beyond the downloaded `.anno` |
 | `pca` | the HO `.geno`/`.snp`/`.ind` |
 | `f2` | the 1240K genotypes **and** ADMIXTOOLS 2 via `STRATA_RSCRIPT` |
+| `fetch-f2` | network access to `github.com` only |
+| `onekg` | `ftp.1000genomes.ebi.ac.uk`, and `pca` already run |
 
 The full build has been run end to end against AADR v66.p1 (see
 `data/derived/MANIFEST.json`). Some development containers cannot reach
@@ -54,8 +63,16 @@ On a 4-core, 15 GB machine: the download is ~11 GB, `pca` peaks at roughly
 8 GB (the fit runs in float32 on int8 genotypes), and `f2` first rewrites the
 1240K individuals it needs from AADR's transposed `TGENO` into ordinary `GENO`
 under `data/work/f2-input/` (ADMIXTOOLS 2 does not read `TGENO`). The f2 cache
-lands in `data/derived/f2/`, which is gitignored: it is distributed as a release
-asset, not committed.
+lands in `data/derived/f2/`, which is gitignored: at 147 MB it is distributed as
+a release asset, not committed.
+
+Rebuilding it takes roughly 45 minutes and the full 11 GB download, so
+`make fetch-f2` downloads the published asset instead. It verifies the tarball
+against the `.sha256` published beside it, refuses any archive member that
+would write outside the destination, and refuses a cache whose population count
+disagrees with the committed `MANIFEST.json` — a cache fixes the SNP set for
+every statistic computed from it, so the wrong cache would change p-values
+rather than fail. `REPO=` and `TAG=` point it at a fork or a mirror.
 
 ## Modules
 
@@ -116,3 +133,27 @@ not fatal** — AADR renames groups between releases, and
 and URLs) and `group_id` (the AADR label, verbatim). **Anything crossing into
 `strata.qpadm` uses `group_id`**, because that is the string stored in the f2
 cache and sent to ADMIXTOOLS.
+
+### The 1000 Genomes stage
+
+`make onekg` adds five South Asian panels from 1000 Genomes phase 3 (GIH, PJL,
+BEB, STU, ITU — 489 individuals) as a second reference source, on the same SNP
+set and allele orientation as everything else. It streams each autosome's VCF
+and keeps only panel positions, caching per chromosome under
+`data/work/onekg/`, so a partial run continues rather than restarting:
+
+```bash
+make onekg CHR=22        # one autosome, for a quick check
+make onekg               # all 22; roughly 45 minutes of streaming
+```
+
+It needs `pca` to have run, because it projects into the fitted space rather
+than changing it: a present-day cohort this size would otherwise dominate the
+axes and move every existing coordinate. Those rows are marked `projected`.
+
+Run `make manifest` afterwards — the stage appends to `populations.parquet`,
+`samples.parquet` and the coordinates table, and the manifest hashes must
+follow. `data/work/onekg.json` records the per-chromosome counts (sites seen,
+sites at a panel position, dropped as multi-allelic or on allele mismatch,
+strand-flipped) so a run can be judged rather than trusted. See
+`docs/DATA_PROVENANCE.md` §3b for what is and is not redistributed.

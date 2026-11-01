@@ -100,6 +100,13 @@ class LibraryReference:
             ) from exc
         return {k: np.asarray(v, dtype=float) for k, v in samples.items()}
 
+    def panel(self) -> dict[str, Any]:
+        """The panel's composition and limits, as the pipeline recorded them."""
+        lib = self._require()
+        panel = dict(lib.panel())
+        panel["limits"] = lib.limits()
+        return panel
+
     def all_metadata(self) -> list[dict[str, Any]]:
         lib = self._require()
         rows = [{"kind": "population", **_summary(_dump(p))} for p in lib.populations()]

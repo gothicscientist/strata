@@ -118,6 +118,12 @@ cache used by qpAdm are derived from the Allen Ancient DNA Resource by
   files; large artefacts are uploaded as workflow artefacts / release assets.
 * **On your own machine:** `cd data/pipeline && make all` (needs
   `dataverse.harvard.edu` and, for the f2 stage, `STRATA_RSCRIPT`).
+* **For a deployment that only runs analyses:** `cd data/pipeline &&
+  make fetch-f2`. The derived metadata and PCA coordinates are already in the
+  repository; this adds the f2 cache from the release the workflow published,
+  verified against its checksum and against the committed `MANIFEST.json`. It
+  needs neither Dataverse nor R, so it is the step to run in an image build or
+  an init container.
 
 Mount the results at `STRATA_DERIVED_DIR` (and the f2 cache at `STRATA_F2_DIR`)
 for the API and worker. `/api/v1/health` reports whether each piece loaded.

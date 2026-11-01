@@ -570,3 +570,119 @@ async def test_bootstrap_runs_when_sample_coordinates_exist(tool_ctx: ToolContex
     for w in boot["weights"]:
         assert w["ci_low"] <= w["ci_high"]
     assert {w["name"] for w in boot["weights"]} == {"Onge.SG", "Iran_GanjDareh_N"}
+
+
+async def test_a_formal_result_carries_the_panels_limits(
+    tool_ctx: ToolContext, monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    """The model cannot read a limit off the numbers.
+
+    An under-identified weight looks like any other weight and a rejected fit
+    looks like a rejected model, so the panel's own statement of what it cannot
+    answer has to travel with the result.
+    """
+    monkeypatch.setenv("STRATA_F2_DIR", str(tmp_path / "f2"))
+    monkeypatch.setattr(
+        "strata.api.science.reference_limits",
+        lambda: [
+            {"id": "no_aasi_proxy", "summary": "no proxy", "affects": ["qpadm"]},
+            {"id": "elsewhere", "summary": "other tool only", "affects": ["f4"]},
+        ],
+    )
+
+    async def run_job(kind: str, payload: dict[str, Any]) -> dict[str, Any]:
+        return {"kind": "formal", "target": "T", "p": 0.4}
+
+    tool_ctx.run_job = run_job
+    out = await execute_tool(
+        "run_qpadm",
+        {"target": "T", "sources": ["A", "B"], "right": ["R1", "R2", "R3"]},
+        tool_ctx,
+    )
+
+    assert out.ok, out.error
+    # Only the limit that names this tool, and only the fields the model needs.
+    assert out.result["panel_limits"] == [{"id": "no_aasi_proxy", "summary": "no proxy"}]
+
+
+async def test_a_limit_naming_no_tool_applies_to_every_formal_tool(
+    tool_ctx: ToolContext, monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    """So a limit added later cannot be lost by forgetting to list a tool."""
+    monkeypatch.setenv("STRATA_F2_DIR", str(tmp_path / "f2"))
+    monkeypatch.setattr(
+        "strata.api.science.reference_limits",
+        lambda: [{"id": "everywhere", "summary": "applies to all"}],
+    )
+
+    async def run_job(kind: str, payload: dict[str, Any]) -> dict[str, Any]:
+        return {"kind": "formal", "f4": []}
+
+    tool_ctx.run_job = run_job
+    out = await execute_tool("run_f4", {"quadruples": [["A", "B", "C", "D"]]}, tool_ctx)
+
+    assert out.ok, out.error
+    assert [lim["id"] for lim in out.result["panel_limits"]] == ["everywhere"]
+
+
+async def test_a_failure_to_read_the_limits_does_not_fail_the_result(
+    tool_ctx: ToolContext, monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    """A computed statistic is not thrown away because its caveat is unreadable."""
+    monkeypatch.setenv("STRATA_F2_DIR", str(tmp_path / "f2"))
+
+    def boom() -> list[dict[str, Any]]:
+        raise RuntimeError("derived directory is unreadable")
+
+    monkeypatch.setattr("strata.api.science.reference_limits", boom)
+
+    async def run_job(kind: str, payload: dict[str, Any]) -> dict[str, Any]:
+        return {"kind": "formal", "target": "T", "p": 0.4}
+
+    tool_ctx.run_job = run_job
+    out = await execute_tool(
+        "run_qpadm",
+        {"target": "T", "sources": ["A", "B"], "right": ["R1", "R2", "R3"]},
+        tool_ctx,
+    )
+
+    assert out.ok, out.error
+    assert "panel_limits" not in out.result
+
+
+async def test_describe_reference_panel_serves_the_curated_outgroup_set(
+    tool_ctx: ToolContext,
+) -> None:
+    """The model should start a right set from the panel, not invent one."""
+    out = await execute_tool("describe_reference_panel", {}, tool_ctx)
+
+    assert out.ok, out.error
+    assert out.result["right_set"] == ["SYNTH_outgroup"]
+    assert "right_set as the starting point" in out.result["guidance"]
+
+
+async def test_describe_reference_panel_tells_the_model_to_state_a_limit(
+    tool_ctx: ToolContext, fake_reference
+) -> None:
+    fake_reference.panel_record = {
+        "right_set": ["SYNTH_outgroup"],
+        "limits": [{"id": "no_aasi_proxy", "summary": "no Andamanese-related population"}],
+    }
+
+    out = await execute_tool("describe_reference_panel", {}, tool_ctx)
+
+    assert out.ok, out.error
+    assert [lim["id"] for lim in out.result["limits"]] == ["no_aasi_proxy"]
+    assert "say so in the answer" in out.result["guidance"]
+
+
+async def test_an_undescribed_panel_is_reported_as_unavailable(
+    tool_ctx: ToolContext, fake_reference
+) -> None:
+    """An empty panel would read as a panel with no limits, which is worse."""
+    fake_reference.panel_record = {}
+
+    out = await execute_tool("describe_reference_panel", {}, tool_ctx)
+
+    assert not out.ok
+    assert "supply a right set explicitly" in out.error
