@@ -277,7 +277,34 @@ async def search_populations(args: dict[str, Any], ctx: ToolContext) -> dict[str
         args.get("period"),
         int(args.get("limit", 20)),
     )
-    return {"count": len(rows), "populations": _jsonable(rows)}
+    out: dict[str, Any] = {"count": len(rows), "populations": _jsonable(rows)}
+    # Formal tools read the f2 cache, which carries fewer populations than the
+    # coordinate library; say which ones, so a qpAdm model is built from
+    # populations it can run on rather than discovered to be missing.
+    in_f2 = _f2_population_names()
+    if in_f2 is not None:
+        for row in out["populations"]:
+            if isinstance(row, dict) and row.get("group_id"):
+                row["in_f2_cache"] = row["group_id"] in in_f2
+    if not rows and (args.get("region") or args.get("period")):
+        # Region and period are exact-match filters over this library's own
+        # vocabulary, which a model cannot guess; hand it the vocabulary.
+        facets = getattr(ref, "facets", None)
+        if callable(facets):
+            out["accepted_filters"] = await _call(facets)
+            out["hint"] = (
+                "region and period must match one of accepted_filters exactly; "
+                "retry with one of them, or with the query alone"
+            )
+    return out
+
+
+def _f2_population_names() -> frozenset[str] | None:
+    try:
+        from strata.qpadm import default_f2_dir, f2_populations
+    except Exception:  # science stack absent: nothing to annotate
+        return None
+    return f2_populations(default_f2_dir())
 
 
 async def get_population(args: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
@@ -309,8 +336,16 @@ async def describe_reference_panel(args: dict[str, Any], ctx: ToolContext) -> di
             "(it predates panel reporting); supply a right set explicitly"
         )
     limits = list(panel.get("limits") or [])
+    right_set = list(panel.get("right_set") or [])
+    # The panel records the outgroup set as it resolved in the release; the
+    # f2 cache was built from a subset. Offer only what a formal tool can use,
+    # and name the rest so the model does not go looking for them.
+    in_f2 = _f2_population_names()
+    not_in_f2 = [p for p in right_set if in_f2 is not None and p not in in_f2]
+    out_right = [p for p in right_set if p not in not_in_f2]
     return {
-        "right_set": list(panel.get("right_set") or []),
+        "right_set": out_right,
+        **({"right_set_not_in_f2_cache": not_in_f2} if not_in_f2 else {}),
         "limits": limits,
         "matched_groups": panel.get("matched_groups"),
         "roles": panel.get("roles") or {},
@@ -509,6 +544,20 @@ async def _run_formal(kind: str, payload: dict[str, Any], ctx: ToolContext) -> d
         spec = spec_cls.model_validate(full)
     except Exception as exc:  # pydantic ValidationError and model validators
         raise ToolInputError(f"invalid {kind} specification: {exc}") from exc
+    # Checked here as well as in the runner: on the queue path the runner's
+    # error comes back from the worker as a failed job, which the model cannot
+    # tell from a broken backend.
+    check = getattr(mod, "check_f2_coverage", None)
+    if callable(check):
+        try:
+            check(spec)
+        except Exception as exc:
+            missing = getattr(exc, "missing", None)
+            if missing is None:
+                raise
+            raise ToolInputError(
+                f"{exc} Use search_populations and pick populations with in_f2_cache: true."
+            ) from exc
     try:
         if ctx.run_job is not None:
             # Long-running: hand the validated spec to the worker.
@@ -877,7 +926,11 @@ TOOLS: list[Tool] = [
         "search_populations",
         "Search the reference library by free text, region and/or period. Returns each "
         "population's id and group_id with basic metadata (region, period, dates, sample "
-        "count, publication). Use id for coordinate tools and group_id for qpAdm/f4 tools.",
+        "count, publication). Use id for coordinate tools and group_id for qpAdm/f4 tools. "
+        "`in_f2_cache` says whether a population can be used in qpAdm/f4 at all; formal "
+        "tools reject any population without it. Region and period are exact filters over "
+        "the library's own labels; leave them out unless you know a label, and a search that "
+        "finds nothing returns the accepted labels.",
         _obj(
             {
                 "query": {"type": "string"},

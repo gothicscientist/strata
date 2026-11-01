@@ -3,7 +3,15 @@
 // Inline scripts emitted by Next.js are admitted by SHA-256 hash, not 'unsafe-inline'.
 import { createHash } from "node:crypto";
 import fs from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
+
+// `next build` reads NEXT_PUBLIC_* from .env.local and friends; this script runs as plain node
+// afterwards and would not, so a build configured only through .env.local shipped a CSP whose
+// connect-src omitted the API and every API call was blocked. Load the same files the same way
+// Next does (@next/env, resolved through next itself since it is not a direct dependency).
+const requireFromNext = createRequire(createRequire(import.meta.url).resolve("next/package.json"));
+requireFromNext("@next/env").loadEnvConfig(process.cwd(), false);
 
 const OUT = path.resolve(process.argv[2] ?? "out");
 

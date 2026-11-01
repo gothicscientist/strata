@@ -143,21 +143,47 @@ export function parseInline(s: string): Inline[] {
 
 export type Block = { t: "p"; v: string } | { t: "ul"; items: string[] } | { t: "ol"; items: string[] } | { t: "h"; v: string };
 
-/** A deliberately small Markdown subset: paragraphs, headings, bullet and numbered lists. */
+/** A deliberately small Markdown subset: paragraphs, headings, bullet and numbered lists.
+ *
+ * Lists are recognised line by line, not only as whole blank-line-separated chunks: models
+ * routinely write a label line and its bullets with single newlines ("Summary\n- a\n- b"), and
+ * a chunk-level test turned the whole answer into run-on paragraphs. A short unpunctuated line
+ * directly above a list is taken as its heading. Indented bullets are flattened into the list.
+ */
 export function parseBlocks(text: string): Block[] {
   const blocks: Block[] = [];
+  const UL = /^\s*[-*•]\s+/;
+  const OL = /^\s*\d+[.)]\s+/;
   for (const chunk of text.split(/\n{2,}/)) {
     const lines = chunk.split("\n").filter((l) => l.trim() !== "");
-    if (!lines.length) continue;
-    if (lines.every((l) => /^\s*[-*]\s+/.test(l))) {
-      blocks.push({ t: "ul", items: lines.map((l) => l.replace(/^\s*[-*]\s+/, "")) });
-    } else if (lines.every((l) => /^\s*\d+[.)]\s+/.test(l))) {
-      blocks.push({ t: "ol", items: lines.map((l) => l.replace(/^\s*\d+[.)]\s+/, "")) });
-    } else if (lines.length === 1 && /^#{1,4}\s+/.test(lines[0]!)) {
+    if (lines.length === 1 && /^#{1,4}\s+/.test(lines[0]!)) {
       blocks.push({ t: "h", v: lines[0]!.replace(/^#{1,4}\s+/, "") });
-    } else {
-      blocks.push({ t: "p", v: lines.join(" ") });
+      continue;
     }
+    type Run = { t: "p" | "ul" | "ol"; lines: string[] };
+    const runs: Run[] = [];
+    for (const line of lines) {
+      const t = UL.test(line) ? "ul" : OL.test(line) ? "ol" : "p";
+      const last = runs[runs.length - 1];
+      if (last && last.t === t) last.lines.push(line);
+      else runs.push({ t, lines: [line] });
+    }
+    runs.forEach((r, i) => {
+      if (r.t === "ul") blocks.push({ t: "ul", items: r.lines.map((l) => l.replace(UL, "")) });
+      else if (r.t === "ol") blocks.push({ t: "ol", items: r.lines.map((l) => l.replace(OL, "")) });
+      else {
+        // A short unpunctuated first line with more below it ("Short answer\nWith this panel…")
+        // is a label, not the start of a sentence.
+        const first = r.lines[0]!.trim().replace(/^#{1,4}\s+/, "");
+        // Hard-wrapped prose ("A\nB") is not a label: the line after a label runs on well past it.
+        const next = r.lines[1]?.trim();
+        const more = next !== undefined ? next.length > 2 * first.length : runs[i + 1] !== undefined;
+        const label = more && first.length <= 60 && !/[.,;?!]$/.test(first);
+        if (label) blocks.push({ t: "h", v: first.replace(/:$/, "") });
+        const rest = label ? r.lines.slice(1) : r.lines;
+        if (rest.length) blocks.push({ t: "p", v: rest.join(" ") });
+      }
+    });
   }
   return blocks;
 }

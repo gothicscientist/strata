@@ -651,9 +651,11 @@ async def test_a_failure_to_read_the_limits_does_not_fail_the_result(
 
 
 async def test_describe_reference_panel_serves_the_curated_outgroup_set(
-    tool_ctx: ToolContext,
+    tool_ctx: ToolContext, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """The model should start a right set from the panel, not invent one."""
+    # Independent of whatever f2 cache this machine happens to have.
+    monkeypatch.setattr("strata.agent.tools._f2_population_names", lambda: None)
     out = await execute_tool("describe_reference_panel", {}, tool_ctx)
 
     assert out.ok, out.error
@@ -686,3 +688,91 @@ async def test_an_undescribed_panel_is_reported_as_unavailable(
 
     assert not out.ok
     assert "supply a right set explicitly" in out.error
+
+
+# ---- the f2 cache carries fewer populations than the library ---------------------------------
+
+
+def _fake_f2_cache(root, pops: list[str]):
+    root.mkdir()
+    (root / "block_lengths_f2.rds").write_bytes(b"")
+    for p in pops:
+        (root / p).mkdir()
+    return root
+
+
+async def test_formal_tool_names_populations_missing_from_the_f2_cache(
+    tool_ctx: ToolContext, monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    """Without the check, ADMIXTOOLS fails on a missing .rds file and the model
+    reads it as a broken backend; it should read as a population to replace."""
+    cache = _fake_f2_cache(tmp_path / "f2", ["Modern_Punjabi", "Han.DG", "Mbuti.DG", "Onge.SG"])
+    monkeypatch.setenv("STRATA_F2_DIR", str(cache))
+
+    async def run_job(kind: str, payload: dict[str, Any]) -> dict[str, Any]:
+        raise AssertionError("must not reach the job runner")
+
+    tool_ctx.run_job = run_job
+    out = await execute_tool(
+        "run_qpadm",
+        {
+            "target": "Modern_Punjabi",
+            "sources": ["Onge.SG", "Russia_Steppe_MLBA"],
+            "right": ["Mbuti.DG", "Han.DG", "Iran_GanjDareh_N"],
+        },
+        tool_ctx,
+    )
+    assert not out.ok
+    assert "not in the reference f2 cache (4 populations)" in out.error
+    assert "Russia_Steppe_MLBA, Iran_GanjDareh_N" in out.error
+    assert "in_f2_cache" in out.error
+
+
+async def test_search_marks_which_populations_formal_tools_can_use(
+    tool_ctx: ToolContext, fake_reference, monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    cache = _fake_f2_cache(tmp_path / "f2", ["Han"])
+    monkeypatch.setenv("STRATA_F2_DIR", str(cache))
+    monkeypatch.setattr(
+        fake_reference,
+        "search",
+        lambda *a: [{"id": "han", "group_id": "Han"}, {"id": "tiny", "group_id": "Tiny"}],
+    )
+    out = await execute_tool("search_populations", {"query": "a"}, tool_ctx)
+    assert out.ok, out.error
+    flags = {p["group_id"]: p["in_f2_cache"] for p in out.result["populations"]}
+    assert flags == {"Han": True, "Tiny": False}
+
+
+async def test_an_empty_filtered_search_returns_the_accepted_labels(
+    tool_ctx: ToolContext,
+) -> None:
+    """A model guesses "Western Europe"; the library says "Global". Tell it."""
+    out = await execute_tool(
+        "search_populations", {"query": "Han", "region": "Eastern Asia"}, tool_ctx
+    )
+    assert out.ok, out.error
+    assert out.result["count"] == 0
+    assert "East Asia" in out.result["accepted_filters"]["region"]
+    assert "Present" in out.result["accepted_filters"]["period"]
+    assert "accepted_filters" in out.result["hint"]
+
+
+async def test_a_successful_search_carries_no_filter_hint(tool_ctx: ToolContext) -> None:
+    out = await execute_tool("search_populations", {"query": "Han"}, tool_ctx)
+    assert out.ok and out.result["count"] >= 1
+    assert "accepted_filters" not in out.result
+
+
+async def test_describe_reference_panel_offers_only_outgroups_the_cache_carries(
+    tool_ctx: ToolContext, fake_reference, monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    cache = _fake_f2_cache(tmp_path / "f2", ["Mbuti", "Han"])
+    monkeypatch.setenv("STRATA_F2_DIR", str(cache))
+    fake_reference.panel_record = {"right_set": ["Han", "Mbuti", "Spain_Magdalenian"]}
+
+    out = await execute_tool("describe_reference_panel", {}, tool_ctx)
+
+    assert out.ok, out.error
+    assert out.result["right_set"] == ["Han", "Mbuti"]
+    assert out.result["right_set_not_in_f2_cache"] == ["Spain_Magdalenian"]
