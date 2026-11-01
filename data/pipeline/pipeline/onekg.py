@@ -40,7 +40,9 @@ making a long run resumable.
 from __future__ import annotations
 
 import gzip
+import http.client
 import logging
+import time
 import urllib.error
 import urllib.request
 from collections.abc import Iterable, Iterator
@@ -423,11 +425,20 @@ def fetch_chromosome(
     samples: dict[str, str],
     cache_dir: Path | None = None,
     force: bool = False,
+    attempts: int = 4,
 ) -> ChromExtract:
     """Extract one chromosome, reusing a cached extract when there is one.
 
     The cache is what makes a 22-chromosome run resumable: each chromosome is
     hours of streaming, and a run that dies on chr14 must not start over.
+
+    A chromosome is also retried in place. Each one is a single ~1 GB gzip
+    stream read to the end, so a reset at 90% loses the whole chromosome, and
+    over 22 of them a transport that resets occasionally will reset at least
+    once. There is no resuming mid-stream: the retry restarts the chromosome,
+    which is correct precisely because a partial extract is discarded rather
+    than cached. A refusal from the server (`OneKgError`) is not retried, since
+    a wrong URL or a withdrawn release does not improve with waiting.
     """
     cache = None if cache_dir is None else cache_dir / f"chr{chrom}.npz"
     if cache is not None and cache.is_file() and not force:
@@ -439,9 +450,29 @@ def fetch_chromosome(
                 geno=z["geno"],
                 stats={"cached": 1, "kept": int(z["snp_idx"].shape[0])},
             )
-    extract = extract_chromosome(
-        _open_stream(vcf_url(chrom)), panel=panel, chrom=chrom, samples=samples
-    )
+    for attempt in range(1, max(1, attempts) + 1):
+        try:
+            extract = extract_chromosome(
+                _open_stream(vcf_url(chrom)), panel=panel, chrom=chrom, samples=samples
+            )
+            break
+        except (OSError, http.client.HTTPException) as exc:
+            # ConnectionResetError, IncompleteRead, a read timeout: the transport
+            # failed part-way, not the data. OneKgError is deliberately not caught.
+            if attempt == max(1, attempts):
+                raise OneKgError(
+                    f"chr{chrom}: the stream failed {attempt} times; last error: {exc}"
+                ) from exc
+            delay = 5 * 2 ** (attempt - 1)
+            log.warning(
+                "chr%s: stream failed (%s); retrying in %ds (attempt %d of %d)",
+                chrom,
+                exc,
+                delay,
+                attempt + 1,
+                max(1, attempts),
+            )
+            time.sleep(delay)
     log.info(
         "chr%s: kept %d of %d panel positions for %d samples",
         chrom,

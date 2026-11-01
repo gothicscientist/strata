@@ -240,6 +240,75 @@ def test_a_real_gzip_stream_reads(tmp_path) -> None:
     assert out.geno.tolist() == [[2]]
 
 
+def _one_site_stream() -> list[bytes]:
+    return vcf("22\t100\trs1\tA\tG\t.\tPASS\t.\tGT\t1|1\n", ["HG01A"])
+
+
+def test_a_reset_stream_is_retried_and_the_chromosome_still_lands(monkeypatch) -> None:
+    """A transport failure costs the chromosome in flight, not the run."""
+    import pipeline.onekg as mod
+
+    calls: list[int] = []
+
+    def flaky(url, **kwargs):
+        calls.append(1)
+        if len(calls) < 3:
+            raise ConnectionResetError(104, "Connection reset by peer")
+        return iter(_one_site_stream())
+
+    monkeypatch.setattr(mod, "_open_stream", flaky)
+    monkeypatch.setattr(mod.time, "sleep", lambda s: None)
+    out = mod.fetch_chromosome(
+        "22",
+        panel=panel_of([("rs1", "22", 100, "A", "G")]),
+        samples={"HG01A": "GIH"},
+    )
+
+    assert len(calls) == 3
+    # GT 1|1 at a site whose panel ref is A and alt is G: no copies of the
+    # panel's first allele, which is what the dosage counts.
+    assert out.geno.tolist() == [[0]]
+
+
+def test_a_stream_that_keeps_failing_is_an_error_not_a_short_chromosome(monkeypatch) -> None:
+    """The alternative — returning what arrived — is a silently truncated panel."""
+    import pipeline.onekg as mod
+
+    def always_resets(url, **kwargs):
+        raise ConnectionResetError(104, "Connection reset by peer")
+
+    monkeypatch.setattr(mod, "_open_stream", always_resets)
+    monkeypatch.setattr(mod.time, "sleep", lambda s: None)
+    with pytest.raises(OneKgError, match="failed 2 times"):
+        mod.fetch_chromosome(
+            "22",
+            panel=panel_of([("rs1", "22", 100, "A", "G")]),
+            samples={"HG01A": "GIH"},
+            attempts=2,
+        )
+
+
+def test_a_refusal_from_the_server_is_not_retried(monkeypatch) -> None:
+    """A wrong URL or a withdrawn release does not improve with waiting."""
+    import pipeline.onekg as mod
+
+    calls: list[int] = []
+
+    def refuses(url, **kwargs):
+        calls.append(1)
+        raise OneKgError("returned HTTP 404")
+
+    monkeypatch.setattr(mod, "_open_stream", refuses)
+    monkeypatch.setattr(mod.time, "sleep", lambda s: None)
+    with pytest.raises(OneKgError, match="404"):
+        mod.fetch_chromosome(
+            "22",
+            panel=panel_of([("rs1", "22", 100, "A", "G")]),
+            samples={"HG01A": "GIH"},
+        )
+    assert calls == [1]
+
+
 # ------------------------------------------------------------------ assembly
 
 
