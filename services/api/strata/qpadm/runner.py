@@ -86,6 +86,71 @@ class QpAdmProtocolError(QpAdmError):
     """R produced output that does not match the contract."""
 
 
+class QpAdmMissingPopulations(QpAdmRunError):  # noqa: N818 - names what is missing
+    """The request names populations the f2 cache does not carry.
+
+    Raised before R starts. Without it ADMIXTOOLS fails on the first missing
+    pair with "File .../A/B_ap.rds not found! You may have to recompute the
+    f-statistics", which names a file rather than the population and reads as
+    a broken cache rather than as a request to change.
+    """
+
+    def __init__(self, missing: list[str], n_available: int) -> None:
+        self.missing = missing
+        self.n_available = n_available
+        super().__init__(
+            f"not in the reference f2 cache ({n_available} populations): "
+            f"{', '.join(missing)}. Formal tests can only use populations the cache "
+            "carries; choose another proxy for each of these.",
+            kind="missing_populations",
+        )
+
+
+# Spec fields that name populations, across every formal spec.
+_POP_FIELDS = ("target", "left", "right", "leftright", "rightfix", "pop1", "pop2", "pop3", "pop4")
+
+
+def f2_populations(f2_dir: str | Path | None) -> frozenset[str] | None:
+    """Population names an f2 cache carries, or None when it cannot be read.
+
+    ADMIXTOOLS 2 writes one directory per population under the cache root;
+    files (block lengths, metadata) and dot-entries are not populations. A
+    directory without the block-length file it also writes is not taken for
+    a cache, so a wrong path is left for ADMIXTOOLS to report.
+    """
+    if f2_dir is None:
+        return None
+    root = Path(f2_dir)
+    if not (root / "block_lengths_f2.rds").is_file():
+        return None
+    return frozenset(e.name for e in root.iterdir() if e.is_dir() and not e.name.startswith("."))
+
+
+def spec_populations(spec: BaseModel) -> list[str]:
+    """Every population a formal spec names, in first-seen order."""
+    seen: dict[str, None] = {}
+    for field in _POP_FIELDS:
+        value = getattr(spec, field, None)
+        if isinstance(value, str):
+            seen.setdefault(value, None)
+        elif isinstance(value, list | tuple):
+            for v in value:
+                seen.setdefault(str(v), None)
+    return list(seen)
+
+
+def check_f2_coverage(spec: BaseModel) -> None:
+    """Raise :class:`QpAdmMissingPopulations` if `spec` names a population its
+    f2 cache lacks. A spec that reads genotypes, or a cache that cannot be
+    listed, is left for ADMIXTOOLS to judge."""
+    have = f2_populations(getattr(spec, "f2_dir", None))
+    if not have:
+        return
+    missing = [p for p in spec_populations(spec) if p not in have]
+    if missing:
+        raise QpAdmMissingPopulations(missing, len(have))
+
+
 def r_script_dir() -> Path:
     """Directory holding the ADMIXTOOLS wrapper scripts.
 
@@ -359,6 +424,7 @@ def run_qpadm(
         QpAdmRunError: ADMIXTOOLS rejected the model or the data.
         QpAdmTimeout: The fit exceeded its budget.
     """
+    check_f2_coverage(spec)
     result = _invoke(
         "qpadm.R", _spec_payload(spec), QpAdmResult, timeout=timeout, threads=spec.threads
     )
@@ -372,6 +438,7 @@ def run_qpadm_rotate(
     assess: bool = True,
 ) -> QpAdmRotateResult:
     """Fit every left/right split of a candidate pool and rank the models."""
+    check_f2_coverage(spec)
     result = _invoke(
         "qpadm_rotate.R",
         _spec_payload(spec),
@@ -387,6 +454,7 @@ def run_qpadm_rotate(
 
 def run_qpwave(spec: QpWaveSpec, *, timeout: float | None = None) -> QpWaveResult:
     """Estimate a lower bound on the number of admixture waves between two sets."""
+    check_f2_coverage(spec)
     return _invoke(
         "qpwave.R", _spec_payload(spec), QpWaveResult, timeout=timeout, threads=spec.threads
     )
@@ -394,6 +462,7 @@ def run_qpwave(spec: QpWaveSpec, *, timeout: float | None = None) -> QpWaveResul
 
 def run_f4(spec: F4Spec, *, timeout: float | None = None) -> F4Result:
     """Compute f4- (or D-) statistics over the given population quadruples."""
+    check_f2_coverage(spec)
     return _invoke("f4.R", _spec_payload(spec), F4Result, timeout=timeout, threads=spec.threads)
 
 

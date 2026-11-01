@@ -245,6 +245,12 @@ class FakeReference:
     def get(self, population_id: str) -> dict[str, Any] | None:
         return next((p for p in self._pops if p["id"] == population_id), None)
 
+    def facets(self) -> dict[str, list[str]]:
+        return {
+            "region": sorted({p["region"] for p in self._pops}),
+            "period": sorted({p["period"] for p in self._pops}),
+        }
+
     def coordinates(self, space: str) -> tuple[list[str], np.ndarray]:
         if space not in ("g25", "strata-pca-v1"):
             raise KeyError(f"unknown space {space}")

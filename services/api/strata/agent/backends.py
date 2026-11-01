@@ -72,6 +72,11 @@ class LibraryReference:
         rows = self._require().search(query, region=region, period=period, limit=limit)
         return [_summary(_dump(r)) for r in rows]
 
+    def facets(self) -> dict[str, list[str]]:
+        """The region and period values the filters accept."""
+        f = self._require().facets()
+        return {"region": list(f.get("region", [])), "period": list(f.get("period", []))}
+
     def get(self, population_id: str) -> dict[str, Any] | None:
         try:
             detail = self._require().get_population(population_id)

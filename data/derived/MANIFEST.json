@@ -346,6 +346,38 @@
       "Yemenite_Jew",
       "Yoruba.DG"
     ],
+    "right_set": [
+      "Ami",
+      "Belgium_UP",
+      "Czechia_Gravettian",
+      "Han",
+      "Iran_GanjDareh_N",
+      "Luxembourg_Loschbour_Mesolithic",
+      "Mbuti",
+      "Mixe",
+      "Papuan",
+      "Russia_AfontovaGora_UP",
+      "Russia_Kostenki_UP",
+      "Russia_UstIshim_IUP",
+      "Spain_Magdalenian"
+    ],
+    "limits": [
+      {
+        "id": "no_aasi_proxy",
+        "severity": "under_identified",
+        "summary": "This release carries no Andamanese-related population, the conventional proxy for the deep indigenous South Asian ancestry component. Formal models that apportion that component are under-identified: qpAdm will return weights, but they are not determined by the data, and a rejected fit for a South Asian target may reflect the missing proxy rather than the model.",
+        "labels": [
+          "Onge",
+          "Onge.DG",
+          "Jarawa*",
+          "Great_Andamanese*"
+        ],
+        "affects": [
+          "qpadm",
+          "qpadm_rotate"
+        ]
+      }
+    ],
     "roles": {
       "context": 95,
       "right": 8,
@@ -400,7 +432,8 @@
   },
   "licensing": "AADR data is redistributed only as derived metadata and coordinates. See docs/DATA_PROVENANCE.md for terms, citation requirements and the individuals excluded from public release.",
   "notes": [
-    "137 panel labels matched nothing in AADR v66.p1: Altai_Neanderthal.DG, Ami.DG, Anatolia_N, Asur, Atayal.DG, Balochi.DG, Bengali*, Bhil, Biaka.DG, Birhor, Brahui.DG, Burusho.DG, Chamar, Chamar*, Chimp.REF, Dai.DG, Denisova.DG, Dharkar, Dinka.DG, Dusadh ..."
+    "137 panel labels matched nothing in AADR v66.p1: Altai_Neanderthal.DG, Ami.DG, Anatolia_N, Asur, Atayal.DG, Balochi.DG, Bengali*, Bhil, Biaka.DG, Birhor, Brahui.DG, Burusho.DG, Chamar, Chamar*, Chimp.REF, Dai.DG, Denisova.DG, Dharkar, Dinka.DG, Dusadh ...",
+    "panel.right_set and panel.limits were added on 2026-11-01 by resolving the curated panel against the group ids in populations.parquet (193 matched, identical to the original curate run); they were missing because this manifest was written before curate recorded them."
   ],
   "artefacts": {
     "coordinates/strata-pca-v1.parquet": {
