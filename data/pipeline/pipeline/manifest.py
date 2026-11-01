@@ -41,7 +41,8 @@ def utc_now() -> str:
     return dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _rows_in(path: Path) -> int | None:
+def rows_in(path: Path) -> int | None:
+    """Row count of a parquet table, or None when it cannot be read."""
     if path.suffix != ".parquet":
         return None
     try:
@@ -59,7 +60,7 @@ def describe_artefact(path: Path, root: Path) -> dict[str, Any]:
         "bytes": path.stat().st_size,
         "committed": rel in COMMITTABLE,
     }
-    rows = _rows_in(path)
+    rows = rows_in(path)
     if rows is not None:
         entry["rows"] = rows
     return entry
@@ -142,6 +143,14 @@ def write_manifest(manifest: dict[str, Any], root: Path) -> Path:
     path = root / MANIFEST_NAME
     path.write_text(json.dumps(manifest, indent=2, sort_keys=False) + "\n", encoding="utf-8")
     return path
+
+
+def read_manifest(root: Path) -> dict[str, Any] | None:
+    """The manifest on disk, or None when there is none to read."""
+    path = root / MANIFEST_NAME
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def verify_manifest(root: Path) -> dict[str, list[str]]:

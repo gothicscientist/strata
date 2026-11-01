@@ -150,7 +150,7 @@ once any source supplies a proxy — including the 1000 Genomes work in item 11.
 
 ---
 
-## 5. A fresh clone could not run a formal model — *fixed here*
+## 5. A fresh clone could not run a formal model — *resolved 2026-11-01*
 
 The f2 block cache is the only reference artefact that is neither committed nor
 cheap: 147 MB, gitignored, and about 45 minutes plus the full 11 GB AADR
@@ -174,12 +174,14 @@ cache as a release asset; nothing consumed it.
 
 `REPO=` and `TAG=` point it at a fork or an internal mirror.
 
-**One thing is still needed from you:** no release asset exists yet. Run the
-**Build reference data** workflow once from the Actions tab with
-`stages=full`, `publish_f2_release=true` and `open_pull_request=false`. It
-takes a few hours of runner time and creates the `reference-strata-ref-v1`
-release that `make fetch-f2` reads. I can trigger it if you would rather I did
-— say the word, since it is your Actions budget it spends.
+**Done.** Bharat asked for the build to be run on 2026-11-01; the
+[`reference-strata-ref-v1`](https://github.com/gothicscientist/strata/releases/tag/reference-strata-ref-v1)
+release now carries `f2-strata-ref-v1.tar.gz` and its `.sha256`. Verified from
+this container against the published asset: 9 seconds and 136 populations,
+against ~45 minutes plus an 11 GB download and an ADMIXTOOLS 2 install to
+rebuild. Re-run the workflow after any change that alters the SNP set or the
+population list, because the committed `MANIFEST.json` is what `fetch-f2`
+checks the cache against and a mismatch is refused.
 
 ---
 
@@ -315,3 +317,25 @@ gained an `include_1000_genomes` input for the full run.
 
 It does not supply an Andamanese-related outgroup, so `no_aasi_proxy` still
 applies; the gain is on the exploratory side.
+
+---
+
+## 12. The build workflow cannot open its own pull request — *needs you, one checkbox*
+
+The 2026-11-01 run did everything asked of it — downloaded v66.p1, curated,
+fitted the PCA space, built the f2 cache and published the release — and then
+failed on its last step:
+
+```
+GitHub Actions is not permitted to create or approve pull requests.
+```
+
+That is a repository setting, not a bug in the workflow. The derived files were
+not lost: they are pushed to the branch
+`reference/strata-ref-v1-v66.p1`, so a PR can be opened from it by hand.
+
+**Fix:** in **Settings → Actions → General → Workflow permissions**, tick
+*Allow GitHub Actions to create and approve pull requests*. One checkbox, and
+every later run opens its own PR instead of stopping one step short. Until it is
+ticked, run the workflow with `open_pull_request=false` and open the PR from the
+pushed branch yourself.

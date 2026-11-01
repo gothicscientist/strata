@@ -151,9 +151,12 @@ It needs `pca` to have run, because it projects into the fitted space rather
 than changing it: a present-day cohort this size would otherwise dominate the
 axes and move every existing coordinate. Those rows are marked `projected`.
 
-Run `make manifest` afterwards — the stage appends to `populations.parquet`,
-`samples.parquet` and the coordinates table, and the manifest hashes must
-follow. `data/work/onekg.json` records the per-chromosome counts (sites seen,
+Run `make manifest-refresh` afterwards — the stage appends to
+`populations.parquet`, `samples.parquet` and the coordinates table, and the
+manifest hashes must follow. Use the refresh form, not `make manifest`, unless
+`download` and `curate` ran in the same working tree: a plain `manifest` rebuilds
+the record from `data/work/*.json`, and without those it would write a manifest
+with no source checksums and no counts. It refuses to do that, and says so. `data/work/onekg.json` records the per-chromosome counts (sites seen,
 sites at a panel position, dropped as multi-allelic or on allele mismatch,
 strand-flipped) so a run can be judged rather than trusted. See
 `docs/DATA_PROVENANCE.md` §3b for what is and is not redistributed.

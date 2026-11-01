@@ -528,10 +528,14 @@ def cmd_onekg(args: argparse.Namespace) -> int:
     summary["complete"] = sorted(chromosomes) == sorted(onekg.AUTOSOMES)
 
     if args.merge:
-        model = _load_pca_model(derived, args.reference_version)
+        # The PCA space id, not the reference version: `strata-ref-v1` names a
+        # release of the whole library, `strata-pca-v1` names the fitted space
+        # inside it, and the two are not interchangeable.
+        space = PCA_SPACE.space_id
+        model = _load_pca_model(derived, space)
         if model is None:
             print(
-                f"error: no PCA model for {args.reference_version}; run `pca` first.",
+                f"error: no PCA model for {space}; run `pca` first.",
                 file=sys.stderr,
             )
             return 2
@@ -548,20 +552,21 @@ def cmd_onekg(args: argparse.Namespace) -> int:
             sample_ids=sample_ids,
             coords=coords,
             n_snps_used=used,
-            space=args.reference_version,
+            space=space,
             n_called=int(snp_idx.shape[0]),
         )
         summary["merged"] = merged
+        summary["manifest"] = _record_onekg_source(derived, onekg, chromosomes)
         nan_rows = int(np.isnan(coords[:, 0]).sum())
         summary["projection"] = {
-            "space": args.reference_version,
+            "space": space,
             "n_projected": int(coords.shape[0]) - nan_rows,
             "n_without_coordinates": nan_rows,
             "median_snps_used": int(np.median(used)) if used.size else 0,
         }
         print(
             "note: the 1000 Genomes individuals are PROJECTED into "
-            f"{args.reference_version}, not part of its fit; projected coordinates are "
+            f"{space}, not part of its fit; projected coordinates are "
             "shrunk towards the origin and are marked `projected` in the coordinates table.",
             file=sys.stderr,
         )
@@ -577,6 +582,44 @@ def cmd_onekg(args: argparse.Namespace) -> int:
     (p.work / "onekg.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2))
     return 0
+
+
+def _record_onekg_source(derived: Path, onekg_mod: Any, chromosomes: list[str]) -> str:
+    """Name the second source in the manifest, beside the AADR files.
+
+    A reader of `populations.parquet` who sees `Gujarati_1000G` has to be able
+    to find out where it came from without reading the pipeline. The stage that
+    adds the rows records the source, so the two cannot drift apart; the entry
+    is replaced rather than appended on a rerun, so repeated runs do not stack
+    up near-duplicates.
+    """
+    man = manifest_mod.read_manifest(derived)
+    if man is None:
+        return "no manifest to update; run `manifest` after this stage"
+    name = f"1000 Genomes phase 3 ({onekg_mod.RELEASE}, {onekg_mod.BUILD})"
+    sources = [
+        s
+        for s in (man.get("sources") or [])
+        if not str(s.get("name", "")).startswith("1000 Genomes")
+    ]
+    sources.append(
+        {
+            "name": name,
+            "url": onekg_mod.PANEL_URL,
+            "note": (
+                "South Asian panels "
+                f"{', '.join(sorted(p.code for p in onekg_mod.SAS_POPULATIONS))}, "
+                f"{len(chromosomes)} autosomes, aligned to snp_panel.parquet. "
+                "Genotypes are not redistributed; see docs/DATA_PROVENANCE.md §3b."
+            ),
+        }
+    )
+    man["sources"] = sources
+    citations = dict(man.get("citations") or {})
+    citations["1000_genomes"] = [onekg_mod.CITATION]
+    man["citations"] = citations
+    manifest_mod.write_manifest(man, derived)
+    return f"recorded source {name!r} and its citation"
 
 
 def _load_pca_model(derived: Path, space: str) -> Any | None:
@@ -753,6 +796,37 @@ def cmd_fetch_f2(args: argparse.Namespace) -> int:
     return 0
 
 
+def _refresh_manifest(existing: dict[str, Any], derived: Path) -> int:
+    """Re-describe the derived files without re-deriving the record.
+
+    For the case where the derived data changed but its sources did not: a
+    stage that widened `populations.parquet` leaves every artefact digest in
+    the manifest stale, and a stale digest is worse than no digest, because
+    `verify` reports it as a changed file and a reader cannot tell tampering
+    from a rebuild. Counts are recomputed from the tables themselves rather
+    than read from a state file, so they describe what is on disk.
+    """
+    counts = dict(existing.get("counts") or {})
+    for key, name in (
+        ("populations", "populations.parquet"),
+        ("samples", "samples.parquet"),
+        ("publications", "publications.parquet"),
+    ):
+        rows = manifest_mod.rows_in(derived / name)
+        if rows is not None:
+            counts[key] = rows
+    man = dict(existing)
+    man["counts"] = counts
+    man["built_at"] = manifest_mod.utc_now()
+    path = manifest_mod.write_manifest(man, derived)
+    written = json.loads(path.read_text(encoding="utf-8"))
+    print(
+        f"refreshed {path}: {len(written['artefacts'])} artefact(s), "
+        f"counts {json.dumps(counts, sort_keys=True)}"
+    )
+    return 0
+
+
 def cmd_manifest(args: argparse.Namespace) -> int:
     p = paths(args.root)
     derived = p.derived
@@ -768,6 +842,34 @@ def cmd_manifest(args: argparse.Namespace) -> int:
     pca_state = _load("pca.json")
     f2_state = _load("f2.json")
     download_state = _load(f"../raw/aadr/{args.aadr_version}/download.json")
+
+    existing = manifest_mod.read_manifest(derived)
+    # getattr: `all` calls this with the namespace of the whole pipeline run.
+    if getattr(args, "refresh", False):
+        if existing is None:
+            print(
+                "error: --refresh updates an existing MANIFEST.json and there is none; "
+                "run `manifest` without it.",
+                file=sys.stderr,
+            )
+            return 2
+        return _refresh_manifest(existing, derived)
+    # A manifest whose state files are gone describes less than the one on disk:
+    # no source checksums, no counts, no exclusions. Writing it would quietly
+    # drop the provenance the manifest exists to carry, and `verify` would still
+    # pass, because verify re-hashes artefacts rather than judging the record. So
+    # refuse, and point at the mode that updates the digests without the loss.
+    thin = not curate_state and not download_state
+    if existing is not None and thin:
+        print(
+            "error: this run has no pipeline state in data/work, so the manifest it "
+            "would write carries no source checksums and no counts, losing what "
+            "data/derived/MANIFEST.json already records.\n"
+            "       Pass --refresh to update the artefact digests and counts and keep "
+            "the recorded provenance, or rerun `download` and `curate` first.",
+            file=sys.stderr,
+        )
+        return 2
 
     sources: list[dict[str, Any]] = []
     for key, info in (download_state or {}).items():
@@ -929,6 +1031,15 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(func=cmd_fetch_f2)
 
     s = sub.add_parser("manifest", help="hash artefacts and write MANIFEST.json")
+    s.add_argument(
+        "--refresh",
+        action="store_true",
+        help=(
+            "update the existing manifest's artefact digests and counts, keeping its "
+            "recorded sources and provenance; for when the derived data changed but "
+            "its sources did not"
+        ),
+    )
     s.set_defaults(func=cmd_manifest)
 
     s = sub.add_parser("verify", help="re-hash artefacts against MANIFEST.json")

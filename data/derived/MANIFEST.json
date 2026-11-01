@@ -2,7 +2,7 @@
   "version": "strata-ref-v1",
   "schema_version": "1",
   "pipeline_version": "0.1.0",
-  "built_at": "2026-10-31T21:52:46Z",
+  "built_at": "2026-11-01T08:38:05Z",
   "aadr_version": "v66.p1",
   "aadr_doi": "10.7910/DVN/FFIDCW",
   "sources": [
@@ -53,11 +53,16 @@
       "doi": "10.7910/DVN/FFIDCW",
       "url": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FFIDCW",
       "sha256": "4a8e15d0b8d5a8bd6c929ccab7ff83a17091dc91b5e0d8015d9896dd9a5f7f7a"
+    },
+    {
+      "name": "1000 Genomes phase 3 (20130502, GRCh37)",
+      "url": "https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel",
+      "note": "South Asian panels BEB, GIH, ITU, PJL, STU, 22 autosomes, aligned to snp_panel.parquet. Genotypes are not redistributed; see docs/DATA_PROVENANCE.md \u00a73b."
     }
   ],
   "counts": {
-    "populations": 188,
-    "samples": 3332,
+    "populations": 193,
+    "samples": 3821,
     "publications": 53
   },
   "qc_thresholds": {
@@ -388,7 +393,10 @@
       "Mallick, S., & Reich, D. (2026). The Allen Ancient DNA Resource (AADR): A curated compendium of ancient human genomes, v66.p1. Harvard Dataverse. https://doi.org/10.7910/DVN/FFIDCW",
       "Mallick, S., Micco, A., Mah, M., Ringbauer, H., Lazaridis, I., Olalde, I., Patterson, N., & Reich, D. (2024). The Allen Ancient DNA Resource (AADR): a curated compendium of ancient human genomes. Scientific Data, 11(1). https://doi.org/10.1038/s41597-024-03031-7"
     ],
-    "admixtools2": "Maier, R., Flegontov, P., Flegontova, O., Isildak, U., Changmai, P., & Reich, D. (2023). On the limits of fitting complex models of population history to f-statistics. eLife, 12, e85492. https://doi.org/10.7554/eLife.85492"
+    "admixtools2": "Maier, R., Flegontov, P., Flegontova, O., Isildak, U., Changmai, P., & Reich, D. (2023). On the limits of fitting complex models of population history to f-statistics. eLife, 12, e85492. https://doi.org/10.7554/eLife.85492",
+    "1000_genomes": [
+      "The 1000 Genomes Project Consortium (2015). A global reference for human genetic variation. Nature, 526(7571), 68-74. https://doi.org/10.1038/nature15393"
+    ]
   },
   "licensing": "AADR data is redistributed only as derived metadata and coordinates. See docs/DATA_PROVENANCE.md for terms, citation requirements and the individuals excluded from public release.",
   "notes": [
@@ -396,10 +404,10 @@
   ],
   "artefacts": {
     "coordinates/strata-pca-v1.parquet": {
-      "sha256": "f775faa85d20b13a6421b17099bc0c99467ed2f3a33e4e75e044440b80260d2e",
-      "bytes": 338330,
+      "sha256": "39b7eda4262bb9e6b726700e2eca4e0173ae3e41edbec3c6863b805908ce8f3c",
+      "bytes": 415760,
       "committed": false,
-      "rows": 3332
+      "rows": 3821
     },
     "pca/strata-pca-v1.npz": {
       "sha256": "ce51403885ce24d86799c9b390f278aaaedbc476ebff9d9d5a332ec08aac6af4",
@@ -407,10 +415,10 @@
       "committed": false
     },
     "populations.parquet": {
-      "sha256": "92270215a4d410ccedb1887d033999da84ec27ee5716306f0787bb1bc32ba05e",
-      "bytes": 17994,
+      "sha256": "462e9c01d07747ac97963ac80cbafced813e62761463db5cf4da8576b1d63872",
+      "bytes": 26419,
       "committed": true,
-      "rows": 188
+      "rows": 193
     },
     "publications.parquet": {
       "sha256": "1d02da85c67e8684f5c1943698a2fb1956bf31f4324255ec4b91025f398ffdca",
@@ -419,10 +427,10 @@
       "rows": 53
     },
     "samples.parquet": {
-      "sha256": "6fe6fb8ec8b7d9764802f4a6054ae82f543458897e37f3ae235f101f0c082d29",
-      "bytes": 72538,
+      "sha256": "bc6d653e642777f3af07e1722558213ee1994af5b9bc67ae141a6b7ccb780158",
+      "bytes": 108654,
       "committed": true,
-      "rows": 3332
+      "rows": 3821
     },
     "snp_panel.parquet": {
       "sha256": "0b5c76eba81e8f150c47219944be058e79dd924247fc675cd194fc90a0c826ab",
