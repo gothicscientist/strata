@@ -30,7 +30,7 @@
     "note": "Real f2-statistics bundled with ADMIXTOOLS 2. No genotype data is redistributed by this example."
   },
   "params": {
-    "f2_dir": "/tmp/strata-examples-z1einsod/f2",
+    "f2_dir": "/tmp/strata-examples-axi33klg/f2",
     "pop1": [
       "Chimp.REF"
     ],
@@ -66,9 +66,9 @@
       "r_version_string": "R version 4.5.3 (2026-03-11)",
       "platform": "x86_64-conda-linux-gnu",
       "contract": "1",
-      "timestamp_utc": "2026-10-31T20:47:08Z"
+      "timestamp_utc": "2026-11-01T08:20:26Z"
     },
-    "elapsed_seconds": 0.310113191604614,
+    "elapsed_seconds": 0.147482633590698,
     "options": {
       "comb": true,
       "f4mode": true,
@@ -121,18 +121,18 @@
     "engine": "ADMIXTOOLS 2",
     "admixtools_version": "2.0.10",
     "r_version": "R version 4.5.3 (2026-03-11)",
-    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
-    "python_version": "3.12.3",
+    "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "python_version": "3.12.16",
     "command": "run_f4(F4Spec(...))",
-    "generated_at": "2026-10-31T20:47:10Z",
+    "generated_at": "2026-11-01T08:20:27Z",
     "generator": "data/examples/generate_examples.py",
     "f2_source": "admixtools::example_f2_blocks",
     "f2_n_pops": 7,
     "f2_n_blocks": 708,
     "f2_n_snps": 780009,
     "f2_roundtrip_max_abs_diff": 0,
-    "params_sha256": "0ba90329c85a41a6f81414e3e47cc7aea47beae53a3bf98f1e516848a6a62253",
-    "result_sha256": "4a420ea51413b0558dfe25f31898090e35ca63f6ce727350800d934d98ac17ce",
+    "params_sha256": "2d279a0f1b2f561922ba9a9e2410b284e473a08dc4e8a5d625d53550743ee9b0",
+    "result_sha256": "f481cbe0d3407505806d7105846df3bba531efda2a86301caf2b3515587bff98",
     "citations": [
       "Maier, R., Flegontov, P., Flegontova, O., Isildak, U., Changmai, P., & Reich, D. (2023). On the limits of fitting complex models of population history to f-statistics. eLife, 12, e85492. https://doi.org/10.7554/eLife.85492"
     ]

@@ -20,16 +20,16 @@
       "level": "sample",
       "description": "PCA fitted on present-day West-Eurasian, South-Asian and Central-Asian individuals from the AADR Human Origins panel; ancient individuals are projected with least-squares projection on their observed SNPs only (equivalent to smartpca lsqproject: YES). Projected coordinates are shrunk towards the origin relative to fitted ones and must not be compared to them as if they were on the same scale.",
       "explained_variance_ratio": [
-        0.04956836625933647,
+        0.04956835135817528,
         0.03941649943590164,
-        0.011350155808031559,
-        0.007789901457726955,
-        0.005340747535228729,
-        0.004329788964241743,
-        0.003489529248327017,
-        0.003168621566146612,
-        0.0026623932644724846,
-        0.0025112039875239134
+        0.011350132524967194,
+        0.007789898663759232,
+        0.005340757314115763,
+        0.004329782444983721,
+        0.0034895273856818676,
+        0.003168612252920866,
+        0.0026623893063515425,
+        0.0025112025905400515
       ],
       "provenance": {
         "aadr_version": "v66.p1",
