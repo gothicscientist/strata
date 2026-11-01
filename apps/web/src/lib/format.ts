@@ -80,10 +80,11 @@ export function bpRange(
 }
 
 /** Weight ± SE as percentages, e.g. "42.1 ± 3.4". */
+/** Formal (qpAdm) weights are unconstrained estimates, so they are shown raw, never as percentages. */
 export function weightSe(w: number, se: number | null | undefined): string {
-  const base = signed((w * 100).toFixed(1));
+  const base = signed(w.toFixed(3));
   if (se === null || se === undefined || !Number.isFinite(se)) return base;
-  return `${base} ± ${(se * 100).toFixed(1)}`;
+  return `${base} ± ${se.toFixed(3)}`;
 }
 
 export function dateTime(iso: string | null | undefined): string {
@@ -116,6 +117,8 @@ export const ANALYSIS_LABEL: Record<string, string> = {
   admixture_rotate: "Source rotation",
   qpadm: "qpAdm",
   qpadm_rotate: "qpAdm rotation",
+  f4: "f4-statistics",
+  qpwave: "qpWave rank test",
 };
 
 export function analysisLabel(kind: string): string {
@@ -123,5 +126,5 @@ export function analysisLabel(kind: string): string {
 }
 
 export function isFormal(kind: string): boolean {
-  return kind === "qpadm" || kind === "qpadm_rotate";
+  return kind === "qpadm" || kind === "qpadm_rotate" || kind === "f4" || kind === "qpwave";
 }

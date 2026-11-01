@@ -9,7 +9,7 @@ import { asAnalysisResult } from "@/lib/results";
 import { useResource } from "@/lib/useResource";
 import { ResultView } from "@/components/results/ResultView";
 import { describeParams, ProvenanceList } from "@/components/results/AnalysisDocument";
-import { Empty, ErrorNote, KindMark, Loading, PageHeader, Section } from "@/components/typography";
+import { Caveat, Empty, ErrorNote, KindMark, Loading, PageHeader, Section } from "@/components/typography";
 
 function ExampleInner() {
   const slug = useSearchParams().get("slug");
@@ -26,7 +26,8 @@ function ExampleInner() {
   if (!e) return null;
   const result = asAnalysisResult(e.result);
   const inputs = describeParams(e.inputs);
-  const params = describeParams(e.params);
+  // Machine-local paths (e.g. a temporary f2 directory) carry no information for the reader.
+  const params = describeParams(Object.fromEntries(Object.entries(e.params).filter(([k]) => k !== "f2_dir")));
 
   return (
     <article>
@@ -43,6 +44,15 @@ function ExampleInner() {
           </p>
         }
       />
+      {e.caveats?.length ? (
+        <div className="mb-10">
+          {e.caveats.map((c, i) => (
+            <Caveat key={i} title={i === 0 ? "About this example" : "Reading the result"}>
+              {c}
+            </Caveat>
+          ))}
+        </div>
+      ) : null}
       {e.description ? (
         <div className="measure prose-journal mb-12">
           {e.description.split(/\n{2,}/).map((para, i) => (

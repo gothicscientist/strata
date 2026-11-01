@@ -38,9 +38,11 @@ describe("components", () => {
 
   it("marks a rejected, infeasible qpAdm model", () => {
     render(<ResultView result={synthQpAdm} />);
-    expect(screen.getByText("rejected")).toBeInTheDocument();
+    expect(screen.getByText("infeasible")).toBeInTheDocument();
     expect(screen.getByText(/Infeasible weights/)).toBeInTheDocument();
-    expect(screen.getByText("112.0 ± 20.0")).toBeInTheDocument();
+    expect(screen.getByText(/No weight figure is drawn/)).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: /qpAdm weights/ })).toBeNull();
+    expect(screen.getByText("1.120 ± 0.200")).toBeInTheDocument();
   });
 
   it("draws whiskers for each weight", () => {

@@ -1,13 +1,14 @@
 // Layout review of result pages using SYNTHETIC fixtures served by Playwright route
 // interception. The page is stamped with a visible "synthetic fixture" banner and files are
 // named *-synthetic.png. These numbers are invented for rendering only; they are not results.
-// Usage: node e2e/fixture-screens.mjs [baseUrl=http://localhost:4173] [outDir=../../docs/screenshots]
+// Output goes to test-results/ (git-ignored) by default; do not publish these images as results.
+// Usage: node e2e/fixture-screens.mjs [baseUrl=http://localhost:4173] [outDir=test-results/fixture-screens]
 import fs from "node:fs";
 import path from "node:path";
 import { launch } from "./browser.mjs";
 
 const base = process.argv[2] ?? "http://localhost:4173";
-const outDir = path.resolve(process.argv[3] ?? "../../docs/screenshots");
+const outDir = path.resolve(process.argv[3] ?? "test-results/fixture-screens");
 fs.mkdirSync(outDir, { recursive: true });
 
 let seed = 7;

@@ -17,7 +17,7 @@ const pages = [
   ["assistant", "/assistant/"],
   ["methods", "/methods/"],
   ["data", "/data/"],
-  ...extra.map((e) => e.split("=")),
+  ...extra.map((e) => [e.slice(0, e.indexOf("=")), e.slice(e.indexOf("=") + 1)]),
 ];
 
 fs.mkdirSync(outDir, { recursive: true });

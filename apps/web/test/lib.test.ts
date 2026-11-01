@@ -37,7 +37,7 @@ describe("format", () => {
     expect(int(12345)).toBe("12 345");
     expect(int(1234)).toBe("1234");
     expect(pct(0.4213)).toBe("42.1%");
-    expect(weightSe(0.421, 0.034)).toBe("42.1 ± 3.4");
+    expect(weightSe(0.421, 0.034)).toBe("0.421 ± 0.034");
     expect(fixed(null)).toBe("—");
   });
   it("formats p-values with scientific notation below 0.001", () => {

@@ -149,7 +149,7 @@ def build_examples(f2_dir: Path) -> list[Example]:
                 "relative to four deep outgroups. This is the worked example from "
                 "ADMIXTOOLS 2's own qpadm() documentation, so the output can be "
                 "checked directly against the upstream package. It is a useful "
-                "demonstration of what a *rejected* model looks like: Denisovans "
+                "demonstration of what a rejected model looks like: Denisovans "
                 "are a sister lineage to Neanderthals, not a mixture of two of "
                 "them, so the fit statistic is expected to be poor. Read the "
                 "rank-drop table and the weight standard errors, not just the "

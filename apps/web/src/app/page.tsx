@@ -6,7 +6,7 @@ import { useResource } from "@/lib/useResource";
 import { analysisLabel } from "@/lib/format";
 import { PcaPlot } from "@/components/charts/PcaPlot";
 import { useSession } from "@/components/SessionProvider";
-import { Empty, ErrorNote, Figure, KindMark, Loading, Section } from "@/components/typography";
+import { Empty, ErrorNote, Figure, Footnote, KindMark, Loading, Section } from "@/components/typography";
 
 function LibraryFigure() {
   const spaces = useResource((s) => api.spaces(s), []);
@@ -48,7 +48,9 @@ function ExampleList() {
         <code>data/pipeline</code> from public reference data.
       </Empty>
     );
+  const notes = [...new Set(ex.data.map((e) => e.caveats?.[0]).filter((c): c is string => !!c))];
   return (
+    <>
     <ol className="divide-y divide-rule-soft border-y border-rule">
       {ex.data.slice(0, 5).map((e, i) => (
         <li key={e.slug} className="grid grid-cols-[2rem_1fr] gap-2 py-3">
@@ -65,6 +67,12 @@ function ExampleList() {
         </li>
       ))}
     </ol>
+    {notes.map((n) => (
+      <Footnote key={n} mark="*">
+        {n}
+      </Footnote>
+    ))}
+    </>
   );
 }
 

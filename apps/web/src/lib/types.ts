@@ -502,11 +502,11 @@ export interface ExampleSummary {
   kind: AnalysisKind;
   result_kind: ResultKind;
   tags?: string[];
+  caveats?: string[];
 }
 
 export interface ExampleDetail extends ExampleSummary {
   description?: string | null;
-  caveats?: string[];
   inputs: Record<string, unknown>;
   params: Record<string, unknown>;
   result: AnalysisResult;
