@@ -200,6 +200,26 @@ describe("chat", () => {
       { t: "h", v: "H" },
     ]);
   });
+  it("finds lists written under a label line with single newlines", () => {
+    expect(parseBlocks("Summary\n- With this panel, x.\n  - nested y\nThen a closing sentence.")).toEqual([
+      { t: "h", v: "Summary" },
+      { t: "ul", items: ["With this panel, x.", "nested y"] },
+      { t: "p", v: "Then a closing sentence." },
+    ]);
+    expect(parseBlocks("Evidence details (formal):\n1. r1 rejected\n2. r2 marginal")).toEqual([
+      { t: "h", v: "Evidence details (formal)" },
+      { t: "ol", items: ["r1 rejected", "r2 marginal"] },
+    ]);
+    expect(parseBlocks("Short answer\nWith this panel, the model is rejected.")).toEqual([
+      { t: "h", v: "Short answer" },
+      { t: "p", v: "With this panel, the model is rejected." },
+    ]);
+    // A full sentence above a list stays a paragraph.
+    expect(parseBlocks("I ran two models.\n- a")).toEqual([
+      { t: "p", v: "I ran two models." },
+      { t: "ul", items: ["a"] },
+    ]);
+  });
   it("rebuilds turns from persisted history", () => {
     const turns = turnsFromHistory([
       { id: "2", seq: 2, role: "assistant", content: "A", tool_calls: [{ id: "c", name: "n", arguments: {} }], tool_results: [{ id: "c", name: "n", ok: true, result: {}, error: null }], grounding: null, citations: [], usage: null, error: null, created_at: "" },

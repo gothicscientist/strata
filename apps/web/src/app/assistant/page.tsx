@@ -139,7 +139,8 @@ function AssistantAnswer({ turn, index }: { turn: AssistantTurn; index: number }
             <Prose key={i} text={p.text} citations={turn.citations} />
           ) : (
             <a key={i} href={`#method-${p.id}`} className="no-underline" title={`Method ${p.n}: ${p.name}`}>
-              <sup className="num text-[0.7em]">{p.n}</sup>
+              {/* Separate a run of markers, or 29 tool calls read as one number. */}
+              <sup className="num text-[0.7em]">{turn.parts[i - 1]?.kind === "tool" ? `,\u200b${p.n}` : p.n}</sup>
             </a>
           ),
         )}
