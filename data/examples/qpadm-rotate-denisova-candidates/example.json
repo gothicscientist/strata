@@ -1,0 +1,603 @@
+{
+  "slug": "qpadm-rotate-denisova-candidates",
+  "title": "Rotating qpAdm: every one- and two-source model",
+  "summary": "10 models fitted for Denisova.DG; None of the 10 rotated models is consistent with the data at p > 0.",
+  "kind": "qpadm_rotate",
+  "result_kind": "formal",
+  "tags": [
+    "qpadm",
+    "qpadm_rotate",
+    "formal",
+    "archaic",
+    "model-search"
+  ],
+  "description": "Rotates four candidate populations between the source and outgroup roles, pinning Chimp and Mbuti to the right, and fits every resulting one- and two-source model. Models are ranked by p-value, best first.\n\nThe ranking is a shortlist, not a result. All of these models were fitted on the same SNPs, so their p-values are not independent and no multiple-testing correction has been applied. When several models fit at once, the honest conclusion is that these data cannot distinguish between them.\n\nNone of the 10 rotated models is consistent with the data at p > 0.05 with weights in [0, 1]. Either the candidate pool is missing a necessary source, or the right set is too demanding.",
+  "caveats": [
+    "Computed from admixtools::example_f2_blocks, the f2-statistics bundled with ADMIXTOOLS 2 for seven populations (Altai Neanderthal, Vindija, Denisova, Mbuti, Chimp, Russia_Ust_Ishim, Switzerland_Bichon). These are real data and the statistics are genuine, but they are the package's demonstration populations -- archaic hominins and Palaeolithic modern humans. This is NOT a South Asian analysis and must not be presented as one. South Asian examples require the AADR reference panel built by data/pipeline/.",
+    "qpAdm does not identify the true history. A model that is not rejected is consistent with these data given this outgroup set; other untested models may fit as well or better. p-values depend on the right populations, the SNP set and the jackknife block size.",
+    "Rotating qpAdm fits many models to the same data. The p-values are not independent and are not corrected for multiple testing, so the number of models tested must be reported alongside any 'best' model. Ranking by p-value selects for models that happen to fit this SNP set; treat the ranking as a shortlist for scrutiny, not as a posterior over histories."
+  ],
+  "inputs": {
+    "f2_source": "admixtools::example_f2_blocks",
+    "f2_populations": [
+      "Altai_Neanderthal.DG",
+      "Chimp.REF",
+      "Denisova.DG",
+      "Mbuti.DG",
+      "Russia_Ust_Ishim.DG",
+      "Switzerland_Bichon.SG",
+      "Vindija.DG"
+    ],
+    "synthetic": false,
+    "note": "Real f2-statistics bundled with ADMIXTOOLS 2. No genotype data is redistributed by this example."
+  },
+  "params": {
+    "blgsize": 0.05,
+    "fudge": 0.0001,
+    "fudge_twice": false,
+    "auto_only": true,
+    "poly_only": false,
+    "constrained": false,
+    "boot": false,
+    "allsnps": false,
+    "threads": 1,
+    "f2_dir": "/tmp/strata-examples-z1einsod/f2",
+    "target": "Denisova.DG",
+    "leftright": [
+      "Altai_Neanderthal.DG",
+      "Vindija.DG",
+      "Russia_Ust_Ishim.DG",
+      "Switzerland_Bichon.SG"
+    ],
+    "rightfix": [
+      "Chimp.REF",
+      "Mbuti.DG"
+    ],
+    "min_sources": 1,
+    "max_sources": 2,
+    "max_models": 400,
+    "full_results": true
+  },
+  "result": {
+    "kind": "formal",
+    "engine": "admixtools2",
+    "analysis": "qpadm_rotate",
+    "caveat": "Formal f-statistic result (ADMIXTOOLS 2). qpAdm tests whether a proposed set of source populations can explain the target's allele-frequency relationships to the right (outgroup) populations. A model that is not rejected is consistent with the data, not proven: other untested models may fit equally well or better, and the p-value depends strongly on the choice of right populations, on SNP coverage, and on the jackknife block size. Admixture weights are estimates with standard errors, not exact ancestry percentages.",
+    "provenance": {
+      "admixtools_version": "2.0.10",
+      "r_version": "4.5.3",
+      "r_version_string": "R version 4.5.3 (2026-03-11)",
+      "platform": "x86_64-conda-linux-gnu",
+      "contract": "1",
+      "timestamp_utc": "2026-10-31T20:47:06Z"
+    },
+    "elapsed_seconds": 2.33987331390381,
+    "options": {
+      "min_sources": 1,
+      "max_sources": 2,
+      "allsnps": false,
+      "blgsize": 0.05,
+      "fudge": 0.0001,
+      "constrained": false
+    },
+    "target": "Denisova.DG",
+    "leftright": [
+      "Altai_Neanderthal.DG",
+      "Vindija.DG",
+      "Russia_Ust_Ishim.DG",
+      "Switzerland_Bichon.SG"
+    ],
+    "rightfix": [
+      "Chimp.REF",
+      "Mbuti.DG"
+    ],
+    "data_source": "f2_dir",
+    "n_models_enumerated": 10,
+    "n_models_tested": 10,
+    "models": [
+      {
+        "model_index": 10,
+        "rank": 1,
+        "left": [
+          "Russia_Ust_Ishim.DG",
+          "Switzerland_Bichon.SG"
+        ],
+        "right": [
+          "Altai_Neanderthal.DG",
+          "Vindija.DG",
+          "Chimp.REF",
+          "Mbuti.DG"
+        ],
+        "n_sources": 2,
+        "f4rank": 1,
+        "p": 0.856402245367556,
+        "chisq": 0.310030200804558,
+        "dof": 2.0,
+        "feasible": false,
+        "f4_var_rcond": 0.00438440279757954,
+        "weights": [
+          {
+            "target": "Denisova.DG",
+            "left": "Russia_Ust_Ishim.DG",
+            "weight": 65.4268298525697,
+            "se": 23.162436323195,
+            "z": 2.8246955086953
+          },
+          {
+            "target": "Denisova.DG",
+            "left": "Switzerland_Bichon.SG",
+            "weight": -64.4268298525697,
+            "se": 23.162436323195,
+            "z": -2.7815221574102
+          }
+        ],
+        "feasibility": {
+          "verdict": "infeasible",
+          "reasons": [
+            "At least one admixture weight falls outside [0, 1] (Russia_Ust_Ishim.DG=65.427, Switzerland_Bichon.SG=-64.427), which has no interpretation as an ancestry proportion and usually means a source is misspecified."
+          ],
+          "p_passes": true,
+          "weights_in_unit_interval": false,
+          "weights_well_determined": true,
+          "well_conditioned": true,
+          "p_threshold": 0.05,
+          "marginal_p_threshold": 0.01,
+          "max_relative_se": 0.5,
+          "note": "Heuristic summary of standard qpAdm reporting conventions, not a formal model-selection procedure. 'plausible' means the model was not rejected and its weights are physically interpretable; it does not mean the model is correct or that competing models were excluded."
+        }
+      },
+      {
+        "model_index": 5,
+        "rank": 2,
+        "left": [
+          "Altai_Neanderthal.DG",
+          "Vindija.DG"
+        ],
+        "right": [
+          "Russia_Ust_Ishim.DG",
+          "Switzerland_Bichon.SG",
+          "Chimp.REF",
+          "Mbuti.DG"
+        ],
+        "n_sources": 2,
+        "f4rank": 1,
+        "p": 0.0268652331512778,
+        "chisq": 7.23384455242675,
+        "dof": 2.0,
+        "feasible": false,
+        "f4_var_rcond": 0.00336963570096901,
+        "weights": [
+          {
+            "target": "Denisova.DG",
+            "left": "Altai_Neanderthal.DG",
+            "weight": 49.3286891612116,
+            "se": 23.0861557241313,
+            "z": 2.13672166776774
+          },
+          {
+            "target": "Denisova.DG",
+            "left": "Vindija.DG",
+            "weight": -48.3286891612116,
+            "se": 23.0861557241313,
+            "z": -2.09340566436079
+          }
+        ],
+        "feasibility": {
+          "verdict": "infeasible",
+          "reasons": [
+            "At least one admixture weight falls outside [0, 1] (Altai_Neanderthal.DG=49.329, Vindija.DG=-48.329), which has no interpretation as an ancestry proportion and usually means a source is misspecified."
+          ],
+          "p_passes": false,
+          "weights_in_unit_interval": false,
+          "weights_well_determined": true,
+          "well_conditioned": true,
+          "p_threshold": 0.05,
+          "marginal_p_threshold": 0.01,
+          "max_relative_se": 0.5,
+          "note": "Heuristic summary of standard qpAdm reporting conventions, not a formal model-selection procedure. 'plausible' means the model was not rejected and its weights are physically interpretable; it does not mean the model is correct or that competing models were excluded."
+        }
+      },
+      {
+        "model_index": 1,
+        "rank": 3,
+        "left": [
+          "Altai_Neanderthal.DG"
+        ],
+        "right": [
+          "Vindija.DG",
+          "Russia_Ust_Ishim.DG",
+          "Switzerland_Bichon.SG",
+          "Chimp.REF",
+          "Mbuti.DG"
+        ],
+        "n_sources": 1,
+        "f4rank": 0,
+        "p": 0.0,
+        "chisq": 12618.9302190977,
+        "dof": 4.0,
+        "feasible": true,
+        "f4_var_rcond": 0.0301157301502099,
+        "weights": [
+          {
+            "target": "Denisova.DG",
+            "left": "Altai_Neanderthal.DG",
+            "weight": 1.0,
+            "se": 1.77761265916786e-13,
+            "z": 5625522494130.55
+          }
+        ],
+        "feasibility": {
+          "verdict": "rejected",
+          "reasons": [
+            "The model is rejected: p = 0 <= 0.01, so the sources cannot explain the target's relationship to the right populations."
+          ],
+          "p_passes": false,
+          "weights_in_unit_interval": true,
+          "weights_well_determined": true,
+          "well_conditioned": true,
+          "p_threshold": 0.05,
+          "marginal_p_threshold": 0.01,
+          "max_relative_se": 0.5,
+          "note": "Heuristic summary of standard qpAdm reporting conventions, not a formal model-selection procedure. 'plausible' means the model was not rejected and its weights are physically interpretable; it does not mean the model is correct or that competing models were excluded."
+        }
+      },
+      {
+        "model_index": 2,
+        "rank": 4,
+        "left": [
+          "Vindija.DG"
+        ],
+        "right": [
+          "Altai_Neanderthal.DG",
+          "Russia_Ust_Ishim.DG",
+          "Switzerland_Bichon.SG",
+          "Chimp.REF",
+          "Mbuti.DG"
+        ],
+        "n_sources": 1,
+        "f4rank": 0,
+        "p": 0.0,
+        "chisq": 12260.1374495785,
+        "dof": 4.0,
+        "feasible": true,
+        "f4_var_rcond": 0.0314747281041898,
+        "weights": [
+          {
+            "target": "Denisova.DG",
+            "left": "Vindija.DG",
+            "weight": 1.0,
+            "se": 1.77761265916786e-13,
+            "z": 5625522494130.55
+          }
+        ],
+        "feasibility": {
+          "verdict": "rejected",
+          "reasons": [
+            "The model is rejected: p = 0 <= 0.01, so the sources cannot explain the target's relationship to the right populations."
+          ],
+          "p_passes": false,
+          "weights_in_unit_interval": true,
+          "weights_well_determined": true,
+          "well_conditioned": true,
+          "p_threshold": 0.05,
+          "marginal_p_threshold": 0.01,
+          "max_relative_se": 0.5,
+          "note": "Heuristic summary of standard qpAdm reporting conventions, not a formal model-selection procedure. 'plausible' means the model was not rejected and its weights are physically interpretable; it does not mean the model is correct or that competing models were excluded."
+        }
+      },
+      {
+        "model_index": 3,
+        "rank": 5,
+        "left": [
+          "Russia_Ust_Ishim.DG"
+        ],
+        "right": [
+          "Altai_Neanderthal.DG",
+          "Vindija.DG",
+          "Switzerland_Bichon.SG",
+          "Chimp.REF",
+          "Mbuti.DG"
+        ],
+        "n_sources": 1,
+        "f4rank": 0,
+        "p": 0.0,
+        "chisq": 21083.2779979179,
+        "dof": 4.0,
+        "feasible": true,
+        "f4_var_rcond": 0.0130010122946235,
+        "weights": [
+          {
+            "target": "Denisova.DG",
+            "left": "Russia_Ust_Ishim.DG",
+            "weight": 1.0,
+            "se": 1.77761265916786e-13,
+            "z": 5625522494130.55
+          }
+        ],
+        "feasibility": {
+          "verdict": "rejected",
+          "reasons": [
+            "The model is rejected: p = 0 <= 0.01, so the sources cannot explain the target's relationship to the right populations."
+          ],
+          "p_passes": false,
+          "weights_in_unit_interval": true,
+          "weights_well_determined": true,
+          "well_conditioned": true,
+          "p_threshold": 0.05,
+          "marginal_p_threshold": 0.01,
+          "max_relative_se": 0.5,
+          "note": "Heuristic summary of standard qpAdm reporting conventions, not a formal model-selection procedure. 'plausible' means the model was not rejected and its weights are physically interpretable; it does not mean the model is correct or that competing models were excluded."
+        }
+      },
+      {
+        "model_index": 4,
+        "rank": 6,
+        "left": [
+          "Switzerland_Bichon.SG"
+        ],
+        "right": [
+          "Altai_Neanderthal.DG",
+          "Vindija.DG",
+          "Russia_Ust_Ishim.DG",
+          "Chimp.REF",
+          "Mbuti.DG"
+        ],
+        "n_sources": 1,
+        "f4rank": 0,
+        "p": 0.0,
+        "chisq": 22426.4597573688,
+        "dof": 4.0,
+        "feasible": true,
+        "f4_var_rcond": 0.0164473259238494,
+        "weights": [
+          {
+            "target": "Denisova.DG",
+            "left": "Switzerland_Bichon.SG",
+            "weight": 1.0,
+            "se": 1.77761265916786e-13,
+            "z": 5625522494130.55
+          }
+        ],
+        "feasibility": {
+          "verdict": "rejected",
+          "reasons": [
+            "The model is rejected: p = 0 <= 0.01, so the sources cannot explain the target's relationship to the right populations."
+          ],
+          "p_passes": false,
+          "weights_in_unit_interval": true,
+          "weights_well_determined": true,
+          "well_conditioned": true,
+          "p_threshold": 0.05,
+          "marginal_p_threshold": 0.01,
+          "max_relative_se": 0.5,
+          "note": "Heuristic summary of standard qpAdm reporting conventions, not a formal model-selection procedure. 'plausible' means the model was not rejected and its weights are physically interpretable; it does not mean the model is correct or that competing models were excluded."
+        }
+      },
+      {
+        "model_index": 6,
+        "rank": 7,
+        "left": [
+          "Altai_Neanderthal.DG",
+          "Russia_Ust_Ishim.DG"
+        ],
+        "right": [
+          "Vindija.DG",
+          "Switzerland_Bichon.SG",
+          "Chimp.REF",
+          "Mbuti.DG"
+        ],
+        "n_sources": 2,
+        "f4rank": 1,
+        "p": 0.0,
+        "chisq": 11240.5128081661,
+        "dof": 2.0,
+        "feasible": true,
+        "f4_var_rcond": 0.00941359975783395,
+        "weights": [
+          {
+            "target": "Denisova.DG",
+            "left": "Altai_Neanderthal.DG",
+            "weight": 0.902923059455075,
+            "se": 0.00347606903922707,
+            "z": 259.754063934198
+          },
+          {
+            "target": "Denisova.DG",
+            "left": "Russia_Ust_Ishim.DG",
+            "weight": 0.0970769405449254,
+            "se": 0.00347606903922699,
+            "z": 27.9272187777126
+          }
+        ],
+        "feasibility": {
+          "verdict": "rejected",
+          "reasons": [
+            "The model is rejected: p = 0 <= 0.01, so the sources cannot explain the target's relationship to the right populations."
+          ],
+          "p_passes": false,
+          "weights_in_unit_interval": true,
+          "weights_well_determined": true,
+          "well_conditioned": true,
+          "p_threshold": 0.05,
+          "marginal_p_threshold": 0.01,
+          "max_relative_se": 0.5,
+          "note": "Heuristic summary of standard qpAdm reporting conventions, not a formal model-selection procedure. 'plausible' means the model was not rejected and its weights are physically interpretable; it does not mean the model is correct or that competing models were excluded."
+        }
+      },
+      {
+        "model_index": 7,
+        "rank": 8,
+        "left": [
+          "Altai_Neanderthal.DG",
+          "Switzerland_Bichon.SG"
+        ],
+        "right": [
+          "Vindija.DG",
+          "Russia_Ust_Ishim.DG",
+          "Chimp.REF",
+          "Mbuti.DG"
+        ],
+        "n_sources": 2,
+        "f4rank": 1,
+        "p": 0.0,
+        "chisq": 11318.0117401077,
+        "dof": 2.0,
+        "feasible": true,
+        "f4_var_rcond": 0.0111689700672605,
+        "weights": [
+          {
+            "target": "Denisova.DG",
+            "left": "Altai_Neanderthal.DG",
+            "weight": 0.913536288698365,
+            "se": 0.00302606199488994,
+            "z": 301.88948218544
+          },
+          {
+            "target": "Denisova.DG",
+            "left": "Switzerland_Bichon.SG",
+            "weight": 0.086463711301635,
+            "se": 0.00302606199489011,
+            "z": 28.5730138535297
+          }
+        ],
+        "feasibility": {
+          "verdict": "rejected",
+          "reasons": [
+            "The model is rejected: p = 0 <= 0.01, so the sources cannot explain the target's relationship to the right populations."
+          ],
+          "p_passes": false,
+          "weights_in_unit_interval": true,
+          "weights_well_determined": true,
+          "well_conditioned": true,
+          "p_threshold": 0.05,
+          "marginal_p_threshold": 0.01,
+          "max_relative_se": 0.5,
+          "note": "Heuristic summary of standard qpAdm reporting conventions, not a formal model-selection procedure. 'plausible' means the model was not rejected and its weights are physically interpretable; it does not mean the model is correct or that competing models were excluded."
+        }
+      },
+      {
+        "model_index": 8,
+        "rank": 9,
+        "left": [
+          "Vindija.DG",
+          "Russia_Ust_Ishim.DG"
+        ],
+        "right": [
+          "Altai_Neanderthal.DG",
+          "Switzerland_Bichon.SG",
+          "Chimp.REF",
+          "Mbuti.DG"
+        ],
+        "n_sources": 2,
+        "f4rank": 1,
+        "p": 0.0,
+        "chisq": 11092.1827495475,
+        "dof": 2.0,
+        "feasible": true,
+        "f4_var_rcond": 0.0104366236565215,
+        "weights": [
+          {
+            "target": "Denisova.DG",
+            "left": "Vindija.DG",
+            "weight": 0.904715868408527,
+            "se": 0.00366353506757713,
+            "z": 246.951605954426
+          },
+          {
+            "target": "Denisova.DG",
+            "left": "Russia_Ust_Ishim.DG",
+            "weight": 0.0952841315914726,
+            "se": 0.00366353506757709,
+            "z": 26.0087947389267
+          }
+        ],
+        "feasibility": {
+          "verdict": "rejected",
+          "reasons": [
+            "The model is rejected: p = 0 <= 0.01, so the sources cannot explain the target's relationship to the right populations."
+          ],
+          "p_passes": false,
+          "weights_in_unit_interval": true,
+          "weights_well_determined": true,
+          "well_conditioned": true,
+          "p_threshold": 0.05,
+          "marginal_p_threshold": 0.01,
+          "max_relative_se": 0.5,
+          "note": "Heuristic summary of standard qpAdm reporting conventions, not a formal model-selection procedure. 'plausible' means the model was not rejected and its weights are physically interpretable; it does not mean the model is correct or that competing models were excluded."
+        }
+      },
+      {
+        "model_index": 9,
+        "rank": 10,
+        "left": [
+          "Vindija.DG",
+          "Switzerland_Bichon.SG"
+        ],
+        "right": [
+          "Altai_Neanderthal.DG",
+          "Russia_Ust_Ishim.DG",
+          "Chimp.REF",
+          "Mbuti.DG"
+        ],
+        "n_sources": 2,
+        "f4rank": 1,
+        "p": 0.0,
+        "chisq": 11237.6058113754,
+        "dof": 2.0,
+        "feasible": true,
+        "f4_var_rcond": 0.0117596688416227,
+        "weights": [
+          {
+            "target": "Denisova.DG",
+            "left": "Vindija.DG",
+            "weight": 0.920357357820786,
+            "se": 0.00308535674395905,
+            "z": 298.298522406782
+          },
+          {
+            "target": "Denisova.DG",
+            "left": "Switzerland_Bichon.SG",
+            "weight": 0.0796426421792146,
+            "se": 0.00308535674395894,
+            "z": 25.8131064860337
+          }
+        ],
+        "feasibility": {
+          "verdict": "rejected",
+          "reasons": [
+            "The model is rejected: p = 0 <= 0.01, so the sources cannot explain the target's relationship to the right populations."
+          ],
+          "p_passes": false,
+          "weights_in_unit_interval": true,
+          "weights_well_determined": true,
+          "well_conditioned": true,
+          "p_threshold": 0.05,
+          "marginal_p_threshold": 0.01,
+          "max_relative_se": 0.5,
+          "note": "Heuristic summary of standard qpAdm reporting conventions, not a formal model-selection procedure. 'plausible' means the model was not rejected and its weights are physically interpretable; it does not mean the model is correct or that competing models were excluded."
+        }
+      }
+    ],
+    "rotation_caveat": "Rotating qpAdm fits many models to the same data. The p-values are not independent and are not corrected for multiple testing, so the number of models tested must be reported alongside any 'best' model. Ranking by p-value selects for models that happen to fit this SNP set; treat the ranking as a shortlist for scrutiny, not as a posterior over histories."
+  },
+  "provenance": {
+    "engine": "ADMIXTOOLS 2",
+    "admixtools_version": "2.0.10",
+    "r_version": "R version 4.5.3 (2026-03-11)",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "command": "run_qpadm_rotate(QpAdmRotateSpec(...))",
+    "generated_at": "2026-10-31T20:47:10Z",
+    "generator": "data/examples/generate_examples.py",
+    "f2_source": "admixtools::example_f2_blocks",
+    "f2_n_pops": 7,
+    "f2_n_blocks": 708,
+    "f2_n_snps": 780009,
+    "f2_roundtrip_max_abs_diff": 0,
+    "params_sha256": "07069c31e5ba46f77625ccb69ff9485874adbb0d59e6ec1e9bdae2a8c23f2ea1",
+    "result_sha256": "09ebfeea194384ff1176e6fcda584e2bf2cde227b7d1739a49c98479d9424d7e",
+    "citations": [
+      "Maier, R., Flegontov, P., Flegontova, O., Isildak, U., Changmai, P., & Reich, D. (2023). On the limits of fitting complex models of population history to f-statistics. eLife, 12, e85492. https://doi.org/10.7554/eLife.85492"
+    ]
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "slug": "f4-archaic-symmetry-tests",
+  "title": "f4 symmetry tests against the archaic lineages",
+  "summary": "3 f4-statistics; 3 with |Z| >= 3.",
+  "kind": "f4",
+  "result_kind": "formal",
+  "tags": [
+    "f4",
+    "formal",
+    "archaic",
+    "symmetry"
+  ],
+  "description": "f4(Chimp, Mbuti; X, Russia_Ust_Ishim) for each archaic X. f4 is zero in expectation when the Chimp/Mbuti split is unrelated to the X/Ust-Ishim split; a significantly non-zero value indicates shared drift between one population on each side.\n\n|Z| >= 3 is the conventional threshold, roughly p = 0.003 two-sided before any correction for the number of statistics computed here. The standard errors come from a block jackknife over 5 cM blocks, which accounts for linkage between nearby SNPs; a naive per-SNP standard error would be far too small.",
+  "caveats": [
+    "Computed from admixtools::example_f2_blocks, the f2-statistics bundled with ADMIXTOOLS 2 for seven populations (Altai Neanderthal, Vindija, Denisova, Mbuti, Chimp, Russia_Ust_Ishim, Switzerland_Bichon). These are real data and the statistics are genuine, but they are the package's demonstration populations -- archaic hominins and Palaeolithic modern humans. This is NOT a South Asian analysis and must not be presented as one. South Asian examples require the AADR reference panel built by data/pipeline/.",
+    "Several f4-statistics are computed from one dataset, so the per-statistic p-values are not corrected for multiple testing."
+  ],
+  "inputs": {
+    "f2_source": "admixtools::example_f2_blocks",
+    "f2_populations": [
+      "Altai_Neanderthal.DG",
+      "Chimp.REF",
+      "Denisova.DG",
+      "Mbuti.DG",
+      "Russia_Ust_Ishim.DG",
+      "Switzerland_Bichon.SG",
+      "Vindija.DG"
+    ],
+    "synthetic": false,
+    "note": "Real f2-statistics bundled with ADMIXTOOLS 2. No genotype data is redistributed by this example."
+  },
+  "params": {
+    "f2_dir": "/tmp/strata-examples-z1einsod/f2",
+    "pop1": [
+      "Chimp.REF"
+    ],
+    "pop2": [
+      "Mbuti.DG"
+    ],
+    "pop3": [
+      "Altai_Neanderthal.DG",
+      "Vindija.DG",
+      "Denisova.DG"
+    ],
+    "pop4": [
+      "Russia_Ust_Ishim.DG"
+    ],
+    "comb": true,
+    "unique_only": true,
+    "f4mode": true,
+    "afprod": true,
+    "blgsize": 0.05,
+    "auto_only": true,
+    "allsnps": false,
+    "boot": false,
+    "threads": 1
+  },
+  "result": {
+    "kind": "formal",
+    "engine": "admixtools2",
+    "analysis": "f4",
+    "caveat": "Formal f-statistic result (ADMIXTOOLS 2). qpAdm tests whether a proposed set of source populations can explain the target's allele-frequency relationships to the right (outgroup) populations. A model that is not rejected is consistent with the data, not proven: other untested models may fit equally well or better, and the p-value depends strongly on the choice of right populations, on SNP coverage, and on the jackknife block size. Admixture weights are estimates with standard errors, not exact ancestry percentages.",
+    "provenance": {
+      "admixtools_version": "2.0.10",
+      "r_version": "4.5.3",
+      "r_version_string": "R version 4.5.3 (2026-03-11)",
+      "platform": "x86_64-conda-linux-gnu",
+      "contract": "1",
+      "timestamp_utc": "2026-10-31T20:47:08Z"
+    },
+    "elapsed_seconds": 0.310113191604614,
+    "options": {
+      "comb": true,
+      "f4mode": true,
+      "unique_only": true,
+      "allsnps": false,
+      "boot": false
+    },
+    "data_source": "f2_dir",
+    "f4": [
+      {
+        "pop1": "Chimp.REF",
+        "pop2": "Mbuti.DG",
+        "pop3": "Altai_Neanderthal.DG",
+        "pop4": "Russia_Ust_Ishim.DG",
+        "est": 0.0698054712616563,
+        "se": 0.000630564029429931,
+        "z": 110.703224420785,
+        "p": 0.0,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Chimp.REF",
+        "pop2": "Mbuti.DG",
+        "pop3": "Vindija.DG",
+        "pop4": "Russia_Ust_Ishim.DG",
+        "est": 0.069681621194969,
+        "se": 0.00063210480889703,
+        "z": 110.23744830633,
+        "p": 0.0,
+        "n": null,
+        "fit": null
+      },
+      {
+        "pop1": "Chimp.REF",
+        "pop2": "Mbuti.DG",
+        "pop3": "Denisova.DG",
+        "pop4": "Russia_Ust_Ishim.DG",
+        "est": 0.0827528378946054,
+        "se": 0.000662110412723427,
+        "z": 124.983441287718,
+        "p": 0.0,
+        "n": null,
+        "fit": null
+      }
+    ],
+    "n_statistics": 3
+  },
+  "provenance": {
+    "engine": "ADMIXTOOLS 2",
+    "admixtools_version": "2.0.10",
+    "r_version": "R version 4.5.3 (2026-03-11)",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "command": "run_f4(F4Spec(...))",
+    "generated_at": "2026-10-31T20:47:10Z",
+    "generator": "data/examples/generate_examples.py",
+    "f2_source": "admixtools::example_f2_blocks",
+    "f2_n_pops": 7,
+    "f2_n_blocks": 708,
+    "f2_n_snps": 780009,
+    "f2_roundtrip_max_abs_diff": 0,
+    "params_sha256": "0ba90329c85a41a6f81414e3e47cc7aea47beae53a3bf98f1e516848a6a62253",
+    "result_sha256": "4a420ea51413b0558dfe25f31898090e35ca63f6ce727350800d934d98ac17ce",
+    "citations": [
+      "Maier, R., Flegontov, P., Flegontova, O., Isildak, U., Changmai, P., & Reich, D. (2023). On the limits of fitting complex models of population history to f-statistics. eLife, 12, e85492. https://doi.org/10.7554/eLife.85492"
+    ]
+  }
+}

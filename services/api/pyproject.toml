@@ -11,7 +11,7 @@ dependencies = [
   "pandas>=2.2",
   "pyarrow>=16",
   "pydantic>=2.7",
-  "pydantic-settings>=2.3",
+  "pydantic-settings>=2.7",
   "fastapi>=0.115",
   "uvicorn[standard]>=0.30",
   "python-multipart>=0.0.9",
@@ -24,6 +24,7 @@ dependencies = [
   "anthropic>=0.40",
   "openai>=1.50",
   "rank-bm25>=0.2.2",
+  "jsonschema>=4.22",
   "jinja2>=3.1",
   "sse-starlette>=2.1",
   "structlog>=24.1",
@@ -42,10 +43,22 @@ packages = ["strata"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-markers = ["r: requires R + ADMIXTOOLS 2", "slow: slow tests"]
+markers = [
+  "r: requires R + ADMIXTOOLS 2",
+  "slow: slow tests",
+  "live: opt-in tests that make real, billed LLM API calls",
+]
+addopts = "-m 'not live'"
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# Numerical code uses conventional matrix names (G, X, A, S, W).
+"strata/analysis/*" = ["N803", "N806"]
+"strata/io/*" = ["N803", "N806"]
+"tests/analysis/*" = ["N803", "N806"]
+"tests/io/*" = ["N803", "N806"]
