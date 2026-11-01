@@ -13,17 +13,15 @@ Three kinds of entry:
 
 ---
 
-## 1. The reference library is not on `main` yet — *needs you*
+## 1. The reference library was not on `main` — *resolved 2026-11-01*
 
-`main` carries the platform. The AADR-derived reference library is still in
-[PR #2](https://github.com/gothicscientist/strata/pull/2): 188 populations,
-3,332 samples and the `strata-pca-v1` coordinates, built end to end against
-AADR v66.p1. CI is green on all three jobs and it merges clean.
+[PR #2](https://github.com/gothicscientist/strata/pull/2) is merged, so `main`
+now carries the AADR-derived reference library: 188 populations, 3,332 samples
+and the `strata-pca-v1` coordinates, built end to end against AADR v66.p1. The
+library and PCA pages no longer fall back to their "not built yet" notice.
 
-Until it merges, the library and PCA pages show their "not built yet" notice,
-because that is honest about an empty `data/derived/`.
-
-**Fix:** merge PR #2. Nothing else gates it.
+The f2 cache is a separate matter — it is not committed, and item 5 is what
+makes it obtainable.
 
 ---
 
