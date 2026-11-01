@@ -1,0 +1,439 @@
+{
+  "version": "strata-ref-v1",
+  "schema_version": "1",
+  "pipeline_version": "0.1.0",
+  "built_at": "2026-10-31T21:52:46Z",
+  "aadr_version": "v66.p1",
+  "aadr_doi": "10.7910/DVN/FFIDCW",
+  "sources": [
+    {
+      "name": "AADR v66.p1 HO: v66.p1_HO.aadr.patch.PUB.geno",
+      "doi": "10.7910/DVN/FFIDCW",
+      "url": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FFIDCW",
+      "sha256": "7af8c2f5cf0db612e39257e59f20aba87906de90c79f409771c3b3145a253ec3"
+    },
+    {
+      "name": "AADR v66.p1 HO: v66.p1_HO.aadr.patch.PUB.snp",
+      "doi": "10.7910/DVN/FFIDCW",
+      "url": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FFIDCW",
+      "sha256": "c0d565ee9e6a6edf30c2063430ee4f828e5db45f26d4747fd76f19eee650a5de"
+    },
+    {
+      "name": "AADR v66.p1 HO: v66.p1_HO.aadr.patch.PUB.ind",
+      "doi": "10.7910/DVN/FFIDCW",
+      "url": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FFIDCW",
+      "sha256": "51f99bee3667b5c3a97b663cc12fd3e25486cf64049782657d99db347b65509e"
+    },
+    {
+      "name": "AADR v66.p1 HO: v66.p1_HO.aadr.PUB.anno",
+      "doi": "10.7910/DVN/FFIDCW",
+      "url": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FFIDCW",
+      "sha256": "57f93730b0e408d2c29e0e3a1bd53b0c3c618fcbac22f498154de6335e5e415e"
+    },
+    {
+      "name": "AADR v66.p1 1240K: v66.p1_1240K.aadr.patch.PUB.geno",
+      "doi": "10.7910/DVN/FFIDCW",
+      "url": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FFIDCW",
+      "sha256": "ce9e13a990b26e29eadbb5630dfd2f706cff0aea7a5df59c8d7744346d7428b4"
+    },
+    {
+      "name": "AADR v66.p1 1240K: v66.p1_1240K.aadr.patch.PUB.snp",
+      "doi": "10.7910/DVN/FFIDCW",
+      "url": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FFIDCW",
+      "sha256": "1189e253b82058822fddabc4966c1448dea70373a96c40106e720bedd93b55bf"
+    },
+    {
+      "name": "AADR v66.p1 1240K: v66.p1_1240K.aadr.patch.PUB.ind",
+      "doi": "10.7910/DVN/FFIDCW",
+      "url": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FFIDCW",
+      "sha256": "c7500f8d337a42833d034800f989e1c6419855a6427769cc74de9d0a8bf76f98"
+    },
+    {
+      "name": "AADR v66.p1 1240K: v66.p1_1240K.aadr.PUB.anno",
+      "doi": "10.7910/DVN/FFIDCW",
+      "url": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/FFIDCW",
+      "sha256": "4a8e15d0b8d5a8bd6c929ccab7ff83a17091dc91b5e0d8015d9896dd9a5f7f7a"
+    }
+  ],
+  "counts": {
+    "populations": 188,
+    "samples": 3332,
+    "publications": 53
+  },
+  "qc_thresholds": {
+    "min_snps": 30000,
+    "allowed_assessments": [
+      "PASS"
+    ],
+    "reject_assessment_substrings": [
+      "QUESTIONABLE",
+      "FAIL",
+      "CRITICAL"
+    ],
+    "reject_group_substrings": [
+      "ignore",
+      "_dup",
+      "_contam",
+      "_lc",
+      "_rel",
+      "_outlier_",
+      "_hasrelative",
+      "_published",
+      "-qcremove",
+      "-dup",
+      "relative"
+    ],
+    "deduplicate_on_master_id": true,
+    "min_population_size": 1
+  },
+  "exclusions": {
+    "1240K": {
+      "total_excluded": 21483,
+      "by_reason": {
+        "assessment_critical": 21,
+        "assessment_questionable": 52,
+        "duplicate_master_id": 246,
+        "low_coverage": 63,
+        "not_in_panel": 21101
+      },
+      "examples": {
+        "assessment_critical": [
+          "I2954.AG",
+          "I4159.AG",
+          "I0987.AG",
+          "I11461.AG",
+          "I11471.AG"
+        ],
+        "assessment_questionable": [
+          "I1853.AG",
+          "I2513.AG",
+          "I4085.AG",
+          "I4153.AG",
+          "I4257.AG"
+        ],
+        "duplicate_master_id": [
+          "Loschbour.AG",
+          "I1852.AG",
+          "I1960.DG",
+          "I1960.AG",
+          "I1960_alt.SG"
+        ],
+        "low_coverage": [
+          "cay011.SG",
+          "cay012.SG",
+          "cay014.SG",
+          "cay015.SG",
+          "cay1820.SG"
+        ],
+        "not_in_panel": [
+          "Kou01.SG",
+          "Kou03.SG",
+          "Log02.SG",
+          "Log04.SG",
+          "Mik15.SG"
+        ]
+      }
+    },
+    "HO": {
+      "total_excluded": 25080,
+      "by_reason": {
+        "assessment_critical": 21,
+        "assessment_questionable": 52,
+        "duplicate_master_id": 1028,
+        "group_marker-dup": 2,
+        "group_marker-qcremove": 6,
+        "low_coverage": 100,
+        "not_in_panel": 23871
+      },
+      "examples": {
+        "assessment_critical": [
+          "I2954.AG",
+          "I4159.AG",
+          "I0987.AG",
+          "I11461.AG",
+          "I11471.AG"
+        ],
+        "assessment_questionable": [
+          "I1853.AG",
+          "I2513.AG",
+          "I4085.AG",
+          "I4153.AG",
+          "I4257.AG"
+        ],
+        "duplicate_master_id": [
+          "Loschbour.AG",
+          "I1852.AG",
+          "I1960.DG",
+          "I1960.AG",
+          "I1960_alt.SG"
+        ],
+        "group_marker-dup": [
+          "Nesk21.HO",
+          "Nesk10.HO"
+        ],
+        "group_marker-qcremove": [
+          "Nesk_05.HO",
+          "Nesk_03.HO",
+          "Nesk_31.HO",
+          "Nesk_01.HO",
+          "Esk37.HO"
+        ],
+        "low_coverage": [
+          "cay011.SG",
+          "cay012.SG",
+          "cay014.SG",
+          "cay015.SG",
+          "cay016.SG"
+        ],
+        "not_in_panel": [
+          "Kou01.SG",
+          "Kou03.SG",
+          "Log02.SG",
+          "Log04.SG",
+          "Mik15.SG"
+        ]
+      }
+    },
+    "populations": {
+      "total_excluded": 0,
+      "by_reason": {},
+      "examples": {}
+    }
+  },
+  "panel": {
+    "matched_groups": 193,
+    "unmatched_labels": [
+      "Altai_Neanderthal.DG",
+      "Ami.DG",
+      "Anatolia_N",
+      "Asur",
+      "Atayal.DG",
+      "Balochi.DG",
+      "Bengali*",
+      "Bhil",
+      "Biaka.DG",
+      "Birhor",
+      "Brahui.DG",
+      "Burusho.DG",
+      "Chamar",
+      "Chamar*",
+      "Chimp.REF",
+      "Dai.DG",
+      "Denisova.DG",
+      "Dharkar",
+      "Dinka.DG",
+      "Dusadh",
+      "EHG",
+      "ESHG",
+      "French.DG",
+      "Gond",
+      "Gorilla.REF",
+      "Great_Andamanese*",
+      "Hallaki",
+      "Han.DG",
+      "Ho",
+      "India_Rakhigarhi_H*",
+      "India_Roopkund_A",
+      "India_Roopkund_B",
+      "India_Roopkund_C",
+      "Iran_Belt_Cave_M*",
+      "Iran_HajjiFiruz_C*",
+      "Iran_HotuIIIb_M*",
+      "Iran_ShahrISokhta_BA1",
+      "Iran_ShahrISokhta_BA2",
+      "Iran_ShahrISokhta_BA_o*",
+      "Iran_Wezmeh_N*",
+      "Iranian.DG",
+      "Israel_PPNB",
+      "Jarawa*",
+      "Ju_hoan_North.DG",
+      "Juang",
+      "Kalash.DG",
+      "Kamsali",
+      "Kannada*",
+      "Karitiana.DG",
+      "Kashmiri_Pandit",
+      "Kazakhstan_Kumsay_EBA*",
+      "Kazakhstan_Petrovka*",
+      "Kazakhstan_Sintashta_MLBA*",
+      "Kol",
+      "Kunbi",
+      "Kurmi",
+      "Kurumba",
+      "Kyrgyz",
+      "Kyrgyzstan_*_MLBA*",
+      "Levant_PPNB*",
+      "Lodi",
+      "Mahadeo_Koli",
+      "Makrani.DG",
+      "Malayan",
+      "Mbuti.DG",
+      "Mixe.DG",
+      "Munda*",
+      "Natufian*",
+      "Nepali*",
+      "Nihali",
+      "Onge",
+      "Onge.DG",
+      "Pakistan_Aligrama*",
+      "Pakistan_Barikot*",
+      "Pakistan_Butkara*",
+      "Pakistan_Gogdara*",
+      "Pakistan_Katelai*",
+      "Pakistan_Loebanr*",
+      "Pakistan_SaiduSharif_H_contact*",
+      "Pakistan_SaiduSharif_IA*",
+      "Pakistan_Swat*",
+      "Pakistan_SwatValleyProtohistoric*",
+      "Pakistan_Udegram*",
+      "Palliyar",
+      "Paniya",
+      "Papuan.DG",
+      "Pathan.DG",
+      "Punjabi.DG",
+      "Relli",
+      "Russia_Baikal_EN*",
+      "Russia_DevilsCave_N*",
+      "Russia_Karelia_HG*",
+      "Russia_Krasnoyarsk_MLBA*",
+      "Russia_Petrovka*",
+      "Russia_Poltavka*",
+      "Russia_Potapovka*",
+      "Russia_Samara_HG*",
+      "Russia_Shamanka_EN*",
+      "Russia_Sintashta_MLBA*",
+      "Russia_Sosnoviy_HG",
+      "Russia_Srubnaya*",
+      "Russia_Tyumen_HG",
+      "Russia_Yamnaya*",
+      "Russia_Yamnaya_Samara",
+      "Russian.DG",
+      "Santhal",
+      "Sardinian.DG",
+      "Sindhi",
+      "Sindhi.DG",
+      "Sinhalese",
+      "Surui.DG",
+      "Tajikistan_Ksirov_H*",
+      "Tajikistan_Sarazm_EN*",
+      "Tamil*",
+      "Telugu*",
+      "Tiwari_Brahmin",
+      "Turkey_Barcin_N*",
+      "Turkey_Boncuklu_N*",
+      "Turkmenistan_Geoksyur_EN*",
+      "Turkmenistan_Gonur1_BA*",
+      "Turkmenistan_Gonur_BA_o*",
+      "Turkmenistan_Namazga*",
+      "Tuscan",
+      "Ulladan",
+      "Uygur",
+      "Uzbekistan_Bustan_BA*",
+      "Uzbekistan_Dzharkutan*",
+      "Uzbekistan_Sappali_Tepe_BA*",
+      "Velamas",
+      "Vietnamese",
+      "Vindija.DG",
+      "Vishwabrahmin",
+      "WHG",
+      "WSHG",
+      "Yakut.DG",
+      "Yemenite_Jew",
+      "Yoruba.DG"
+    ],
+    "roles": {
+      "context": 95,
+      "right": 8,
+      "source": 51,
+      "target_cline": 39
+    }
+  },
+  "spaces": [
+    {
+      "id": "strata-pca-v1",
+      "n_dims": 10,
+      "level": "sample"
+    }
+  ],
+  "f2": {
+    "f2_dir": "data/derived/f2/strata-ref-v1",
+    "n_pops": 136,
+    "n_snps": 228853.0,
+    "n_blocks": 704.0,
+    "cache_id": "sha256:1e0a65a5d8afb5c1d1dc0b761a90c90542c4fcefb6bbb66479a9420b913787a9",
+    "options": {
+      "blgsize": 0.05,
+      "maxmiss": 0,
+      "minmaf": 0,
+      "maxmaf": 0.5,
+      "auto_only": true,
+      "transitions": true,
+      "transversions": true,
+      "adjust_pseudohaploid": true
+    },
+    "config": {
+      "blgsize": 0.05,
+      "maxmiss": 0.0,
+      "auto_only": true,
+      "adjust_pseudohaploid": true,
+      "min_snps_for_f2": 800000
+    }
+  },
+  "tools": {
+    "python": "3.13.18",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39"
+  },
+  "citations": {
+    "aadr": [
+      "Mallick, S., & Reich, D. (2026). The Allen Ancient DNA Resource (AADR): A curated compendium of ancient human genomes, v66.p1. Harvard Dataverse. https://doi.org/10.7910/DVN/FFIDCW",
+      "Mallick, S., Micco, A., Mah, M., Ringbauer, H., Lazaridis, I., Olalde, I., Patterson, N., & Reich, D. (2024). The Allen Ancient DNA Resource (AADR): a curated compendium of ancient human genomes. Scientific Data, 11(1). https://doi.org/10.1038/s41597-024-03031-7"
+    ],
+    "admixtools2": "Maier, R., Flegontov, P., Flegontova, O., Isildak, U., Changmai, P., & Reich, D. (2023). On the limits of fitting complex models of population history to f-statistics. eLife, 12, e85492. https://doi.org/10.7554/eLife.85492"
+  },
+  "licensing": "AADR data is redistributed only as derived metadata and coordinates. See docs/DATA_PROVENANCE.md for terms, citation requirements and the individuals excluded from public release.",
+  "notes": [
+    "137 panel labels matched nothing in AADR v66.p1: Altai_Neanderthal.DG, Ami.DG, Anatolia_N, Asur, Atayal.DG, Balochi.DG, Bengali*, Bhil, Biaka.DG, Birhor, Brahui.DG, Burusho.DG, Chamar, Chamar*, Chimp.REF, Dai.DG, Denisova.DG, Dharkar, Dinka.DG, Dusadh ..."
+  ],
+  "artefacts": {
+    "coordinates/strata-pca-v1.parquet": {
+      "sha256": "f775faa85d20b13a6421b17099bc0c99467ed2f3a33e4e75e044440b80260d2e",
+      "bytes": 338330,
+      "committed": false,
+      "rows": 3332
+    },
+    "pca/strata-pca-v1.npz": {
+      "sha256": "ce51403885ce24d86799c9b390f278aaaedbc476ebff9d9d5a332ec08aac6af4",
+      "bytes": 23714247,
+      "committed": false
+    },
+    "populations.parquet": {
+      "sha256": "92270215a4d410ccedb1887d033999da84ec27ee5716306f0787bb1bc32ba05e",
+      "bytes": 17994,
+      "committed": true,
+      "rows": 188
+    },
+    "publications.parquet": {
+      "sha256": "1d02da85c67e8684f5c1943698a2fb1956bf31f4324255ec4b91025f398ffdca",
+      "bytes": 2964,
+      "committed": true,
+      "rows": 53
+    },
+    "samples.parquet": {
+      "sha256": "6fe6fb8ec8b7d9764802f4a6054ae82f543458897e37f3ae235f101f0c082d29",
+      "bytes": 72538,
+      "committed": true,
+      "rows": 3332
+    },
+    "snp_panel.parquet": {
+      "sha256": "0b5c76eba81e8f150c47219944be058e79dd924247fc675cd194fc90a0c826ab",
+      "bytes": 9042685,
+      "committed": false,
+      "rows": 417935
+    },
+    "spaces.json": {
+      "sha256": "49b33983039814ccd96d2ab738710a11f803c1dbeccff4b3fd3eb9e4afc8d11a",
+      "bytes": 1716,
+      "committed": true
+    }
+  }
+}

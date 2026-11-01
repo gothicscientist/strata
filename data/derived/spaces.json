@@ -1,0 +1,52 @@
+{
+  "spaces": [
+    {
+      "id": "strata-pca-v1",
+      "name": "Strata West-Eurasian / South-Asian PCA",
+      "version": "1",
+      "n_dims": 10,
+      "dim_names": [
+        "PC1",
+        "PC2",
+        "PC3",
+        "PC4",
+        "PC5",
+        "PC6",
+        "PC7",
+        "PC8",
+        "PC9",
+        "PC10"
+      ],
+      "level": "sample",
+      "description": "PCA fitted on present-day West-Eurasian, South-Asian and Central-Asian individuals from the AADR Human Origins panel; ancient individuals are projected with least-squares projection on their observed SNPs only (equivalent to smartpca lsqproject: YES). Projected coordinates are shrunk towards the origin relative to fitted ones and must not be compared to them as if they were on the same scale.",
+      "explained_variance_ratio": [
+        0.04956836625933647,
+        0.03941649943590164,
+        0.011350155808031559,
+        0.007789901457726955,
+        0.005340747535228729,
+        0.004329788964241743,
+        0.003489529248327017,
+        0.003168621566146612,
+        0.0026623932644724846,
+        0.0025112039875239134
+      ],
+      "provenance": {
+        "aadr_version": "v66.p1",
+        "source_dataset": "AADR-HO",
+        "n_fit_individuals": 2729,
+        "n_projected_individuals": 3332,
+        "n_snps": 417935,
+        "max_snp_missingness": 0.02,
+        "min_maf": 0.01,
+        "seed": 0,
+        "fit_on_modern_only": true,
+        "projection": "least-squares on observed SNPs (smartpca lsqproject: YES)",
+        "fit_individuals_scored": "out-of-fold (refit per fold, Procrustes-rotated)",
+        "n_folds": 5,
+        "n_out_of_fold_rows": 2729,
+        "all_rows_out_of_sample": true
+      }
+    }
+  ]
+}

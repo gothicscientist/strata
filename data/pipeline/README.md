@@ -37,15 +37,25 @@ PYTHONPATH=.:../../services/api ../../services/api/.venv/bin/python -m pipeline 
 | `pca` | the HO `.geno`/`.snp`/`.ind` |
 | `f2` | the 1240K genotypes **and** ADMIXTOOLS 2 via `STRATA_RSCRIPT` |
 
-**Neither Dataverse nor ADMIXTOOLS 2 is reachable from the development
-container**, so the pipeline is written to be correct and resumable and is
-executed on a GitHub runner by `.github/workflows/build-reference.yml`. The
-version-fragile logic — `.anno` header resolution and the QC rules — is pure and
-unit-tested locally:
+The full build has been run end to end against AADR v66.p1 (see
+`data/derived/MANIFEST.json`). Some development containers cannot reach
+Dataverse; there it runs on a GitHub runner via
+`.github/workflows/build-reference.yml`. ADMIXTOOLS 2 comes from
+`services/worker/r/install_env.sh`. The version-fragile logic — `.anno` header
+resolution and the QC rules — is pure and unit-tested locally:
 
 ```bash
 cd services/api && .venv/bin/python -m pytest tests/pipeline -q
 ```
+
+### Resources
+
+On a 4-core, 15 GB machine: the download is ~11 GB, `pca` peaks at roughly
+8 GB (the fit runs in float32 on int8 genotypes), and `f2` first rewrites the
+1240K individuals it needs from AADR's transposed `TGENO` into ordinary `GENO`
+under `data/work/f2-input/` (ADMIXTOOLS 2 does not read `TGENO`). The f2 cache
+lands in `data/derived/f2/`, which is gitignored: it is distributed as a release
+asset, not committed.
 
 ## Modules
 

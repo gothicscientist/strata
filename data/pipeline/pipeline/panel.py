@@ -50,6 +50,32 @@ BASE_RIGHT: tuple[str, ...] = (
     "Mixe.DG",
 )
 
+# AADR v66.p1 relabelled the whole compendium: the ".DG" suffixes are gone,
+# site names were folded into period labels (the Swat Valley series is now
+# "Pakistan_IA" / "Pakistan_LBA" / "Pakistan_Historic*"), and outliers,
+# relatives and duplicates are marked with hyphen suffixes ("-o", "-Dup",
+# "-QCremove", "-oRelative"). The labels below are the v66.p1 equivalents,
+# read from the release's .ind files on 2026-10-31. The older labels above are
+# kept so earlier .p1 releases still resolve.
+BASE_RIGHT_V66: tuple[str, ...] = (
+    "Mbuti",
+    "Russia_UstIshim_IUP",
+    "Russia_Kostenki_UP",
+    "Russia_Malta_UP",
+    "Russia_AfontovaGora_UP",
+    "Belgium_UP",
+    "Czechia_Gravettian",
+    "Spain_Magdalenian",
+    "Luxembourg_Loschbour_Mesolithic",
+    "Iran_GanjDareh_N",
+    "Papuan",
+    "Han",
+    "Ami",
+    "Mixe",
+)
+
+BASE_RIGHT = BASE_RIGHT + BASE_RIGHT_V66
+
 # --------------------------------------------------------------------------
 # ancient sources and context
 # --------------------------------------------------------------------------
@@ -82,6 +108,19 @@ ANCIENT_SOUTH_ASIA: tuple[str, ...] = (
     "India_Roopkund_A",
     "India_Roopkund_B",
     "India_Roopkund_C",
+    # v66.p1 labels.
+    "Iran_ShahriSokhta_BA1-1",
+    "Iran_ShahriSokhta_BA2-2",
+    "Iran_ShahriSokhta_BA3-3",
+    "India_Harappan",
+    "Pakistan_LBA",
+    "Pakistan_IA",
+    "Pakistan_ProtohistoricGraves",
+    "Pakistan_EarlyHistoric_H",
+    "Pakistan_Historic*",
+    "India_Roopkund-A",
+    "India_Roopkund-B",
+    "India_Roopkund-C",
 )
 
 ANCIENT_IRAN_ANATOLIA: tuple[str, ...] = (
@@ -101,6 +140,15 @@ ANCIENT_IRAN_ANATOLIA: tuple[str, ...] = (
     "Jordan_PPNB",
     "Natufian*",
     "Israel_Natufian*",
+    # v66.p1 labels.
+    "Iran_HajjiFiruz_N",
+    "Iran_WezmehCave_N",
+    "Iran_BeltCave_Mesolithic",
+    "Iran_HotuCave_Mesolithic_HotuIIIb",
+    "Iran_TepeAbdulHosein_N",
+    "Turkey_PPN",
+    "Turkey_Epipaleolithic",
+    "Turkey_Catalhoyuk_EN",
 )
 
 ANCIENT_STEPPE_SIBERIA: tuple[str, ...] = (
@@ -132,6 +180,25 @@ ANCIENT_STEPPE_SIBERIA: tuple[str, ...] = (
     "EHG",
     "WSHG",
     "ESHG",
+    # v66.p1 labels.
+    "Russia_Chelyabinsk_MLBA_Sintashta",
+    "Russia_MLBA_Sintashta",
+    "Russia_Samara_LBA_Srubnaya",
+    "Russia_Samara_MBA_Poltavka",
+    "Russia_Samara_MBA_Potapovka",
+    "Russia_Chelyabinsk_Petrovka",
+    "Russia_KrasnoyarskKrai_MLBA",
+    "Russia_KrasnoyarskKrai_MLBA_Andronovo",
+    "Russia_Samara_EBA_Yamnaya",
+    "Russia_Kalmykia_EBA_Yamnaya",
+    "Kazakhstan_KumsayKyrykOba_EBA_Yamnaya",
+    "Russia_Altai_Afanasievo",
+    "Russia_Karelia_Mesolithic",
+    "Russia_Karelia_Mesolithic_HG",
+    "Russia_Tyumen_EN_Mesolithic",
+    "Russia_Tyumen_N_HG",
+    "Russia_Irkutsk_N_Pribaikal",
+    "Serbia_IronGates_Mesolithic",
 )
 
 ANCIENT_CENTRAL_ASIA: tuple[str, ...] = (
@@ -144,6 +211,22 @@ ANCIENT_CENTRAL_ASIA: tuple[str, ...] = (
     "Tajikistan_Sarazm_EN*",
     "Kazakhstan_Botai*",
     "Kyrgyzstan_*_MLBA*",
+    # v66.p1 labels (the Gonur / Sappali Tepe / Dzharkutan series is now
+    # carried by period labels).
+    "Turkmenistan_Eneolithic",
+    "Turkmenistan_C",
+    "Turkmenistan_BA",
+    "Turkmenistan_BA1-1",
+    "Turkmenistan_BA2-2",
+    "Turkmenistan_BA3-3",
+    "Uzbekistan_BA",
+    "Uzbekistan_BA1-1",
+    "Uzbekistan_BA2-2",
+    "Uzbekistan_BA3-3",
+    "Tajikistan_C",
+    "Tajikistan_BA",
+    "Kyrgyzstan_MLBA_Andronovo",
+    "Kyrgyzstan_EBA_MLBA_Andronovo",
 )
 
 # --------------------------------------------------------------------------
@@ -223,6 +306,13 @@ MODERN_SOUTH_ASIA: tuple[str, ...] = (
     "Nepali*",
     "Tharu*",
     "Chamar*",
+    # v66.p1 labels.
+    "Sindhi_Pakistan",
+    "Sindhi_1",
+    "Sindhi_2",
+    "Pakistani",
+    "Relli_1",
+    "Relli_2",
 )
 
 # Enough global context for a user's coordinates to be interpretable and for
@@ -311,6 +401,29 @@ MODERN_GLOBAL: tuple[str, ...] = (
     "Altai_Neanderthal.DG",
     "Vindija.DG",
     "Denisova.DG",
+    # v66.p1 labels.
+    "Jew_Yemenite",
+    "Dinka",
+    "Yoruba",
+    "Mbuti",
+    "Biaka",
+    "Ju_hoan_North",
+    "Dai",
+    "Ami",
+    "Atayal",
+    "Kinh_Vietnamese",
+    "Uyghur",
+    "Kyrgyz_Kyrgyzstan",
+    "Yakut",
+    "Papuan",
+    "Karitiana",
+    "Mixe",
+    "Surui",
+    "Chimp",
+    "Gorilla",
+    "Altai_Neanderthal",
+    "VindijaCave_Neanderthal",
+    "Russia_Denisova",
 )
 
 

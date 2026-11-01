@@ -68,11 +68,19 @@ well.
 
 ### 1.2 Licence
 
-**[unverified]** — the Dataverse "Terms of Use" / licence field for
-doi:10.7910/DVN/FFIDCW could not be read from the build environment. Harvard
-Dataverse datasets are commonly CC0, but AADR carries dataset-specific terms and
-a citation requirement that a bare CC0 dedication would not impose, so **do not
-assume CC0**. Read the dataset page before redistributing any AADR file.
+**[verified]** — the Dataverse API record for doi:10.7910/DVN/FFIDCW
+(`/api/datasets/:persistentId/?persistentId=doi:10.7910/DVN/FFIDCW`, read on
+2026-10-31, dataset version 14.0 = AADR v66.p1) gives the licence as
+**CC0 1.0** (`rightsIdentifier: CC0-1.0`) with an empty `termsOfUse` field. The
+two-citation requirement in §1.1 is AADR's own scholarly request and is honoured
+regardless.
+
+The same listing shows the release's real file names, which the pipeline now
+pins: genotypes are `v66.p1_<set>.aadr.patch.PUB.{geno,snp,ind}` and the
+annotation is `v66.p1_<set>.aadr.PUB.anno`. The `.geno` files are **transposed**
+packed ancestrymap (`TGENO` header), which `strata.io` reads directly and which
+the f2 stage rewrites as ordinary `GENO` before handing it to ADMIXTOOLS 2. Every
+file used was checked against the release's own `v66.p1__files.md5sum`.
 
 Strata's conservative position, which holds either way:
 
@@ -120,6 +128,15 @@ present-day panel historically required a signed letter to the Reich Lab. This
 is widely repeated and plausible, but could not be confirmed against a primary
 source from here. It does not affect Strata either way: Strata uses only what the
 public Dataverse release contains, and redistributes none of it.
+
+**[verified]** for v66.p1 — most of the present-day Indian groups from the
+Reich-lab Human Origins panel (Chamar, Kol, Gond, Santhal, Paniya and others in
+`panel.py`) and the Andamanese (Onge, Jarawa, Great Andamanese) are **absent
+from the public release**: no `.ind` row in either the HO or 1240K dataset
+carries those labels. They are reported in `MANIFEST.json`
+`panel.unmatched_labels`. AASI-related ancestry therefore has no direct
+present-day proxy in this build; `India_Harappan` (one individual) and the
+Shahr-i-Sokhta / Turkmenistan BA outlier groups carry it indirectly.
 
 ### 1.4 What the pipeline excludes, and why
 
@@ -274,8 +291,8 @@ it, and the build workflow runs that before opening a pull request.
 
 ## 6. Open items
 
-* **[unverified]** The exact Dataverse licence / terms-of-use text for
-  doi:10.7910/DVN/FFIDCW. Read the dataset page and record it here.
+* ~~The exact Dataverse licence for doi:10.7910/DVN/FFIDCW~~ — resolved:
+  CC0 1.0, see §1.2.
 * **[unverified]** Whether any Human Origins present-day populations in the
   current public release carry additional use restrictions beyond citation.
 * **[unverified]** Global25 terms of use. Until established, redistribute

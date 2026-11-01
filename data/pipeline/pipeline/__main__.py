@@ -250,7 +250,7 @@ def cmd_pca(args: argparse.Namespace) -> int:
 
     p = paths(args.root)
     prefix = p.aadr_dir("HO") / DATASETS["HO"].stem
-    if not (prefix.with_suffix(".geno")).is_file():
+    if not Path(f"{prefix}.geno").is_file():
         print(f"error: {prefix}.geno not found. Run `download` first.", file=sys.stderr)
         return 2
 
@@ -314,12 +314,19 @@ def cmd_pca(args: argparse.Namespace) -> int:
     return 0
 
 
+def _as_list(value: Any) -> list[Any]:
+    """A parquet list cell as a Python list (pyarrow gives numpy arrays or None)."""
+    if value is None:
+        return []
+    return list(value)
+
+
 def cmd_f2(args: argparse.Namespace) -> int:
     from .f2stage import build_f2
 
     p = paths(args.root)
     prefix = p.aadr_dir("1240K") / DATASETS["1240K"].stem
-    if not (prefix.with_suffix(".geno")).is_file():
+    if not Path(f"{prefix}.geno").is_file():
         print(f"error: {prefix}.geno not found. Run `download` first.", file=sys.stderr)
         return 2
 
@@ -350,8 +357,8 @@ def cmd_f2(args: argparse.Namespace) -> int:
             date_max_bp=r.date_max_bp,
             n_samples=int(r.n_samples),
             data_source=r.data_source,
-            publication_ids=list(r.publication_ids or []),
-            spaces=list(r.spaces or []),
+            publication_ids=_as_list(r.publication_ids),
+            spaces=_as_list(r.spaces),
             role=r.role,
             panel_block=r.panel_block,
         )
@@ -381,6 +388,17 @@ def cmd_f2(args: argparse.Namespace) -> int:
     ]
     eligible = curate_mod.f2_eligible(populations)
 
+    # Resumability: a finished cache is left alone unless --force. extract_f2
+    # itself refuses a non-empty out_dir, and `all` must not fail on a rerun.
+    # extract_f2.R treats any subdirectory of out_dir as an existing cache.
+    cached = p.work / "f2.json"
+    f2_dir = p.f2_dir(args.reference_version)
+    has_cache = f2_dir.is_dir() and any(child.is_dir() for child in f2_dir.iterdir())
+    if not args.force and has_cache and cached.is_file():
+        print(cached.read_text(encoding="utf-8"), end="")
+        print(f"f2 cache already built in {f2_dir}; pass --force to rebuild.", file=sys.stderr)
+        return 0
+
     try:
         build = build_f2(
             prefix=prefix,
@@ -389,13 +407,16 @@ def cmd_f2(args: argparse.Namespace) -> int:
             samples=samples,
             overwrite=args.force,
             timeout=args.timeout,
+            work_dir=p.work / "f2-input",
         )
     except RuntimeError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
     summary = {
-        "f2_dir": str(build.f2_dir),
+        # Relative to the repo root: this lands in the committed MANIFEST, and
+        # the absolute path is a property of the build machine, not the cache.
+        "f2_dir": str(build.f2_dir.relative_to(p.root)),
         "n_pops": build.n_pops,
         "n_snps": build.n_snps,
         "n_blocks": build.n_blocks,
@@ -472,13 +493,15 @@ def cmd_manifest(args: argparse.Namespace) -> int:
                 "maxmiss": F2.maxmiss,
                 "auto_only": F2.auto_only,
                 "adjust_pseudohaploid": F2.adjust_pseudohaploid,
+                "min_snps_for_f2": F2.min_snps_for_f2,
             },
         },
         panel=curate_state.get("panel", {}),
         notes=curate_state.get("notes", []),
     )
     path = manifest_mod.write_manifest(man, derived)
-    print(f"wrote {path} describing {len(man['artefacts'])} artefact(s)")
+    written = json.loads(path.read_text(encoding="utf-8"))
+    print(f"wrote {path} describing {len(written['artefacts'])} artefact(s)")
     return 0
 
 

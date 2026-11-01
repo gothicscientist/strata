@@ -23,6 +23,34 @@ from .curate import CuratedPopulation, CuratedSample
 log = logging.getLogger(__name__)
 
 
+def packed_input(prefix: Path, ind_ids: list[str], work_dir: Path) -> Path:
+    """Return a genotype prefix ADMIXTOOLS 2 can read for these individuals.
+
+    AADR v66.p1 ships transposed packed ancestrymap (``TGENO``), which
+    ADMIXTOOLS 2.0.10 does not read. When the source is TGENO, the selected
+    individuals are rewritten as ordinary ``GENO`` (SNP-major) under
+    `work_dir`, keeping every SNP in the original order; the conversion is
+    skipped when an up-to-date copy already exists. Other formats pass through.
+    """
+    from strata.io import read_eigenstrat_dataset, write_eigenstrat_dataset
+    from strata.io.eigenstrat import detect_geno_format
+
+    if detect_geno_format(f"{prefix}.geno") != "transposed_packedancestrymap":
+        return prefix
+    out = work_dir / f"{prefix.name}.f2input"
+    stamp = Path(f"{out}.ids")
+    wanted = "\n".join(sorted(ind_ids))
+    if Path(f"{out}.geno").is_file() and stamp.is_file() and stamp.read_text() == wanted:
+        log.info("reusing packed f2 input %s", out)
+        return out
+    log.info("converting %d individuals from TGENO to GENO -> %s", len(ind_ids), out)
+    work_dir.mkdir(parents=True, exist_ok=True)
+    ds = read_eigenstrat_dataset(prefix, individuals=ind_ids)
+    write_eigenstrat_dataset(out, ds)
+    stamp.write_text(wanted)
+    return out
+
+
 @dataclass
 class F2Build:
     f2_dir: Path
@@ -44,6 +72,7 @@ def build_f2(
     config: F2Config = F2,
     overwrite: bool = False,
     timeout: float | None = None,
+    work_dir: Path | None = None,
 ) -> F2Build:
     """Extract f2 blocks for the curated panel's populations.
 
@@ -73,8 +102,31 @@ def build_f2(
             "Run services/worker/r/install_env.sh and set STRATA_RSCRIPT."
         )
 
+    from strata.io.eigenstrat import read_ind
+
     wanted = {p.group_id for p in populations}
-    members = [s for s in samples if s.group_id in wanted]
+    # samples.parquet merges the HO and 1240K curations; present-day Human
+    # Origins individuals have no 1240K genotypes, so keep only the
+    # individuals this genotype file actually carries.
+    in_file = {r.id for r in read_ind(f"{prefix}.ind")}
+    in_panel = [s for s in samples if s.group_id in wanted]
+    present = [s for s in in_panel if s.id in in_file]
+    if len(present) < len(in_panel):
+        log.info(
+            "%d curated individuals are not in %s.ind and are skipped",
+            len(in_panel) - len(present),
+            prefix.name,
+        )
+
+    # See F2Config.min_snps_for_f2: with maxmiss = 0 the sparsest individual
+    # in the panel decides how many SNPs survive for everyone.
+    members = [s for s in present if (s.n_snps or 0) >= config.min_snps_for_f2]
+    if len(members) < len(present):
+        log.info(
+            "%d individuals below the %d-SNP f2 coverage floor are excluded",
+            len(present) - len(members),
+            config.min_snps_for_f2,
+        )
     if not members:
         raise ValueError("no curated individuals fall in the requested populations")
 
@@ -84,8 +136,10 @@ def build_f2(
     pops = [s.group_id for s in members]
     log.info("extract_f2: %d individuals in %d populations", len(inds), len(set(pops)))
 
+    geno_prefix = packed_input(prefix, inds, work_dir or out_dir.parent / "work")
+
     spec = ExtractF2Spec(
-        geno_prefix=str(prefix),
+        geno_prefix=str(geno_prefix),
         out_dir=str(out_dir),
         inds=inds,
         pops=pops,

@@ -21,6 +21,8 @@ from strata.io.types import Build, IndRecord, SnpPanel
 
 MISSING = -1
 GenoFormat = Literal["eigenstrat", "packedancestrymap"]
+# Formats that can be read; TGENO is read-only (AADR v66.p1 ships it).
+ReadableGenoFormat = Literal["eigenstrat", "packedancestrymap", "transposed_packedancestrymap"]
 
 _CHROM_IN = {"23": "X", "24": "Y", "90": "MT", "91": "XY", "25": "XY", "26": "MT"}
 _CHROM_OUT = {"X": "23", "Y": "24", "MT": "90", "XY": "91"}
@@ -156,13 +158,13 @@ def eigensoft_hash(names: list[str]) -> int:
 # --------------------------------------------------------------------------- geno
 
 
-def detect_geno_format(path: str | Path) -> GenoFormat:
+def detect_geno_format(path: str | Path) -> ReadableGenoFormat:
     with open(path, "rb") as fh:
         head = fh.read(5)
     if head.startswith(b"GENO"):
         return "packedancestrymap"
     if head.startswith(b"TGENO"):
-        raise InputFormatError("Transposed packed format (TGENO) is not supported; use convertf.")
+        return "transposed_packedancestrymap"
     return "eigenstrat"
 
 
@@ -179,6 +181,50 @@ def _as_index(idx: np.ndarray | None, n: int) -> np.ndarray:
     return idx.astype(np.int64)
 
 
+def _read_tgeno(
+    path: str | Path,
+    n_ind: int,
+    n_snp: int,
+    ii: np.ndarray,
+    ss: np.ndarray,
+    out: np.ndarray,
+) -> np.ndarray:
+    """Transposed packed ancestrymap (``TGENO``), as AADR v66.p1 distributes.
+
+    One record per *individual* of ``ceil(n_snp / 4)`` bytes (at least 48),
+    genotypes packed four per byte, high bits first, 3 = missing. The header
+    is not padded to the record length the way ``GENO`` headers are, so its
+    size is derived from the file size and checked to be plausible.
+    """
+    rlen = max(48, math.ceil(n_snp * 2 / 8))
+    size = Path(path).stat().st_size
+    offset = size - n_ind * rlen
+    if offset < 5 or offset > max(rlen, 48):
+        raise InputFormatError(
+            f"TGENO file size {size} does not fit {n_ind} individuals x {n_snp} SNPs"
+        )
+    with open(path, "rb") as fh:
+        header = fh.read(offset).split(b"\x00", 1)[0].split()
+    hn_ind, hn_snp = int(header[1]), int(header[2])
+    if (hn_ind, hn_snp) != (n_ind, n_snp):
+        raise InputFormatError(
+            f"geno header ({hn_ind} ind, {hn_snp} snp) disagrees with .ind/.snp ({n_ind}, {n_snp})"
+        )
+    mm = np.memmap(path, dtype=np.uint8, mode="r", offset=offset, shape=(n_ind, rlen))
+    full = ss.size == n_snp and bool(np.all(ss == np.arange(n_snp)))
+    shifts = np.array([6, 4, 2, 0], dtype=np.uint8)
+    for k, i in enumerate(ii):
+        row = np.asarray(mm[i])
+        vals = ((row[:, None] >> shifts[None, :]) & 3).reshape(-1)[:n_snp]
+        if not full:
+            vals = vals[ss]
+        v = vals.astype(np.int8)
+        v[vals == 3] = MISSING
+        out[k] = v
+    del mm
+    return out
+
+
 def read_geno(
     path: str | Path,
     n_ind: int,
@@ -193,6 +239,8 @@ def read_geno(
     ss = _as_index(snp_idx, n_snp)
     out = np.empty((ii.size, ss.size), dtype=np.int8)
     fmt = detect_geno_format(path)
+    if fmt == "transposed_packedancestrymap":
+        return _read_tgeno(path, n_ind, n_snp, ii, ss, out)
     if fmt == "packedancestrymap":
         rlen = _packed_rlen(n_ind)
         with open(path, "rb") as fh:

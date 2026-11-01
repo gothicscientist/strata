@@ -322,14 +322,27 @@ async def test_run_f4_zips_quadruples_rowwise(
 async def test_formal_tools_report_unavailability_without_job_runner(
     tool_ctx: ToolContext,
 ) -> None:
-    """With no worker and no local ADMIXTOOLS 2, the tool says so instead of guessing."""
+    """The tool reports why it cannot answer instead of guessing.
+
+    What it cannot do varies with the machine: no worker and no local
+    ADMIXTOOLS 2 gives "unavailable", while a machine that has both and a real
+    f2 cache (a reference build host) reaches ADMIXTOOLS and is told these
+    made-up populations are not in the cache. Either way the failure names a
+    cause, which is what this asserts; it must never come back ok with numbers
+    for populations that do not exist.
+    """
     out = await execute_tool(
         "run_qpadm",
         {"target": "Modern_Punjabi", "sources": ["Onge.SG"], "right": ["Mbuti.DG", "Han.DG"]},
         tool_ctx,
     )
-    if not out.ok:
-        assert "unavailable" in out.error or "f2 cache" in out.error
+    assert not out.ok, "qpAdm must not succeed on populations that do not exist"
+    assert (
+        "unavailable" in out.error
+        or "f2 cache" in out.error
+        or "not found" in out.error
+        or "recompute" in out.error
+    ), out.error
 
 
 async def test_compare_models_separates_exploratory_and_formal(tool_ctx: ToolContext) -> None:
