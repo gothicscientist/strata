@@ -49,6 +49,12 @@ def reference_version() -> str | None:
     return None if lib is None else lib.version
 
 
+def reference_limits() -> list[dict[str, Any]]:
+    """Questions the loaded panel cannot answer. Empty when none, or none loaded."""
+    lib = try_reference_library()
+    return [] if lib is None else list(lib.limits())
+
+
 @lru_cache(maxsize=1)
 def snp_panel() -> Any | None:
     """The reference SNP panel used to harmonise raw DNA, or None if not built."""

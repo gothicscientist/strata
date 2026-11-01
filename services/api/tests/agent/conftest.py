@@ -214,6 +214,15 @@ def _synthetic_coords() -> tuple[list[str], np.ndarray]:
 class FakeReference:
     """In-memory ReferenceBackend over the synthetic fixture."""
 
+    #: Overridden per test; the shape the pipeline writes into MANIFEST.json.
+    panel_record: dict[str, Any] = {
+        "right_set": ["SYNTH_outgroup"],
+        "limits": [],
+        "matched_groups": len(SYNTHETIC_POPULATIONS),
+        "roles": {"context": len(SYNTHETIC_POPULATIONS)},
+        "unavailable_labels": {},
+    }
+
     def __init__(self) -> None:
         self._pops = SYNTHETIC_POPULATIONS
         self._names, self._mat = _synthetic_coords()
@@ -243,6 +252,9 @@ class FakeReference:
 
     def all_metadata(self) -> list[dict[str, Any]]:
         return [{"kind": "population", **p} for p in self._pops]
+
+    def panel(self) -> dict[str, Any]:
+        return dict(self.panel_record)
 
 
 @pytest.fixture

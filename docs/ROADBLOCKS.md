@@ -78,9 +78,11 @@ worth doing next and is item 7 below.
 
 ---
 
-## 4. No present-day Andamanese group in the public release — *needs you*
+## 4. No present-day Andamanese group in the public release — *decided; in progress*
 
-This is the one that needs a decision rather than a fix.
+Bharat chose, on 2026-11-01, to rework the panel around what v66.p1 ships and
+then add the 1000 Genomes South Asian panels (option 2 below). The rework is
+done; the second source is item 11.
 
 Of the 41 labels genuinely absent from v66.p1, 39 are present-day South Asian
 groups, and they include all three Andamanese labels (`Onge`, `Jarawa`,
@@ -130,8 +132,21 @@ Three ways forward, in the order I would take them:
    consent reason, so I would expect this to come back empty, and I would not
    spend the time before 1 and 2 are done.
 
-**Fix:** tell me which. I will start on 1 unless you say otherwise, since it is
-reversible and the other two sit on top of it.
+**What the rework changed.** The 39 labels the public AADR cannot carry are now
+recorded in `UNAVAILABLE_IN_PUBLIC_AADR` with the reason — `consent` for the
+Reich-lab Indian and Andamanese panels, `in_1000_genomes` for the three the
+1000 Genomes Project publishes instead — so they are reported as understood
+rather than as something to chase, and the build's warning is left naming only
+the two labels that are absent for no recorded reason (`Tuscan`,
+`Russia_Samara_HG*`), which is the list worth looking at after a version bump.
+
+What the gap *costs* is now computed rather than left in prose. `panel_limits()`
+checks whether any Andamanese-related label resolved and, when none did, emits a
+`no_aasi_proxy` limit naming the analyses it affects. The manifest carries it,
+`/api/v1/reference/panel` serves it, `/health` states it in its notes, every
+formal agent result carries it, and the formal result view prints it above the
+numbers. The check is against the release, so the limit disappears by itself
+once any source supplies a proxy — including the 1000 Genomes work in item 11.
 
 ---
 
@@ -181,17 +196,23 @@ in the repository needs changing.
 
 ---
 
-## 7. No canonical outgroup set is exposed to the agent or the UI — *open*
+## 7. No canonical outgroup set was exposed to the agent or the UI — *fixed here*
 
 Following from item 3: a right set is always supplied by the caller, so the
 agent assembles one itself for every formal model. It has no curated default to
 start from, which puts the quality of a formal model at the mercy of the
 model's own choice of outgroups.
 
-**Fix:** serve `panel.right_set` from the reference API as a named default, have
-the agent's qpAdm tools default to it, and show it in the formal-model UI as
-the set in use with the populations that resolved. Half a day, and it depends
-on the item 4 decision only for which labels the panel asks for.
+**Fixed with the rework.** `/api/v1/reference/panel` serves `right_set`, and the
+agent has a `describe_reference_panel` tool whose description tells it to start
+a right set there rather than choose outgroups itself. The tool reports the
+panel as undescribed rather than returning an empty one, because an empty panel
+reads as a panel with no limits.
+
+Still open: the qpAdm tools do not *default* `right` to that set when the model
+omits it, and the formal-model UI shows the right set in use but not that it
+came from the panel. Both are small, and neither is load-bearing now that the
+set is one tool call away.
 
 ---
 
@@ -240,3 +261,26 @@ non-comparable. The floor is in the pinned config and recorded in the manifest.
 Worth revisiting only if a specific analysis needs one of the dropped
 populations, and then as a second, separately identified cache rather than a
 change to this one.
+
+---
+
+## 11. Present-day South Asian coverage is thin — *in progress*
+
+Following the item 4 decision. The 25 South Asian populations v66.p1 ships
+total 434 individuals, and the Indian groups among them have one or two
+samples each — enough to place a population mean on the PCA, thin for anything
+that needs within-population variation, and nothing like the coverage a user
+with Indian ancestry would expect to be compared against.
+
+The 1000 Genomes Project publishes five South Asian panels with roughly a
+hundred samples each and no consent restriction: Gujarati (GIH), Punjabi
+(PJL), Bengali (BEB), Sri Lankan Tamil (STU) and Indian Telugu (ITU). Three of
+those are labels this panel already asks for and AADR does not carry, which is
+why they are marked `in_1000_genomes` rather than `consent`.
+
+It does not supply an Andamanese-related outgroup, so the `no_aasi_proxy` limit
+stands either way; what it changes is the exploratory side — PCA placement,
+distances and admixture fitting against groups with real sample counts.
+
+`ftp.1000genomes.ebi.ac.uk` is reachable from this container, so the download
+can run here rather than only on a runner.

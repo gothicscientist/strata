@@ -86,6 +86,31 @@ def get_population(population_id: str, response: Response) -> dict[str, Any]:
     return detail.model_dump(mode="json")
 
 
+@router.get("/panel", summary="How the curated panel resolved, and what it cannot answer")
+def panel(response: Response) -> dict[str, Any]:
+    """The panel's composition and its limits, as recorded by the data pipeline.
+
+    `right_set` is the standing deep-outgroup set as it resolved in this
+    release — a caller assembling a qpAdm right set should start from it rather
+    than inventing one. `limits` are the questions this panel cannot answer;
+    they are computed against the release, so one disappears by itself once the
+    missing populations are supplied.
+    """
+    response.headers["Cache-Control"] = CACHE
+    lib = _lib()
+    p = lib.panel()
+    return {
+        "reference_version": lib.version,
+        "aadr_version": lib.manifest.get("aadr_version"),
+        "right_set": list(p.get("right_set") or []),
+        "limits": lib.limits(),
+        "matched_groups": p.get("matched_groups"),
+        "roles": p.get("roles") or {},
+        "unavailable_labels": p.get("unavailable_labels") or {},
+        "missing_labels": list(p.get("missing_labels") or []),
+    }
+
+
 @router.get("/publications", summary="Source publications of reference samples")
 def list_publications(response: Response) -> list[dict[str, Any]]:
     response.headers["Cache-Control"] = CACHE

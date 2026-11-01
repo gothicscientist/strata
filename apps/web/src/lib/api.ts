@@ -27,6 +27,7 @@ import type {
   PopulationQuery,
   PopulationSummary,
   Publication,
+  ReferencePanel,
 } from "./types";
 
 export const API_PREFIX = "/api/v1";
@@ -237,6 +238,7 @@ export const api = {
     request<CoordinateSpaceInfo[]>("/reference/spaces", { signal }),
   publications: (signal?: AbortSignal) =>
     request<Publication[]>("/reference/publications", { signal }),
+  panel: (signal?: AbortSignal) => request<ReferencePanel>("/reference/panel", { signal }),
 
   datasets: (signal?: AbortSignal) => request<Dataset[]>("/datasets", { signal }),
   dataset: (id: string, signal?: AbortSignal) =>

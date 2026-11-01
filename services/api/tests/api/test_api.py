@@ -43,6 +43,35 @@ def test_health_with_reference(ref_client):
     assert caps["pca_space"] == "strata-pca-v1"
 
 
+def test_panel_endpoint_reports_composition_and_limits(ref_client):
+    r = ref_client.get(f"{V}/reference/panel")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["reference_version"] == SYNTHETIC_VERSION
+    # The standing outgroup set is served so a caller does not invent one.
+    assert body["right_set"] == ["PopC"]
+    assert body["limits"] == []
+    assert body["unavailable_labels"] == {}
+
+
+def test_panel_endpoint_is_unavailable_without_reference_data(client):
+    """503 rather than an empty panel, which would read as "no limits"."""
+    r = client.get(f"{V}/reference/panel")
+    assert r.status_code == 503
+    assert r.json()["code"] == "reference_unavailable"
+
+
+def test_health_states_a_panel_limit(ref_client, monkeypatch):
+    """An operator has to see what the installed panel cannot answer."""
+    monkeypatch.setattr(
+        "strata.api.science.reference_limits",
+        lambda: [{"id": "no_aasi_proxy", "summary": "no Andamanese-related population"}],
+    )
+    notes = ref_client.get(f"{V}/health").json()["notes"]
+
+    assert any("no_aasi_proxy" in n and "Andamanese" in n for n in notes)
+
+
 def test_auth_required_and_bad_tokens(client):
     assert client.get(f"{V}/datasets").status_code == 401
     r = client.get(f"{V}/datasets", headers={"Authorization": "Bearer nope"})

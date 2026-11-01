@@ -171,21 +171,28 @@ def cmd_curate(args: argparse.Namespace) -> int:
     all_groups = [r.group_id for r in records_1240k] + [r.group_id for r in records_ho]
     resolution = panel_mod.resolve(all_groups)
     unmatched = resolution.classify_unmatched()
+    limits = panel_mod.panel_limits(resolution)
     log.info(
-        "panel resolved: %d groups matched, %d labels superseded by a rename, "
-        "%d absent from the release",
+        "panel resolved: %d groups matched, %d renamed, %d known unavailable, "
+        "%d absent and unexplained",
         len(resolution.matched),
         len(unmatched.superseded),
+        len(unmatched.unavailable),
         len(unmatched.missing),
     )
-    # Only the real gaps are worth a note. The panel carries labels from
-    # several AADR releases on purpose, so a rename is expected, not news.
+    # Only the unexplained gaps are worth a note. A rename is expected (the
+    # panel carries labels from several releases on purpose), and a group the
+    # public AADR does not carry is already understood — what that one costs
+    # is reported as a limit below, not as something to chase.
     if unmatched.missing:
         ctx.note(
             f"{len(unmatched.missing)} panel labels are absent from AADR "
-            f"{args.aadr_version}: {', '.join(unmatched.missing[:20])}"
+            f"{args.aadr_version} for no recorded reason: "
+            f"{', '.join(unmatched.missing[:20])}"
             + (" ..." if len(unmatched.missing) > 20 else "")
         )
+    for limit in limits:
+        ctx.note(f"panel limit [{limit['id']}]: {limit['summary']}")
 
     keep = set(resolution.matched) if not args.all_groups else None
 
@@ -240,6 +247,9 @@ def cmd_curate(args: argparse.Namespace) -> int:
             # release. Recorded explicitly so a caller does not have to
             # reconstruct it from `roles`, where a panel block's role wins.
             "right_set": list(resolution.right_set),
+            # What this panel cannot answer. Served to the API, the agent and
+            # the UI so a question it cannot answer is not answered silently.
+            "limits": limits,
             "roles": {
                 role: sum(1 for r in resolution.roles.values() if r == role)
                 for role in sorted(set(resolution.roles.values()))

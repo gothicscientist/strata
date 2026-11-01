@@ -13,6 +13,7 @@ from pipeline.panel import (
     PANEL,
     PanelGroup,
     classify_unmatched,
+    panel_limits,
     resolve,
 )
 
@@ -67,10 +68,40 @@ def test_a_known_relabelling_is_not_a_gap() -> None:
 
 
 def test_a_label_the_release_does_not_carry_is_a_gap() -> None:
-    report = classify_unmatched(["Onge", "Mbuti.DG"], ["Mbuti", "Kalash"])
+    report = classify_unmatched(["Tuscan", "Mbuti.DG"], ["Mbuti", "Kalash"])
 
-    assert report.missing == ["Onge"]
+    assert report.missing == ["Tuscan"]
     assert report.superseded == ["Mbuti.DG"]
+
+
+def test_a_group_the_public_aadr_cannot_carry_is_not_an_unexplained_gap() -> None:
+    """Separated because the two call for different responses.
+
+    A group AADR cannot redistribute will never arrive in a later release, so
+    reporting it alongside an unexplained gap buries the handful of labels a
+    maintainer should actually look at after a version bump.
+    """
+    report = classify_unmatched(["Onge", "Jarawa*", "Tuscan"], ["Mbuti"])
+
+    assert report.unavailable == ["Jarawa*", "Onge"]
+    assert report.missing == ["Tuscan"]
+    assert report.as_dict()["unavailable_labels"] == {"Jarawa*": "consent", "Onge": "consent"}
+
+
+def test_the_panel_reports_an_absent_aasi_proxy_as_a_limit() -> None:
+    """The limit is what the gap costs, and it is computed, not asserted."""
+    res = resolve(["Mbuti", "Kalash", "Pakistan_IA"])
+
+    (limit,) = [lim for lim in panel_limits(res) if lim["id"] == "no_aasi_proxy"]
+    assert "qpadm" in limit["affects"]
+    assert "under-identified" in limit["summary"]
+
+
+def test_a_resolved_aasi_proxy_clears_the_limit() -> None:
+    """So the limit disappears by itself once a source supplies the proxy."""
+    res = resolve(["Mbuti", "Kalash", "Onge"])
+
+    assert [lim["id"] for lim in panel_limits(res)] == []
 
 
 def test_a_rename_whose_replacement_is_also_absent_is_a_gap() -> None:
@@ -85,8 +116,9 @@ def test_classification_covers_every_miss_exactly_once() -> None:
     report = res.classify_unmatched()
 
     misses = set(res.unmatched) | set(res.unmatched_right)
-    assert len(report.superseded) + len(report.missing) == len(misses)
-    assert not set(report.superseded) & set(report.missing)
+    buckets = [report.superseded, report.unavailable, report.missing]
+    assert sum(len(b) for b in buckets) == len(misses)
+    assert len(set().union(*buckets)) == len(misses)  # and none in two buckets
 
 
 def test_every_relabelling_target_is_a_label_the_panel_asks_for() -> None:

@@ -530,6 +530,84 @@ RELABELLED: dict[str, tuple[str, ...]] = {
 }
 
 
+# --------------------------------------------------------------------------
+# groups the public AADR does not carry
+# --------------------------------------------------------------------------
+
+# Why a label is absent, where the answer is known. The AADR publishes only
+# what its sample consents allow to be redistributed, so the Reich-lab
+# present-day Indian and Andamanese panels — which much of the South Asian
+# literature is built on — are not in any public release. No AADR version bump
+# will produce them, which is why they are recorded here rather than reported
+# as something to chase. Verified against the v66.p1 `.ind` files on
+# 2026-11-01: no row carries any of these labels.
+#
+# Reasons:
+#   "consent"        not redistributable; do not expect it in a later release.
+#   "in_1000_genomes" absent from AADR, but the same population is public in
+#                     the 1000 Genomes Project, so a second source can supply
+#                     it (see `data/pipeline/pipeline/onekg.py`).
+UNAVAILABLE_IN_PUBLIC_AADR: dict[str, str] = {
+    # Andamanese. The conventional proxy for the deep indigenous South Asian
+    # ancestry component, in both the source and the right set.
+    "Onge": "consent",
+    "Onge.DG": "consent",
+    "Jarawa*": "consent",
+    "Great_Andamanese*": "consent",
+    # Present-day Indian endogamous groups from the Reich-lab Human Origins
+    # Indian panel.
+    "Asur": "consent",
+    "Bhil": "consent",
+    "Birhor": "consent",
+    "Chamar": "consent",
+    "Chamar*": "consent",
+    "Dharkar": "consent",
+    "Dusadh": "consent",
+    "Gond": "consent",
+    "Hallaki": "consent",
+    "Ho": "consent",
+    "Juang": "consent",
+    "Kamsali": "consent",
+    "Kannada*": "consent",
+    "Kashmiri_Pandit": "consent",
+    "Kol": "consent",
+    "Kunbi": "consent",
+    "Kurmi": "consent",
+    "Kurumba": "consent",
+    "Lodi": "consent",
+    "Mahadeo_Koli": "consent",
+    "Malayan": "consent",
+    "Munda*": "consent",
+    "Nepali*": "consent",
+    "Nihali": "consent",
+    "Palliyar": "consent",
+    "Paniya": "consent",
+    "Santhal": "consent",
+    "Sinhalese": "consent",
+    "Tiwari_Brahmin": "consent",
+    "Ulladan": "consent",
+    "Velamas": "consent",
+    "Vishwabrahmin": "consent",
+    # Public in the 1000 Genomes Project instead: BEB (Bengali, Bangladesh),
+    # STU (Sri Lankan Tamil) and ITU (Indian Telugu).
+    "Bengali*": "in_1000_genomes",
+    "Tamil*": "in_1000_genomes",
+    "Telugu*": "in_1000_genomes",
+}
+
+# Labels that, between them, are the only populations in this panel specifically
+# informative about the deep indigenous South Asian ancestry component. If none
+# of them resolves, a model apportioning that component is under-identified:
+# qpAdm can still return weights, but they are not determined by the data, and
+# nothing in the output says so unless the panel says it here.
+AASI_PROXY_LABELS: tuple[str, ...] = (
+    "Onge",
+    "Onge.DG",
+    "Jarawa*",
+    "Great_Andamanese*",
+)
+
+
 @dataclass(frozen=True)
 class PanelGroup:
     """A named block of the reference panel."""
@@ -594,21 +672,34 @@ class Resolution:
 class UnmatchedReport:
     """Which panel labels missed, and whether the miss matters.
 
-    The panel deliberately carries labels from several AADR releases, so most
-    misses on any one release are a label the release renamed and nothing is
-    lost. Reporting the two together overstates the gap: on v66.p1 the raw
-    count is 137 labels, of which only a minority are groups the release does
-    not contain at all. ``missing`` is the number a reviewer should act on.
+    Three outcomes, because they call for three different responses:
+
+    * ``superseded`` — the release renamed the label and carries the same
+      individuals under another one. Nothing is lost and nobody need act. The
+      panel deliberately keeps labels from several AADR releases so older ones
+      keep resolving, so on any one release most misses land here: on v66.p1,
+      96 of 137.
+    * ``unavailable`` — the group is known not to be in the public AADR, for a
+      reason recorded in :data:`UNAVAILABLE_IN_PUBLIC_AADR`. Permanent, already
+      understood, and not fixable by rebuilding; what it costs is reported by
+      :func:`panel_limits` instead.
+    * ``missing`` — unexplained. This is the short list a maintainer should
+      look at after an AADR version bump, and the only count worth warning on.
     """
 
     superseded: list[str] = field(default_factory=list)  # renamed; replacement resolved
-    missing: list[str] = field(default_factory=list)  # absent from the release
+    unavailable: list[str] = field(default_factory=list)  # known absent from public AADR
+    missing: list[str] = field(default_factory=list)  # absent and unexplained
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "superseded_labels": sorted(self.superseded),
+            "unavailable_labels": {
+                label: UNAVAILABLE_IN_PUBLIC_AADR[label] for label in sorted(self.unavailable)
+            },
             "missing_labels": sorted(self.missing),
             "n_superseded": len(self.superseded),
+            "n_unavailable": len(self.unavailable),
             "n_missing": len(self.missing),
         }
 
@@ -648,8 +739,48 @@ def classify_unmatched(unmatched: list[str], available: list[str]) -> UnmatchedR
         if any(_matches(r, g) for r in replacements for g in pool):
             report.superseded.append(label)
             continue
+        if label in UNAVAILABLE_IN_PUBLIC_AADR:
+            report.unavailable.append(label)
+            continue
         report.missing.append(label)
     return report
+
+
+def panel_limits(res: Resolution) -> list[dict[str, Any]]:
+    """What this resolution of the panel cannot support, and what that means.
+
+    A panel is not simply present or absent: it can resolve and still be
+    unable to answer a question, and a number returned for a question it
+    cannot answer is worse than no number. Each limit is computed against the
+    release rather than asserted, so it disappears by itself if a later
+    release, or a second data source, supplies the missing populations.
+
+    Returns:
+        One record per limit that applies, each with an ``id`` (stable, for
+        callers to key on), a ``summary`` for a person, and the ``labels`` the
+        limit turns on. An empty list means the panel resolved with no known
+        limits.
+    """
+    limits: list[dict[str, Any]] = []
+    pool = sorted(res.matched)
+    if not any(_matches(label, g) for label in AASI_PROXY_LABELS for g in pool):
+        limits.append(
+            {
+                "id": "no_aasi_proxy",
+                "severity": "under_identified",
+                "summary": (
+                    "This release carries no Andamanese-related population, the "
+                    "conventional proxy for the deep indigenous South Asian ancestry "
+                    "component. Formal models that apportion that component are "
+                    "under-identified: qpAdm will return weights, but they are not "
+                    "determined by the data, and a rejected fit for a South Asian "
+                    "target may reflect the missing proxy rather than the model."
+                ),
+                "labels": list(AASI_PROXY_LABELS),
+                "affects": ["qpadm", "qpadm_rotate"],
+            }
+        )
+    return limits
 
 
 def _matches(label: str, group_id: str) -> bool:
