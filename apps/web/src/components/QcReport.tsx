@@ -12,7 +12,7 @@ const KNOWN: Array<[keyof Dataset["qc"], string, (v: unknown) => string]> = [
   ["n_no_calls", "No-calls", (v) => int(v as number)],
   ["n_indels_dropped", "Indels dropped", (v) => int(v as number)],
   ["het_rate", "Heterozygosity", (v) => fixed(v as number, 4)],
-  ["panel_overlap", "SNPs on reference panel", (v) => int(v as number)],
+  ["panel_overlap", "Panel coverage", (v) => pct(v as number, 1)],
   ["panel_size", "Reference panel size", (v) => int(v as number)],
 ];
 
@@ -24,10 +24,10 @@ export function QcReport({ dataset, n = 1 }: { dataset: Dataset; n?: number | st
     const v = qc[key];
     if (v === null || v === undefined || v === "") continue;
     if (key === "n_variants" && dataset.kind === "g25") continue;
+    if (key === "panel_overlap" && typeof qc.overlap?.n_usable === "number") {
+      rows.push(["SNPs on reference panel", int(qc.overlap.n_usable)]);
+    }
     rows.push([label, fmt(v)]);
-  }
-  if (qc.panel_overlap && qc.panel_size) {
-    rows.push(["Panel coverage", pct(qc.panel_overlap / qc.panel_size, 1)]);
   }
   if (qc.sex_chrom_counts) {
     rows.push([

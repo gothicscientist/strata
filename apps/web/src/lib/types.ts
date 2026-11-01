@@ -181,8 +181,10 @@ export interface QCReport {
   n_indels_dropped?: number | null;
   het_rate?: number | null;
   sex_chrom_counts?: Record<string, number> | null;
+  /** Fraction of reference-panel SNPs usable, between 0 and 1. */
   panel_overlap?: number | null;
   panel_size?: number | null;
+  overlap?: { n_usable?: number; [key: string]: unknown } | null;
   n_samples?: number | null;
   warnings: string[];
   [key: string]: unknown;
