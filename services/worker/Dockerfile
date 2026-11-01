@@ -64,9 +64,9 @@ RUN Rscript -e 'pkgs <- c("admixtools","abind","cli","crayon","cubelyr","data.tr
       for (p in pkgs) cat(sprintf("%-16s %s\n", p, as.character(packageVersion(p))))' \
       > /opt/strata-r/strata-r-versions.txt
 
-# Drop the compiler toolchain from the layer that gets copied forward.
-RUN micromamba remove -y -p /opt/strata-r gxx_linux-64 make || true \
- && micromamba clean --all --yes \
+# Do not ask the solver to remove compiler packages: conda-forge's dependency
+# graph can remove R with them. Only discard archives and documentation.
+RUN micromamba clean --all --yes \
  && find /opt/strata-r -name '*.a' -delete \
  && rm -rf /opt/strata-r/conda-meta/pkgs /opt/strata-r/share/doc
 
@@ -138,6 +138,9 @@ RUN python -m pipeline --root /app fetch-f2 \
 RUN mkdir -p /app/data/derived && chown -R strata:strata /app/data
 
 USER strata
+
+# Check the final filesystem as the runtime user, after all cleanup and copies.
+RUN python -c "from strata.qpadm import qpadm_available; assert qpadm_available(), 'R runtime unavailable'"
 
 # Liveness: the bridge resolves and ADMIXTOOLS answers.
 HEALTHCHECK --interval=60s --timeout=120s --start-period=30s --retries=3 \
