@@ -80,7 +80,7 @@ describe("components", () => {
       limits: [],
     });
     render(<ResultView result={synthQpAdm} />);
-    await screen.findByText("rejected");
+    await screen.findByText("infeasible");
     expect(screen.queryByText(/cannot answer this fully/)).toBeNull();
   });
 
@@ -91,14 +91,14 @@ describe("components", () => {
       limits: [{ id: "elsewhere", summary: "Only f4.", affects: ["f4"] }],
     });
     render(<ResultView result={synthQpAdm} />);
-    await screen.findByText("rejected");
+    await screen.findByText("infeasible");
     expect(screen.queryByText(/Only f4/)).toBeNull();
   });
 
   it("still shows the result when the limits cannot be loaded", async () => {
     vi.spyOn(api, "panel").mockRejectedValue(new ApiError(503, "no reference"));
     render(<ResultView result={synthQpAdm} />);
-    expect(await screen.findByText("rejected")).toBeInTheDocument();
+    expect(await screen.findByText("infeasible")).toBeInTheDocument();
     expect(screen.queryByText(/cannot answer this fully/)).toBeNull();
   });
 

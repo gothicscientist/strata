@@ -200,16 +200,20 @@ def test_delete_shreds_key(client):
     from strata.db.session import get_sessionmaker
 
     h = guest(client)
+    # A long label, not a two-letter one: the assertion below is that the label does
+    # not survive in the ciphertext, and a short needle turns up in ~1500 random bytes
+    # by chance often enough to fail a green build (p ≈ 2% for two bytes).
+    label = "Sample_Shred_Marker_01"
     did = client.post(
         f"{V}/datasets",
         headers=h,
-        data={"kind": "g25", "g25_text": _g25_line("Me", np.linspace(0.1, 0.001, 25))},
+        data={"kind": "g25", "g25_text": _g25_line(label, np.linspace(0.1, 0.001, 25))},
     ).json()["id"]
     import uuid
 
     with get_sessionmaker()() as s:
         ds = s.get(Dataset, uuid.UUID(did))
-        assert ds.ciphertext and b"Me" not in ds.ciphertext  # encrypted at rest
+        assert ds.ciphertext and label.encode() not in ds.ciphertext  # encrypted at rest
         assert s.get(DatasetKey, uuid.UUID(did)) is not None
     assert client.delete(f"{V}/datasets/{did}", headers=h).status_code == 204
     with get_sessionmaker()() as s:
