@@ -11,6 +11,7 @@ export interface Capabilities {
   qpadm: boolean;
   llm_providers: string[];
   llm_configured: boolean;
+  llm_byok?: boolean;
   reference_version: string | null;
   reference_loaded: boolean;
   snp_panel_loaded: boolean;

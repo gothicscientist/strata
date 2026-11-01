@@ -44,7 +44,7 @@ ENV PATH=/opt/strata-r/bin:$PATH
 RUN git clone --quiet "${ADMIXTOOLS2_REPO}" /tmp/admixtools \
  && git -C /tmp/admixtools checkout --quiet "${ADMIXTOOLS2_COMMIT}" \
  && git -C /tmp/admixtools rev-parse HEAD > /opt/strata-r/ADMIXTOOLS2_COMMIT \
- && MAKEFLAGS="-j$(nproc)" R CMD INSTALL --no-docs --no-help /tmp/admixtools \
+ && MAKEFLAGS="-j2" R CMD INSTALL --no-docs --no-help /tmp/admixtools \
  && rm -rf /tmp/admixtools
 
 # Fail the build rather than ship an image whose f-statistics do not work.
@@ -115,6 +115,23 @@ ENV PYTHONUNBUFFERED=1 \
     STRATA_DERIVED_DIR=/app/data/derived \
     STRATA_QPADM_TIMEOUT=3600 \
     OMP_NUM_THREADS=1
+
+# The same self-contained image serves the API and bounded queue jobs on Azure.
+# No downloads or writable reference volume are needed at startup.
+COPY data/derived /app/data/derived
+COPY data/examples /app/data/examples
+COPY docs/methods /app/docs/methods
+COPY data/pipeline/pipeline /app/data/pipeline/pipeline
+COPY LICENSE /app/LICENSE
+ENV PYTHONPATH=/app/data/pipeline \
+    STRATA_DATA_DIR=/app/data \
+    STRATA_EXAMPLES_DIR=/app/data/examples \
+    STRATA_METHODS_DIR=/app/docs/methods \
+    STRATA_F2_DIR=/app/data/derived/f2/strata-ref-v1 \
+    OPENBLAS_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1
+RUN python -m pipeline --root /app fetch-f2 \
+ && python -m pipeline --root /app verify
 
 # infra/docker-compose.yml mounts data/derived here read-only. Create it so the
 # image also runs standalone, before any reference data exists.

@@ -22,7 +22,7 @@ def make_engine(url: str, *, echo: bool = False) -> Engine:
         if url in ("sqlite://", "sqlite:///:memory:"):
             kwargs["poolclass"] = StaticPool
     else:
-        kwargs.update(pool_pre_ping=True, pool_size=10, max_overflow=10)
+        kwargs.update(pool_pre_ping=True, pool_size=3, max_overflow=2, pool_recycle=300)
     engine = create_engine(url, **kwargs)
     if url.startswith("sqlite"):
 

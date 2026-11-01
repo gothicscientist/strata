@@ -220,10 +220,14 @@ export default function AssistantPage() {
   const [shared, setShared] = useState<string[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const [provider, setProvider] = useState<"anthropic" | "openai">("openai");
+  const [apiKey, setApiKey] = useState("");
+  const [model, setModel] = useState("");
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  const configured = health ? health.capabilities.llm_configured : null;
+  const configured = Boolean(health?.capabilities.llm_configured || apiKey.trim().length >= 8);
+  const connected = session.status === "guest" || session.status === "signed-in";
 
   // Restore the conversation from this tab's previous visit.
   useEffect(() => {
@@ -246,7 +250,7 @@ export default function AssistantPage() {
 
   async function send() {
     const content = input.trim();
-    if (!content || streaming) return;
+    if (!content || streaming || !configured || !connected) return;
     setError(null);
     setStreaming(true);
     const ctrl = new AbortController();
@@ -261,7 +265,10 @@ export default function AssistantPage() {
       }
       setInput("");
       setTurns((t) => [...t, { role: "user", content }, emptyAssistant()]);
-      for await (const ev of streamChat(sid, content, ctrl.signal)) {
+      const credentials = apiKey.trim()
+        ? { provider, api_key: apiKey.trim(), ...(model.trim() ? { model: model.trim() } : {}) }
+        : undefined;
+      for await (const ev of streamChat(sid, content, ctrl.signal, credentials)) {
         setTurns((t) => {
           const last = t[t.length - 1];
           if (!last || last.role !== "assistant") return t;
@@ -307,15 +314,43 @@ export default function AssistantPage() {
         }
       />
 
-      {configured === false ? (
-        <Caveat title="The assistant is not configured on this server">
-          No language-model provider has an API key, so questions cannot be answered. The operator
-          can set one as described in <code>docs/DEPLOYMENT.md</code>. All analyses remain available
-          from the <Link href="/analyses/new/">composer</Link>.
-        </Caveat>
-      ) : null}
-
       <div className="max-w-[46rem]">
+        <fieldset className="mb-8 border-b border-rule pb-6" disabled={streaming}>
+          <legend className="text-h3 italic">Use your own API key</legend>
+          <p id="api-key-help" className="mb-4 mt-2 text-small text-ink-2">
+            Your provider bills your API account. The key stays in this page's memory and is
+            sent securely to Strata for each request, then to your selected provider. It is
+            never saved. Reloading the page clears it. All analyses also work without AI in
+            the <Link href="/analyses/new/">composer</Link>.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="label">Provider</span>
+              <select className="field" value={provider} onChange={(e) => {
+                setProvider(e.target.value as "anthropic" | "openai");
+                setApiKey("");
+                setModel("");
+              }}>
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="label">Model (optional)</span>
+              <input className="field" value={model} maxLength={120}
+                placeholder={provider === "openai" ? "gpt-5" : "claude-opus-5-5"}
+                onChange={(e) => setModel(e.target.value)} />
+            </label>
+          </div>
+          <label className="mt-4 block">
+            <span className="label">API key</span>
+            <input className="field" type="password" autoComplete="off" spellCheck={false}
+              aria-describedby="api-key-help" value={apiKey} maxLength={4096}
+              onChange={(e) => setApiKey(e.target.value)} placeholder="Paste your provider API key" />
+          </label>
+          {apiKey ? <button type="button" className="linkish mt-3 text-small"
+            onClick={() => setApiKey("")}>Clear API key</button> : null}
+        </fieldset>
         {turns.length === 0 ? (
           <div className="mb-10 text-small text-ink-2">
             <p className="mb-2 italic text-ink">For example</p>
@@ -394,7 +429,7 @@ export default function AssistantPage() {
             className="field h-28 resize-y !font-serif !text-body !leading-[1.5]"
             value={input}
             maxLength={8000}
-            disabled={configured === false}
+            disabled={!connected || streaming}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -410,7 +445,7 @@ export default function AssistantPage() {
                 Stop
               </button>
             ) : (
-              <button type="submit" className="btn" disabled={!input.trim() || configured === false}>
+              <button type="submit" className="btn" disabled={!input.trim() || !configured || !connected}>
                 Ask
               </button>
             )}
@@ -420,6 +455,7 @@ export default function AssistantPage() {
               </button>
             ) : null}
           </div>
+          {!configured ? <p className="mt-3 text-small text-ink-2">Enter an API key above to ask the assistant.</p> : null}
         </form>
       </div>
     </>

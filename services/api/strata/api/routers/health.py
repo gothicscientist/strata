@@ -45,7 +45,7 @@ def health(db: DbDep, settings: SettingsDep) -> Health:
             "(services/worker image)"
         )
     if not settings.llm_configured:
-        notes.append(f"research assistant disabled: no API key for {settings.llm_provider}")
+        notes.append("research assistant uses visitor-supplied API keys (BYOK)")
     if not settings.data_key:
         notes.append("STRATA_DATA_KEY not set: using an ephemeral dev key (data lost on restart)")
     from strata.jobs.registry import kinds
