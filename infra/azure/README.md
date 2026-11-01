@@ -73,6 +73,8 @@ genotype calls do not.
 3. Push the deployment branch. `.github/workflows/runtime-image.yml` publishes
    `ghcr.io/gothicscientist/strata-runtime:<commit>`. Use a public commit tag or
    immutable digest; do not deploy the moving `portfolio` tag automatically.
+   For a digest, pass its source commit with `--git-sha`. Commit tags supply the
+   source revision automatically so downloaded reports identify the deployed code.
 4. Deploy with the authenticated CLI session:
 
    ```sh
@@ -116,9 +118,14 @@ prove that the live account has credit or model access.
 
 The November 1 Linux image run passed 570 tests, with one expected skip for the
 missing-R error path. Its 700k-row timing test missed the threshold during the
-busy full run, then passed in isolation. Web typecheck, 51 tests, and the production
+busy full run, then passed in isolation. Web typecheck, 53 tests, and the production
 build passed. Supabase's security advisor returned no lints. These checks do not
 replace subsequent live deployment checks.
+
+Live checks also covered ZIP/gzip, VCF, 23andMe, AncestryDNA, FTDNA, MyHeritage,
+queued-job cancellation, and deletion. Browser validation covered raw upload,
+QC, queued PCA, axis selection, persisted workspaces, and HTML/JSON downloads.
+The QC display distinguishes the exact usable-SNP count from the coverage fraction.
 
 For rollback, deploy the last known-good immutable image tag to both API and worker,
 and restore the previous Pages deployment. Preserve the encryption key and database.

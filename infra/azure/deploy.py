@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import time
 import urllib.error
@@ -23,6 +24,10 @@ def main() -> None:
         "--image", required=True, help="public GHCR image pinned to a commit/digest"
     )
     p.add_argument("--env-file", default=".deployment/runtime.env")
+    p.add_argument(
+        "--git-sha",
+        help="source commit for a digest-pinned image (commit tags infer it)",
+    )
     p.add_argument("--secrets-file", default=".deployment/secrets.json")
     p.add_argument("--resource-group", default="strata")
     p.add_argument("--environment", default="strata-production")
@@ -87,6 +92,12 @@ def main() -> None:
         for line in Path(a.env_file).read_text().splitlines()
         if line.strip() and not line.startswith("#")
     )
+    source_sha = a.git_sha or a.image.rsplit(":", 1)[-1]
+    if not re.fullmatch(r"[0-9a-f]{40}", source_sha):
+        raise SystemExit(
+            "Use a full commit image tag, or provide --git-sha for report provenance"
+        )
+    values["STRATA_GIT_SHA"] = source_sha
     secret_values = json.loads(Path(a.secrets_file).read_text())
     refs = {"DATABASE_URL": "database-url", "STRATA_DATA_KEY": "data-key"}
     secrets = [{"name": refs[k], "value": values[k]} for k in refs]
