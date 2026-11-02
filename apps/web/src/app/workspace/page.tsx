@@ -164,8 +164,8 @@ export default function WorkspacePage() {
         title="Your analyses and datasets"
         lede={
           session.status === "guest"
-            ? "This is a guest workspace. Everything here is deleted 24 hours after it was created."
-            : "Analyses and datasets you have created. Deleting a dataset destroys its encryption key."
+            ? "Guest workspace. Deleted after 24 hours."
+            : undefined
         }
       />
 

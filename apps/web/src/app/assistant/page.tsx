@@ -298,13 +298,8 @@ export default function AssistantPage() {
       <PageHeader
         kicker="Research assistant"
         title="Ask a question"
-        lede="The assistant answers by running Strata's analyses and reading the methods documentation. Each tool it runs is listed as a numbered method beneath the answer, with its inputs and results."
-        aside={
-          <p>
-            It sees population identifiers and derived coordinates, never genotypes. Numbers it
-            states are checked against tool results; unverified values are flagged.
-          </p>
-        }
+        lede="Answers come from real analyses, with every step shown."
+        aside={<p>It never sees genotypes.</p>}
       />
 
       {configured === false ? (

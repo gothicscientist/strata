@@ -12,7 +12,7 @@ export default function MethodsPage() {
       <PageHeader
         kicker="Documentation"
         title="Methods"
-        lede="The statistics Strata computes, their assumptions, and how their results should be read. The research assistant retrieves from these same texts and cites them by section."
+        lede="What each statistic assumes."
       />
       {docs.length === 0 ? (
         <Empty>

@@ -129,7 +129,7 @@ function Nav({ path, onNavigate }: { path: string; onNavigate?: () => void }) {
                     href={n.href}
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
-                    className={`group relative grid grid-cols-[1.25rem_1fr] items-baseline gap-x-2 rounded-[6px] px-3 py-1.5 no-underline transition-colors ${
+                    className={`group relative grid grid-cols-[1.25rem_1fr] items-baseline gap-x-2 rounded-[6px] px-3 py-1 no-underline transition-colors ${
                       active ? "bg-white/[0.07] text-white" : "text-[#c3cbd2] hover:bg-white/[0.04] hover:text-white"
                     }`}
                   >
@@ -141,9 +141,6 @@ function Nav({ path, onNavigate }: { path: string; onNavigate?: () => void }) {
                     </span>
                     <span className="transition-transform duration-150 group-hover:translate-x-0.5">
                       <span className="block text-[1.06rem] font-medium leading-tight">{n.label}</span>
-                      <span className="block text-[0.82rem] leading-snug text-[#8d98a3] group-hover:text-[#a9b3bc]">
-                        {n.hint}
-                      </span>
                     </span>
                   </Link>
                 </li>

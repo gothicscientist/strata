@@ -128,13 +128,33 @@ export function Footnote({ mark = "*", children }: { mark?: string; children: Re
   );
 }
 
-/** A caveat that must be read: an ochre band with its title. */
+/** A caveat, folded to its title; one click opens the full text. */
 export function Caveat({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="my-6 max-w-[46rem] rounded-r-[6px] border-l-[3px] border-[#c08419] bg-loess-soft py-3 pr-4 pl-4 text-small leading-[1.55]">
-      <p className="mb-1 font-semibold text-ink">{title}</p>
-      <div className="text-ink-2">{children}</div>
-    </div>
+    <details className="group my-4 max-w-[46rem] rounded-r-[6px] border-l-[3px] border-[#c08419] bg-loess-soft text-small leading-[1.55]">
+      <summary className="flex cursor-pointer list-none items-center gap-2 py-2 pr-4 pl-4 font-semibold text-ink marker:hidden [&::-webkit-details-marker]:hidden">
+        <span className="inline-block text-[0.8em] text-[#c08419] transition-transform group-open:rotate-90" aria-hidden>
+          &#9656;
+        </span>
+        {title}
+      </summary>
+      <div className="px-4 pb-3 text-ink-2">{children}</div>
+    </details>
+  );
+}
+
+/** Secondary detail (inputs, provenance, background) kept one click away. */
+export function Fold({ title, children, open = false }: { title: ReactNode; children: ReactNode; open?: boolean }) {
+  return (
+    <details open={open} className="group mb-3 max-w-[48rem] border-t border-rule">
+      <summary className="flex cursor-pointer list-none items-center gap-2 py-3 text-[1.15rem] text-ink marker:hidden hover:text-malachite [&::-webkit-details-marker]:hidden">
+        <span className="inline-block text-[0.75em] text-ink-3 transition-transform group-open:rotate-90" aria-hidden>
+          &#9656;
+        </span>
+        {title}
+      </summary>
+      <div className="pb-6">{children}</div>
+    </details>
   );
 }
 

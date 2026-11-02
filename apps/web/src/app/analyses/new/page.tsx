@@ -126,7 +126,7 @@ function Composer() {
       <PageHeader
         kicker="Compose"
         title="New analysis"
-        lede="Choose a target, a method and its parameters. Exploratory methods work in a PCA or G25 space; qpAdm tests a model formally on f-statistics."
+        lede="Pick a method, a target and its sources."
       />
 
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-12">
@@ -136,11 +136,8 @@ function Composer() {
               <legend className="sr-only">Method</legend>
               {(["exploratory", "formal"] as const).map((kind) => (
                 <div key={kind} className="mb-5">
-                  <p className="mb-2 flex items-center gap-2 text-caption text-ink-3">
+                  <p className="mb-2">
                     <KindMark kind={kind} />
-                    {kind === "formal"
-                      ? "Tests a model on f-statistics. Needs ADMIXTOOLS 2 on the server."
-                      : "Describes geometry in a PCA or G25 space."}
                   </p>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {METHODS.filter((m) => m.formal === (kind === "formal")).map((m) => {
@@ -171,7 +168,7 @@ function Composer() {
                             <span className="mt-1 block text-small leading-[1.5] text-ink-2">{m.description}</span>
                             {disabled ? (
                               <span className="mt-1.5 block text-caption text-ink-3">
-                                Not installed on this server. See the worker documentation.
+                                Not installed on this server.
                               </span>
                             ) : null}
                           </span>
@@ -189,7 +186,7 @@ function Composer() {
               <div className="mb-6 max-w-[28rem]">
                 <PopulationPicker
                   label="Target population from the library"
-                  hint="Or leave empty and choose a sample from an uploaded raw-genotype dataset below."
+                  hint="Or use an uploaded sample below."
                   value={state.targetPopulation}
                   onChange={(v: Picked[]) => set({ targetPopulation: v })}
                   max={1}
@@ -260,7 +257,7 @@ function Composer() {
                   <div className="sm:col-span-2">
                     <PopulationPicker
                       label="Sources"
-                      hint="Two to eight candidate source populations."
+                      hint="2 to 8 sources."
                       value={state.sources}
                       onChange={(sources) => set({ sources })}
                       max={8}
@@ -272,7 +269,7 @@ function Composer() {
                     value={state.bootstrap}
                     min={0}
                     max={5000}
-                    hint="Resamples individuals within each source; 0 disables intervals."
+                    hint="0 turns intervals off."
                     onChange={(bootstrap) => set({ bootstrap })}
                   />
                   <NumberField label="Random seed" value={state.seed} min={0} onChange={(seed) => set({ seed })} />
@@ -283,7 +280,7 @@ function Composer() {
                       checked={state.sensitivity}
                       onChange={(e) => set({ sensitivity: e.target.checked })}
                     />
-                    Run leave-one-out sensitivity diagnostics
+                    Leave-one-out checks
                   </label>
                 </>
               ) : null}
@@ -293,7 +290,7 @@ function Composer() {
                   <div className="sm:col-span-2">
                     <PopulationPicker
                       label="Candidate sources"
-                      hint="Every combination within the size range is fitted and ranked."
+                      hint="Every combination is fitted."
                       value={state.sources}
                       onChange={(sources) => set({ sources })}
                       max={24}
@@ -321,7 +318,7 @@ function Composer() {
                   <div>
                     <PopulationPicker
                       label="Right (outgroups)"
-                      hint="Populations differentially related to the sources. Use more right than left populations."
+                      hint="Use more right than left."
                       value={state.right}
                       onChange={(right) => set({ right })}
                       max={30}
@@ -333,7 +330,7 @@ function Composer() {
                   ) : null}
                   <label className="flex items-baseline gap-2 text-small sm:col-span-2">
                     <input type="checkbox" className="" checked={state.allsnps} onChange={(e) => set({ allsnps: e.target.checked })} />
-                    Use all SNPs per f4-statistic (allsnps), rather than only SNPs present in every population
+                    Use all SNPs per f4-statistic (allsnps)
                   </label>
                 </>
               ) : null}
@@ -349,8 +346,7 @@ function Composer() {
 
         <aside className="lg:sticky lg:top-8 lg:self-start">
           <div className="panel p-5">
-            <p className="text-caption font-semibold text-ink-3">Ready to run</p>
-            <p className="mt-1 flex flex-wrap items-center gap-2 text-[1.2rem] font-semibold">
+                        <p className="mt-1 flex flex-wrap items-center gap-2 text-[1.2rem] font-semibold">
               {method.label}{" "}
               <span key={method.key} className="pop inline-block">
                 <KindMark kind={method.formal ? "formal" : "exploratory"} />
@@ -389,13 +385,18 @@ function Composer() {
             </button>
             {error ? <ErrorNote error={error} /> : null}
           </div>
-          <div className="mt-5 px-1 text-caption leading-[1.6] text-ink-2">
-            <p className="mb-1 font-semibold text-ink">About this method</p>
-            <p>{method.guidance}</p>
+          <details className="group mt-4 px-1 text-caption leading-[1.6] text-ink-2">
+            <summary className="cursor-pointer list-none font-semibold text-ink marker:hidden hover:text-malachite [&::-webkit-details-marker]:hidden">
+              <span className="mr-1.5 inline-block text-[0.8em] text-ink-3 transition-transform group-open:rotate-90" aria-hidden>
+                &#9656;
+              </span>
+              When to use this
+            </summary>
+            <p className="mt-2">{method.guidance}</p>
             <p className="mt-2">
-              See <Link href="/methods/">Methods</Link> for the statistics and their assumptions.
+              <Link href="/methods/">Methods</Link>
             </p>
-          </div>
+          </details>
         </aside>
       </div>
     </>

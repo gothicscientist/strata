@@ -115,12 +115,11 @@ function Library() {
       <PageHeader
         kicker="Reference library"
         title="Reference populations"
-        lede="Ancient and present-day groups available as sources, outgroups and points of comparison. Dates are calibrated years before present (BP, present = 1950)."
+        lede="Dates in calibrated years BP."
         aside={
           data ? (
             <p className="num">
-              {int(data.total)} population{data.total === 1 ? "" : "s"} match
-              {data.total === 1 ? "es" : ""} the current filters.
+              {int(data.total)} population{data.total === 1 ? "" : "s"}
             </p>
           ) : null
         }
@@ -168,7 +167,7 @@ function Library() {
         </fieldset>
         <div className="grid grid-cols-2 gap-x-4 gap-y-4 md:grid-cols-4 lg:grid-cols-[2fr_1fr_1fr_0.7fr_0.7fr]">
         <label className="col-span-2 md:col-span-4 lg:col-span-1">
-          <span className="label">Search names, sites and publications</span>
+          <span className="label">Search</span>
           <input
             className="field"
             type="search"
@@ -232,7 +231,7 @@ function Library() {
         <>
           <Figure
             n={1}
-            caption={`Sampling locations of the ${last - first + 1} populations listed in Table 1. Marker area is proportional to the number of individuals. Select a marker to open the population.`}
+            caption="Marker size is the number of individuals. Click one to open it."
           >
             <OriginsMap
               title="Map of population sampling locations"
@@ -252,12 +251,10 @@ function Library() {
 
           <figure className="my-8">
             <figcaption className="mb-2 text-caption text-ink-2">
-              <span className="font-semibold text-ink">Table 1.</span> Reference populations{" "}
               <span className="num">
                 {first}&ndash;{last}
               </span>{" "}
-              of <span className="num">{int(data.total)}</span>. Dates give the range of sample
-              dates within the group; <em>n</em> is the number of individuals.
+              of <span className="num">{int(data.total)}</span>
             </figcaption>
             <div className="panel overflow-x-auto px-4 py-2">
               <table className="booktabs">

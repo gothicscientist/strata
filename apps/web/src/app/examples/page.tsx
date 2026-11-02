@@ -13,7 +13,7 @@ export default function ExamplesPage() {
       <PageHeader
         kicker="Worked examples"
         title="Example analyses"
-        lede="Analyses computed from public reference data with the same code that runs your own. Each records its inputs, parameters and provenance."
+        lede="Real analyses on public data."
       />
       {ex.loading ? (
         <Loading what="examples" />
@@ -47,7 +47,6 @@ export default function ExamplesPage() {
                 <h2 className="mt-1.5 text-[1.35rem] leading-snug font-semibold text-ink group-hover:text-malachite">
                   {e.title}
                 </h2>
-                <p className="measure mt-1 text-small leading-[1.55] text-ink-2">{e.summary}</p>
               </Link>
             </li>
           ))}

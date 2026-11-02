@@ -108,7 +108,7 @@ function PcaView({ r, compact }: { r: PcaProjectionResult; compact: boolean }) {
       ) : space ? (
         <Figure
           n={1}
-          caption={`Projected target${r.targets.length === 1 ? "" : "s"} (black star) against reference population means in ${space.name}, coloured and shaped by region. Projection uses only the SNPs present in the sample (least-squares, as smartpca lsqproject); low-coverage samples shrink towards the origin.`}
+          caption={`Your sample (star) among reference populations. Low-coverage samples drift toward the centre.`}
         >
           <PcaPlot space={space} targets={r.targets} height={compact ? 380 : 540} />
         </Figure>
@@ -156,8 +156,7 @@ function NearestView({ r }: { r: NearestResult }) {
         n={1}
         caption={
           <>
-            Reference populations nearest to <em>{r.target}</em> in {r.space}, by {r.metric} distance
-            between the target and population means.
+            Nearest to <em>{r.target}</em> ({r.metric} distance).
           </>
         }
         notes="Distances in different coordinate spaces are not comparable. Small differences between neighbours are not meaningful without an estimate of sampling error."
@@ -196,7 +195,7 @@ function SensitivityTables({ s, start }: { s: Sensitivity; start: number }) {
       {s.leave_one_source_out.length ? (
         <TableFigure
           n={start}
-          caption="Leave-one-source-out sensitivity. Each row refits the model without one source; a large increase in distance means that source is needed."
+          caption="Drop one source. A big jump means it is needed."
         >
           <table className="booktabs max-w-[40rem]">
             <thead>
@@ -221,7 +220,7 @@ function SensitivityTables({ s, start }: { s: Sensitivity; start: number }) {
       {s.leave_one_dimension_out.length ? (
         <TableFigure
           n={start + 1}
-          caption="Leave-one-dimension-out sensitivity. Rows with large changes indicate a fit driven by a single component."
+          caption="Drop one dimension. Big changes mean one component drives the fit."
         >
           <table className="booktabs max-w-[48rem]">
             <thead>
@@ -274,8 +273,8 @@ function FitView({ r, compact }: { r: AdmixtureFitResult; compact: boolean }) {
         n={1}
         caption={
           hasCi
-            ? `Mixture weights for ${r.target}. (a) Point estimates. (b) Estimates with 95% bootstrap intervals (2.5th to 97.5th percentile, resampling individuals within each source).`
-            : `Mixture weights for ${r.target}. No bootstrap was run, so no interval is shown.`
+            ? `Mixture weights for ${r.target}, with 95% bootstrap intervals.`
+            : `Mixture weights for ${r.target}.`
         }
       >
         <WeightsChart
@@ -311,7 +310,7 @@ function FitView({ r, compact }: { r: AdmixtureFitResult; compact: boolean }) {
       {!compact && r.residuals.length ? (
         <Figure
           n={2}
-          caption="Per-dimension residuals of the fitted mixture (fit minus target). Systematic residuals on one component point to ancestry not represented among the sources."
+          caption="Residuals per dimension. A lopsided one hints at a missing source."
         >
           <ResidualsChart
             title="Residuals by dimension"
@@ -356,7 +355,7 @@ function RotationView({ r }: { r: RotationResult }) {
       </p>
       <TableFigure
         n={1}
-        caption="Source rotation, ranked by residual distance. Sources with weight below 1% are pruned and the model refitted."
+        caption="Models ranked by distance. Sources under 1% are pruned."
         notes={
           <>
             {r.preferred_rank ? (
@@ -458,7 +457,7 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
       {drawable ? (
       <Figure
           n={1}
-          caption={`qpAdm mixture weights for ${r.target} with ±1.96 block-jackknife standard errors. Weights are unconstrained and may fall outside [0, 1].`}
+          caption={`qpAdm weights for ${r.target}, ±1.96 SE.`}
         >
           <WeightsChart
             title={`qpAdm weights for ${r.target}`}
@@ -473,13 +472,12 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
         </Figure>
       ) : (
         <p className="my-6 max-w-[44rem] text-small text-ink-2 italic">
-          No weight figure is drawn: {verdict === "infeasible" ? "the model is infeasible and " : ""}at least one
-          weight lies outside [0, 1], so the estimates cannot be shown as proportions. They are listed in Table 1.
+          No chart: weights fall outside [0, 1]. See Table 1.
         </p>
       )}
       <TableFigure
         n={1}
-        caption="Estimated weights. SE from the block jackknife; z = weight / SE. Weights are unconstrained and need not lie in [0, 1]."
+        caption="Weights, block-jackknife SE."
       >
         <table className="booktabs max-w-[40rem]">
           <thead>
@@ -506,7 +504,7 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
       {r.rank_tests.length ? (
         <TableFigure
           n={2}
-          caption="Rank tests (qpWave). Each row tests whether the f4 matrix between left and right populations has at most the given rank; the full model corresponds to rank = number of sources − 1."
+          caption="Rank tests (qpWave)."
         >
           <table className="booktabs max-w-[44rem]">
             <thead>
@@ -548,7 +546,7 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
       {!compact && f4Residuals(r).length ? (
         <Figure
           n={2}
-          caption="Residual f4-statistics, f4(target, left; right₁, right₂) observed minus fitted, as z-scores. Dashed lines mark |z| = 2; residuals beyond |z| = 3 are drawn in rose."
+          caption="Residual f4 z-scores. Beyond |z| = 3 in rose."
         >
           <ResidualsChart
             title="f4 residual z-scores"
@@ -586,12 +584,8 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
           <p>{r.right.join(", ")}</p>
         </div>
       </div>
-      {r.feasibility?.note ? <Footnote mark="†">{r.feasibility.note}</Footnote> : null}
+      {r.feasibility?.note ? <Caveat title="About the verdict">{r.feasibility.note}</Caveat> : null}
       {r.caveat ? <Caveat title="Formal result">{r.caveat}</Caveat> : null}
-      <Footnote mark="*">
-        A non-rejected model is consistent with the data given this right set; it is not unique.
-        Results depend on the choice of right populations and on the f2 blocks used.
-      </Footnote>
     </div>
   );
 }
@@ -623,10 +617,9 @@ function QpAdmRotateView({ r }: { r: QpAdmRotateResult }) {
         n={1}
         caption={
           engineRanked
-            ? "qpAdm models in the order ranked by the engine. The verdict combines the tail probability with the feasibility of the weights; a high p does not rescue weights outside [0, 1]."
-            : "qpAdm models ordered with feasible, non-rejected models first, then by tail probability."
+            ? "Models as ranked by the engine."
+            : "Feasible, non-rejected models first."
         }
-        notes="Weights are unconstrained estimates (proportions, ± SE). Verdicts follow standard qpAdm reporting conventions; they are not a model-selection procedure."
       >
         <table className="booktabs">
           <thead>
@@ -689,7 +682,7 @@ function F4View({ r }: { r: F4StatResult }) {
       {rows.filter((f) => f.z !== null).length >= 6 ? (
         <Figure
           n={1}
-          caption="z-scores of each statistic (estimate / SE). Dashed lines mark |z| = 3, a common threshold for a significant departure from zero."
+          caption="z-scores. Dashed lines at |z| = 3."
         >
           <ResidualsChart
             title="f4 z-scores"
@@ -699,7 +692,7 @@ function F4View({ r }: { r: F4StatResult }) {
           />
         </Figure>
       ) : null}
-      <TableFigure n={1} caption="f4-statistics. A value consistent with zero means A and B are symmetrically related to C and D.">
+      <TableFigure n={1} caption="f4-statistics. Near zero means symmetric.">
         <table className="booktabs">
           <thead>
             <tr>
@@ -758,7 +751,7 @@ function QpWaveView({ r }: { r: QpWaveResult }) {
       </p>
       <TableFigure
         n={1}
-        caption="Rank tests. Each row tests whether the f4 matrix between left and right populations has at most the given rank."
+        caption="Rank tests."
       >
         <table className="booktabs max-w-[44rem]">
           <thead>

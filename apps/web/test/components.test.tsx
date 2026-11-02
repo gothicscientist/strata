@@ -40,7 +40,7 @@ describe("components", () => {
     render(<ResultView result={synthQpAdm} />);
     expect(screen.getByText("infeasible")).toBeInTheDocument();
     expect(screen.getByText(/Infeasible weights/)).toBeInTheDocument();
-    expect(screen.getByText(/No weight figure is drawn/)).toBeInTheDocument();
+    expect(screen.getByText(/No chart: weights fall outside/)).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: /qpAdm weights/ })).toBeNull();
     expect(screen.getByText("1.120 ± 0.200")).toBeInTheDocument();
   });

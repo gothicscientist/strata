@@ -57,10 +57,9 @@ export default function UploadPage() {
       <PageHeader
         kicker="Datasets"
         title="Upload a dataset"
-        lede="Add a raw genotype file from a consumer test or a single-sample VCF, or paste Global25-style coordinates."
       />
 
-      <Caveat title="How your genetic data is handled">
+      <Caveat title="Your data is encrypted, and the assistant never sees it">
         Files are parsed in memory on the Strata server. Only genotypes at SNPs on the reference panel
         are kept, encrypted with a key unique to this dataset; deleting the dataset destroys the key.
         {session.status === "guest" ? (
@@ -87,8 +86,7 @@ export default function UploadPage() {
       <div className="grid gap-x-14 gap-y-4 lg:grid-cols-2">
         <Section title="Raw genotype file" id="raw">
           <p className="mb-3 text-small text-ink-2">
-            23andMe (v3 to v5), AncestryDNA (v1, v2), FamilyTreeDNA and MyHeritage CSV, or a
-            single-sample VCF. Plain text, .zip or .gz, up to 60&nbsp;MB.
+            23andMe, AncestryDNA, FamilyTreeDNA, MyHeritage or VCF. Up to 60&nbsp;MB.
           </p>
           <div
             onDragOver={(e) => {
@@ -138,7 +136,7 @@ export default function UploadPage() {
 
         <Section title="Or paste G25 coordinates" id="g25">
           <label htmlFor={ids.g25} className="label">
-            One sample per line: a name, then 25 comma-separated coordinates. A header row is optional.
+            One sample per line: a name, then 25 values.
           </label>
           <textarea
             id={ids.g25}

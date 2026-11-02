@@ -10,7 +10,7 @@ import type { PopulationSummary } from "@/lib/types";
 import { PcaPlot } from "@/components/charts/PcaPlot";
 import { CoreSample, type Layer } from "@/components/charts/CoreSample";
 import { useSession } from "@/components/SessionProvider";
-import { Empty, ErrorNote, Footnote, KindMark, Loading } from "@/components/typography";
+import { Empty, ErrorNote, KindMark, Loading } from "@/components/typography";
 
 /** Every population in the library, fetched page by page (the API caps a page). */
 async function allPopulations(signal: AbortSignal): Promise<PopulationSummary[]> {
@@ -56,11 +56,9 @@ function LibraryCore() {
   return (
     <figure>
       <CoreSample layers={layers} height={540} />
-      <figcaption className="mt-4 text-caption leading-[1.55] text-ink-3">
-        The reference library as a core sample: <span className="num text-ink-2">{int(total)}</span>{" "}
-        populations and <span className="num text-ink-2">{int(individuals)}</span> individuals, one layer
-        per period, youngest at the surface. Thicker layers hold more populations. Select a layer to
-        browse it.
+      <figcaption className="mt-4 text-caption text-ink-3">
+        <span className="num text-ink-2">{int(total)}</span> populations,{" "}
+        <span className="num text-ink-2">{int(individuals)}</span> individuals. Click a layer to browse it.
       </figcaption>
     </figure>
   );
@@ -69,25 +67,25 @@ function LibraryCore() {
 const STEPS: Array<{ title: string; body: string; href: string; action: string }> = [
   {
     title: "Upload",
-    body: "A raw file from 23andMe, AncestryDNA, FamilyTreeDNA or MyHeritage, a single-sample VCF, or Global25-style coordinates.",
+    body: "23andMe, AncestryDNA, VCF or G25.",
     href: "/upload/",
     action: "Upload a file",
   },
   {
     title: "Place",
-    body: "Project the sample into the reference PCA using only the SNPs it carries, and rank the populations nearest to it.",
+    body: "See where you sit in the reference PCA.",
     href: "/analyses/new/?method=pca_project",
     action: "Project a sample",
   },
   {
     title: "Fit",
-    body: "Find the mixture of candidate sources that lies closest to the sample, with bootstrap intervals and leave-one-out checks.",
+    body: "Find the closest mix of source populations.",
     href: "/analyses/new/?method=admixture_fit",
     action: "Fit sources",
   },
   {
     title: "Test",
-    body: "Test the models that survive formally with qpAdm on f-statistics, against a stated set of outgroups.",
+    body: "Test that mix formally with qpAdm.",
     href: "/analyses/new/?method=qpadm",
     action: "Set up qpAdm",
   },
@@ -131,7 +129,7 @@ function Workflow() {
         <li key={s.title} className="group relative">
           <span
             className={`num relative z-10 mb-4 flex size-7 items-center justify-center rounded-full bg-ink text-[0.9rem] font-semibold text-white transition-[background-color,transform] duration-200 group-hover:-translate-y-0.5 group-hover:rotate-[-8deg] group-hover:bg-malachite ${
-              seen ? "pop" : "opacity-0"
+              seen ? "pop" : ""
             }`}
             style={{ animationDelay: `${i * 300}ms` }}
           >
@@ -162,13 +160,8 @@ function ReferenceSpace() {
       </figure>
       <div className="text-small leading-[1.6] text-ink-2 lg:pt-2">
         <p>
-          Every population mean in <em>{space.name}</em>, the space your sample is projected into.
-          Distance here is the first thing Strata measures, and the last thing it should be trusted
-          for on its own.
-        </p>
-        <p className="mt-3">
-          <span className="num font-semibold text-ink">{space.populations.length}</span> populations,
-          coloured and shaped by region. Hover a mark for its name and sample count.
+          <span className="num font-semibold text-ink">{space.populations.length}</span> populations. Hover
+          a mark for its name.
         </p>
         <p className="mt-4">
           <Link href="/library/" className="font-semibold">
@@ -182,18 +175,8 @@ function ReferenceSpace() {
 
 function TwoKinds() {
   const rows: Array<[string, string, string]> = [
-    ["Method", "Non-negative least squares on PCA or G25 coordinates", "qpAdm on f4-statistics (ADMIXTOOLS 2)"],
-    [
-      "Question",
-      "Which mixture of sources lies closest to the target in this space?",
-      "Is the target consistent with descending from these sources, given outgroups?",
-    ],
-    [
-      "Uncertainty",
-      "Bootstrap over source individuals; sensitivity to dropped sources and dimensions",
-      "Block-jackknife standard errors; tail probability of the rank test",
-    ],
-    ["How to read it", "A description of geometry. A good fit is not evidence of admixture.", "A model can be rejected. A model that is not rejected may still be wrong."],
+    ["Asks", "Which mix of sources sits closest?", "Does this model survive the data?"],
+    ["Remember", "A good fit is not proof of admixture.", "Not rejected is not the same as true."],
   ];
   const col = (k: 1 | 2) => (
     <dl className="space-y-4">
@@ -210,14 +193,14 @@ function TwoKinds() {
       <div className="rounded-[var(--radius-panel)] border border-dashed border-[#c08419] bg-loess-soft/60 p-5 sm:p-6">
         <p className="mb-4 flex items-center gap-2">
           <KindMark kind="exploratory" />
-          <span className="text-small text-ink-2">PCA projection, nearest populations, mixture fits</span>
+          <span className="text-small text-ink-2">PCA, nearest, mixture fits</span>
         </p>
         {col(1)}
       </div>
       <div className="rounded-[var(--radius-panel)] border border-malachite bg-malachite-soft/70 p-5 sm:p-6">
         <p className="mb-4 flex items-center gap-2">
           <KindMark kind="formal" />
-          <span className="text-small text-ink-2">qpAdm, qpAdm rotation, qpWave, f4</span>
+          <span className="text-small text-ink-2">qpAdm, qpWave, f4</span>
         </p>
         {col(2)}
       </div>
@@ -245,7 +228,6 @@ function ExampleList() {
                 <span className="block text-[1.2rem] leading-snug font-semibold text-ink group-hover:text-malachite">
                   {e.title}
                 </span>
-                <span className="mt-1 block text-small text-ink-2">{e.summary}</span>
               </span>
               <span className="flex items-start gap-2 sm:justify-end sm:pt-0.5">
                 <span className="text-caption text-ink-3">{analysisLabel(e.kind)}</span>
@@ -255,11 +237,9 @@ function ExampleList() {
           </li>
         ))}
       </ul>
-      {notes.map((n) => (
-        <Footnote key={n} mark="*">
-          {n}
-        </Footnote>
-      ))}
+      {notes.length ? (
+        <p className="mt-3 text-caption text-ink-3">Archaic demo data from ADMIXTOOLS 2, not South Asian samples.</p>
+      ) : null}
     </>
   );
 }
@@ -288,9 +268,7 @@ export default function Home() {
             ))}
           </h1>
           <p className="serif measure mt-7 text-[1.4rem] leading-[1.55] text-ink-2">
-            Strata places a genome among ancient and present-day reference populations, fits mixture
-            models with their uncertainty, and tests them formally with qpAdm. Every result states its
-            method and the reference data it rests on.
+            Place your genome among ancient populations, then test models of your ancestry.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link href="/upload/" className="btn">
@@ -300,20 +278,10 @@ export default function Home() {
               See worked examples
             </Link>
           </div>
-          <div className="mt-auto pt-12">
-            <div className="max-w-[30rem] border-l-[3px] border-malachite pl-4 text-caption leading-[1.6] text-ink-2">
-              <p className="font-semibold text-ink">Your data</p>
-              <p className="mt-0.5">
-                Raw genotype files are parsed in memory. Only SNPs on the reference panel are kept,
-                encrypted, and never sent to a language model.{" "}
-                {session.status === "guest"
-                  ? "As a guest, uploads and analyses are deleted after 24 hours."
-                  : session.status === "signed-in"
-                    ? "Your workspace persists until you delete it."
-                    : ""}
-              </p>
-            </div>
-          </div>
+          <p className="mt-auto pt-10 text-caption text-ink-3">
+            Your genotypes are encrypted and never reach the AI.
+            {session.status === "guest" ? " Guest data is deleted after 24 hours." : ""}
+          </p>
         </div>
         <div className="min-w-0">
           <LibraryCore />
@@ -321,7 +289,7 @@ export default function Home() {
       </header>
 
       <section className="mb-20" aria-labelledby="flow">
-        <Heading id="flow">From raw file to formal test</Heading>
+        <Heading id="flow">How it works</Heading>
         <Workflow />
       </section>
 
@@ -331,11 +299,7 @@ export default function Home() {
       </section>
 
       <section className="mb-20" aria-labelledby="kinds">
-        <Heading id="kinds">Two kinds of answer, never mixed</Heading>
-        <p className="measure -mt-2 mb-6 text-ink-2">
-          An exploratory fit describes where a sample sits. A formal test asks whether a model of its
-          ancestry survives the data. Every result in Strata carries one of these two marks.
-        </p>
+        <Heading id="kinds">Two kinds of answer</Heading>
         <TwoKinds />
       </section>
 
