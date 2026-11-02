@@ -44,7 +44,7 @@ ENV PATH=/opt/strata-r/bin:$PATH
 RUN git clone --quiet "${ADMIXTOOLS2_REPO}" /tmp/admixtools \
  && git -C /tmp/admixtools checkout --quiet "${ADMIXTOOLS2_COMMIT}" \
  && git -C /tmp/admixtools rev-parse HEAD > /opt/strata-r/ADMIXTOOLS2_COMMIT \
- && MAKEFLAGS="-j$(nproc)" R CMD INSTALL --no-docs --no-help /tmp/admixtools \
+ && MAKEFLAGS="-j2" R CMD INSTALL --no-docs --no-help /tmp/admixtools \
  && rm -rf /tmp/admixtools
 
 # Fail the build rather than ship an image whose f-statistics do not work.
@@ -64,9 +64,9 @@ RUN Rscript -e 'pkgs <- c("admixtools","abind","cli","crayon","cubelyr","data.tr
       for (p in pkgs) cat(sprintf("%-16s %s\n", p, as.character(packageVersion(p))))' \
       > /opt/strata-r/strata-r-versions.txt
 
-# Drop the compiler toolchain from the layer that gets copied forward.
-RUN micromamba remove -y -p /opt/strata-r gxx_linux-64 make || true \
- && micromamba clean --all --yes \
+# Do not ask the solver to remove compiler packages: conda-forge's dependency
+# graph can remove R with them. Only discard archives and documentation.
+RUN micromamba clean --all --yes \
  && find /opt/strata-r -name '*.a' -delete \
  && rm -rf /opt/strata-r/conda-meta/pkgs /opt/strata-r/share/doc
 
@@ -116,11 +116,31 @@ ENV PYTHONUNBUFFERED=1 \
     STRATA_QPADM_TIMEOUT=3600 \
     OMP_NUM_THREADS=1
 
+# The same self-contained image serves the API and bounded queue jobs on Azure.
+# No downloads or writable reference volume are needed at startup.
+COPY data/derived /app/data/derived
+COPY data/examples /app/data/examples
+COPY docs/methods /app/docs/methods
+COPY data/pipeline/pipeline /app/data/pipeline/pipeline
+COPY LICENSE /app/LICENSE
+ENV PYTHONPATH=/app/data/pipeline \
+    STRATA_DATA_DIR=/app/data \
+    STRATA_EXAMPLES_DIR=/app/data/examples \
+    STRATA_METHODS_DIR=/app/docs/methods \
+    STRATA_F2_DIR=/app/data/derived/f2/strata-ref-v1 \
+    OPENBLAS_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1
+RUN python -m pipeline --root /app fetch-f2 \
+ && python -m pipeline --root /app verify
+
 # infra/docker-compose.yml mounts data/derived here read-only. Create it so the
 # image also runs standalone, before any reference data exists.
 RUN mkdir -p /app/data/derived && chown -R strata:strata /app/data
 
 USER strata
+
+# Check the final filesystem as the runtime user, after all cleanup and copies.
+RUN python -c "from strata.qpadm import qpadm_available; assert qpadm_available(), 'R runtime unavailable'"
 
 # Liveness: the bridge resolves and ADMIXTOOLS answers.
 HEALTHCHECK --interval=60s --timeout=120s --start-period=30s --retries=3 \

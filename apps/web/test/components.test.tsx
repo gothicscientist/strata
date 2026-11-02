@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { QcReport } from "@/components/QcReport";
 import { ResultView } from "@/components/results/ResultView";
 import { ErrorNote, KindMark } from "@/components/typography";
@@ -16,6 +16,18 @@ describe("components", () => {
     expect(screen.getByText("23andMe v5")).toBeInTheDocument();
     expect(screen.getByText("98.50%")).toBeInTheDocument();
     expect(screen.getByText("synthetic warning")).toBeInTheDocument();
+  });
+
+  it.each([
+    { usable: 30_000, fraction: 30_000 / 417_935, count: /30\s000/, coverage: "7.2%" },
+    { usable: 0, fraction: 0, count: /^0$/, coverage: "0.0%" },
+  ])("shows the API's SNP count and coverage separately ($usable usable)", ({ usable, fraction, count, coverage }) => {
+    render(<QcReport dataset={{ ...synthDataset, qc: {
+      ...synthDataset.qc, panel_size: 417_935, panel_overlap: fraction,
+      overlap: { n_usable: usable },
+    } }} />);
+    expect(within(screen.getByRole("row", { name: /SNPs on reference panel/ })).getByRole("cell", { name: count })).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: /Panel coverage/ })).toHaveTextContent(coverage);
   });
 
   it("labels results as exploratory or formal", () => {

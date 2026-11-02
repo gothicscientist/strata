@@ -1,0 +1,17 @@
+.git
+.venv
+**/node_modules
+**/.next
+**/out
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+.env*
+**/.env*
+.deployment
+.deployment-build.log
+supabase/.temp
+data/raw
+data/work
+data/derived/f2
+docs/screenshots

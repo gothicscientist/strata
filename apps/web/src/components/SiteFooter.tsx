@@ -27,7 +27,7 @@ export function SiteFooter() {
           <dd>{caps ? (caps.qpadm ? "available" : "unavailable on this server") : "—"}</dd>
           <dt>Assistant</dt>
           <dd>
-            {caps ? (caps.llm_providers.length ? caps.llm_providers.join(", ") : "no provider configured") : "—"}
+            {caps ? (caps.llm_providers.length ? caps.llm_providers.join(", ") : "bring your own API key") : "—"}
           </dd>
         </dl>
       </div>

@@ -92,6 +92,8 @@ Full stack: `docker compose -f infra/docker-compose.yml --env-file .env up --bui
 Production on Supabase, a container host and Cloudflare Pages:
 [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Every environment variable is documented in
 [`.env.example`](.env.example).
+The credit-protected Azure/Cloudflare deployment for stratalab.cc is documented in
+[`infra/azure/README.md`](infra/azure/README.md).
 
 ## Tests
 

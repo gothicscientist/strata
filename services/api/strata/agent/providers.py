@@ -101,6 +101,12 @@ class LLMProvider(ABC):
     def model(self) -> str:
         return self.settings.model
 
+    async def close(self) -> None:
+        """Release a request-scoped SDK client."""
+        client = getattr(self, "_client", None)
+        if client is not None:
+            await client.close()
+
     @abstractmethod
     def stream(
         self,
@@ -133,7 +139,17 @@ class LLMProvider(ABC):
                     attempt += 1
                     await asyncio.sleep(min(8.0, 0.5 * 2**attempt) + random.random() * 0.25)
                     continue
-                yield ErrorEvent(message=f"{type(exc).__name__}: {exc}", retryable=retryable)
+                status = getattr(exc, "status_code", None)
+                message = {
+                    401: "The provider rejected your API key. Check or replace it and try again.",
+                    403: "Your API account cannot access this model. Choose an available model.",
+                    404: "The selected model is unavailable. Check the model name.",
+                    429: (
+                        "The provider's usage or rate limit was reached. "
+                        "Check your API billing and retry later."
+                    ),
+                }.get(status, f"{type(exc).__name__}: provider request failed. Please retry.")
+                yield ErrorEvent(message=message, retryable=retryable)
                 return
 
 
@@ -157,13 +173,21 @@ class AnthropicProvider(LLMProvider):
 
     name = "anthropic"
 
-    def __init__(self, settings: ProviderSettings | None = None, client: Any = None) -> None:
+    def __init__(
+        self,
+        settings: ProviderSettings | None = None,
+        client: Any = None,
+        *,
+        api_key: str | None = None,
+    ) -> None:
         self.settings = settings or ProviderSettings(model=DEFAULT_ANTHROPIC_MODEL)
         if client is None:
             import anthropic
 
             client = anthropic.AsyncAnthropic(
-                timeout=self.settings.timeout_s, max_retries=self.settings.sdk_max_retries
+                timeout=self.settings.timeout_s,
+                max_retries=self.settings.sdk_max_retries,
+                **({"api_key": api_key} if api_key else {}),
             )
         self._client = client
 
@@ -332,13 +356,21 @@ class OpenAIProvider(LLMProvider):
 
     name = "openai"
 
-    def __init__(self, settings: ProviderSettings | None = None, client: Any = None) -> None:
+    def __init__(
+        self,
+        settings: ProviderSettings | None = None,
+        client: Any = None,
+        *,
+        api_key: str | None = None,
+    ) -> None:
         self.settings = settings or ProviderSettings(model=DEFAULT_OPENAI_MODEL)
         if client is None:
             import openai
 
             client = openai.AsyncOpenAI(
-                timeout=self.settings.timeout_s, max_retries=self.settings.sdk_max_retries
+                timeout=self.settings.timeout_s,
+                max_retries=self.settings.sdk_max_retries,
+                **({"api_key": api_key} if api_key else {}),
             )
         self._client = client
 
@@ -491,7 +523,9 @@ def llm_available() -> dict[str, bool]:
     }
 
 
-def get_provider(name: str | None = None, model: str | None = None) -> LLMProvider:
+def get_provider(
+    name: str | None = None, model: str | None = None, *, api_key: str | None = None
+) -> LLMProvider:
     """Construct the configured provider.
 
     Env: STRATA_LLM_PROVIDER (anthropic|openai), STRATA_LLM_MODEL, STRATA_LLM_MAX_TOKENS,
@@ -511,7 +545,7 @@ def get_provider(name: str | None = None, model: str | None = None) -> LLMProvid
             fallbacks=os.environ.get("STRATA_ANTHROPIC_FALLBACKS", "on").lower() != "off",
             **common,
         )
-        return AnthropicProvider(settings)
+        return AnthropicProvider(settings, api_key=api_key)
     if name == "openai":
         settings = ProviderSettings(
             model=model
@@ -522,5 +556,5 @@ def get_provider(name: str | None = None, model: str | None = None) -> LLMProvid
             fallbacks=False,
             **common,
         )
-        return OpenAIProvider(settings)
+        return OpenAIProvider(settings, api_key=api_key)
     raise ValueError(f"unknown LLM provider {name!r} (expected 'anthropic' or 'openai')")

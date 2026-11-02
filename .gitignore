@@ -9,6 +9,9 @@ node_modules/
 out/
 .env
 .env.local
+.deployment/
+.deployment-build.log
+supabase/.temp/
 data/raw/
 data/work/
 *.egg-info/
