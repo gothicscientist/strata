@@ -203,7 +203,7 @@ export default function WorkspacePage() {
                     <td>
                       <input
                         type="checkbox"
-                        className="accent-black"
+                        className=""
                         aria-label={`Compare ${a.title ?? analysisLabel(a.kind)}`}
                         disabled={!comparable(a) || (!selected.includes(a.id) && selected.length >= MAX_COMPARE)}
                         checked={selected.includes(a.id)}

@@ -72,7 +72,7 @@ export function ReportButtons({ id }: { id: string }) {
 export function ProvenanceList({ provenance }: { provenance: Record<string, unknown> | null | undefined }) {
   if (!provenance || Object.keys(provenance).length === 0) return null;
   return (
-    <dl className="grid max-w-[48rem] grid-cols-[minmax(8rem,auto)_1fr] gap-x-6 gap-y-1 text-small">
+    <dl className="kv max-w-[48rem]">
       {describeParams(provenance).map(([k, v]) => (
         <div key={k} className="contents">
           <dt className="text-ink-3">{k}</dt>
@@ -109,7 +109,7 @@ export function AnalysisDocument({ analysis }: { analysis: Analysis }) {
 
       <Section n={1} title="Methods">
         {params.length ? (
-          <dl className="grid max-w-[48rem] grid-cols-[minmax(8rem,auto)_1fr] gap-x-6 gap-y-1 text-small">
+          <dl className="kv max-w-[48rem]">
             {params.map(([k, v]) => (
               <div key={k} className="contents">
                 <dt className="text-ink-3">{k}</dt>

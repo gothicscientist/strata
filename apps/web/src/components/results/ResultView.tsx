@@ -424,24 +424,32 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
         ) : null}
         .
       </p>
-      <dl className="mb-6 grid max-w-[40rem] grid-cols-2 gap-y-1 border-y border-ink py-3 text-small sm:grid-cols-4">
-        <div>
+      <dl className="panel mb-6 grid max-w-[44rem] grid-cols-2 overflow-hidden text-small sm:grid-cols-4">
+        <div className="border-r border-b border-rule-soft px-4 py-3 sm:border-b-0">
           <dt className="text-caption text-ink-3">Tail probability</dt>
-          <dd className="num text-h3">{pv(r.p_value)}</dd>
+          <dd className="num mt-0.5 text-[1.5rem] leading-tight font-semibold [font-stretch:112%]">{pv(r.p_value)}</dd>
         </div>
-        <div>
+        <div className="border-b border-rule-soft px-4 py-3 sm:border-r sm:border-b-0">
           <dt className="text-caption text-ink-3">
             &chi;<sup>2</sup>
           </dt>
-          <dd className="num text-h3">{fixed(r.chisq, 2)}</dd>
+          <dd className="num mt-0.5 text-[1.5rem] leading-tight font-semibold [font-stretch:112%]">{fixed(r.chisq, 2)}</dd>
         </div>
-        <div>
+        <div className="border-r border-rule-soft px-4 py-3">
           <dt className="text-caption text-ink-3">Degrees of freedom</dt>
-          <dd className="num text-h3">{r.dof}</dd>
+          <dd className="num mt-0.5 text-[1.5rem] leading-tight font-semibold [font-stretch:112%]">{r.dof}</dd>
         </div>
-        <div>
+        <div
+          className={`px-4 py-3 ${
+            verdict === "rejected" || verdict === "infeasible" ? "bg-[#fbecea]" : verdict === "plausible" || verdict === "not rejected" ? "bg-malachite-soft" : "bg-wash"
+          }`}
+        >
           <dt className="text-caption text-ink-3">Verdict</dt>
-          <dd className={`text-h3 italic ${verdict === "rejected" || verdict === "infeasible" ? "text-alert" : ""}`}>
+          <dd
+            className={`mt-0.5 text-[1.5rem] leading-tight font-semibold capitalize [font-stretch:112%] ${
+              verdict === "rejected" || verdict === "infeasible" ? "text-alert" : verdict === "plausible" || verdict === "not rejected" ? "text-malachite" : ""
+            }`}
+          >
             {verdict}
           </dd>
         </div>

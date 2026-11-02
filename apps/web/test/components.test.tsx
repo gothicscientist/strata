@@ -20,7 +20,7 @@ describe("components", () => {
 
   it("labels results as exploratory or formal", () => {
     render(<KindMark kind="formal" />);
-    expect(screen.getByText("formal")).toHaveAttribute("title", expect.stringMatching(/qpAdm/));
+    expect(screen.getByText("Formal")).toHaveAttribute("title", expect.stringMatching(/qpAdm/));
   });
 
   it("renders a nearest-population table with an exploratory caveat", () => {

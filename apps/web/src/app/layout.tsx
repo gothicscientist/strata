@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource/eb-garamond/400.css";
-import "@fontsource/eb-garamond/400-italic.css";
-import "@fontsource/eb-garamond/500.css";
-import "@fontsource/eb-garamond/600.css";
+import "@fontsource-variable/archivo/wdth.css";
+import "@fontsource-variable/archivo/wdth-italic.css";
+import "@fontsource-variable/source-serif-4/opsz.css";
+import "@fontsource-variable/source-serif-4/opsz-italic.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "./globals.css";
 import { SessionProvider } from "@/components/SessionProvider";
@@ -15,18 +15,22 @@ export const metadata: Metadata = {
     "A research instrument for population genetics: PCA projection, exploratory admixture fitting and formal qpAdm modelling against a curated ancient-DNA reference library.",
 };
 
-export const viewport: Viewport = { themeColor: "#ffffff", colorScheme: "light" };
+export const viewport: Viewport = { themeColor: "#1a2129", colorScheme: "light" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="flex min-h-screen flex-col">
+      <body>
         <SessionProvider>
-          <SiteHeader />
-          <main id="main" className="mx-auto w-full max-w-[72rem] flex-1 px-5 pt-12 sm:px-8">
-            {children}
-          </main>
-          <SiteFooter />
+          <div className="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:bg-[linear-gradient(to_right,var(--color-basalt)_16rem,transparent_16rem)]">
+            <SiteHeader />
+            <div className="flex min-h-screen min-w-0 flex-col">
+              <main id="main" className="mx-auto w-full max-w-[76rem] flex-1 px-5 pt-10 sm:px-10 lg:pt-14">
+                {children}
+              </main>
+              <SiteFooter />
+            </div>
+          </div>
         </SessionProvider>
       </body>
     </html>

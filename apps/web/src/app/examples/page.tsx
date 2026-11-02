@@ -32,23 +32,26 @@ export default function ExamplesPage() {
             {c}
           </Caveat>
         ))}
-        <ol className="max-w-[52rem] border-t border-ink">
-          {ex.data.map((e, i) => (
-            <li key={e.slug} className="grid grid-cols-[2.5rem_1fr] gap-2 border-b border-rule py-5">
-              <span className="num pt-1 text-small text-ink-3">{i + 1}.</span>
-              <div>
-                <h2 className="text-h3">
-                  <Link href={`/examples/view/?slug=${encodeURIComponent(e.slug)}`}>{e.title}</Link>
+        <ul className="panel max-w-[56rem] divide-y divide-rule-soft">
+          {ex.data.map((e) => (
+            <li key={e.slug}>
+              <Link
+                href={`/examples/view/?slug=${encodeURIComponent(e.slug)}`}
+                className="group block px-5 py-5 no-underline hover:bg-wash sm:px-6"
+              >
+                <span className="flex flex-wrap items-center gap-2 text-caption text-ink-3">
+                  <KindMark kind={e.result_kind} />
+                  {analysisLabel(e.kind)}
+                  {e.tags?.length ? <span>{e.tags.join(", ")}</span> : null}
+                </span>
+                <h2 className="mt-1.5 text-[1.1875rem] leading-snug font-semibold text-ink group-hover:text-malachite [font-stretch:100%]">
+                  {e.title}
                 </h2>
-                <p className="mt-1 text-small text-ink-2">
-                  <KindMark kind={e.result_kind} /> {analysisLabel(e.kind)}
-                  {e.tags?.length ? <span className="text-ink-3">; {e.tags.join(", ")}</span> : null}
-                </p>
-                <p className="measure mt-2 text-small leading-[1.55]">{e.summary}</p>
-              </div>
+                <p className="measure mt-1 text-small leading-[1.55] text-ink-2">{e.summary}</p>
+              </Link>
             </li>
           ))}
-        </ol>
+        </ul>
         </>
       )}
     </>

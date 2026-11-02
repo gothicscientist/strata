@@ -1,35 +1,19 @@
-"use client";
-
 import Link from "next/link";
-import { useSession } from "./SessionProvider";
 
 export function SiteFooter() {
-  const { health } = useSession();
-  const caps = health?.capabilities;
   return (
-    <footer className="mx-auto mt-24 w-full max-w-[72rem] px-5 pb-12 sm:px-8">
-      <div className="grid gap-6 border-t border-ink pt-5 text-caption leading-[1.6] text-ink-2 sm:grid-cols-3">
+    <footer className="mx-auto mt-24 w-full max-w-[76rem] px-5 pb-10 sm:px-10">
+      <div className="stratum-rule mb-5 opacity-80" aria-hidden />
+      <div className="grid gap-4 text-caption leading-[1.6] text-ink-3 sm:grid-cols-2">
         <p>
-          Strata is open-source software for population-genetic analysis. Exploratory fits in PCA
-          or G25 space are not formal tests; see <Link href="/methods/">Methods</Link>.
+          Strata is open-source software for population-genetic analysis. Exploratory fits in PCA or
+          G25 space are not formal tests; see <Link href="/methods/">Methods</Link>.
         </p>
         <p>
-          Reference data derive from the Allen Ancient DNA Resource and the publications cited in
-          the <Link href="/library/">library</Link>. Provenance and licences are listed under{" "}
-          <Link href="/data/">Data</Link>.
+          Reference data derive from the Allen Ancient DNA Resource, the 1000 Genomes Project and the
+          publications cited in the <Link href="/library/">library</Link>. Provenance and licences
+          are listed under <Link href="/data/">Data</Link>.
         </p>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4">
-          <dt>API</dt>
-          <dd className="num">{health ? `${health.status}, v${health.version}` : "not connected"}</dd>
-          <dt>Reference</dt>
-          <dd className="num">{caps?.reference_version ?? "not built"}</dd>
-          <dt>qpAdm</dt>
-          <dd>{caps ? (caps.qpadm ? "available" : "unavailable on this server") : "—"}</dd>
-          <dt>Assistant</dt>
-          <dd>
-            {caps ? (caps.llm_providers.length ? caps.llm_providers.join(", ") : "no provider configured") : "—"}
-          </dd>
-        </dl>
       </div>
     </footer>
   );

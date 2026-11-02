@@ -57,7 +57,7 @@ export function PcaPlot({ space, targets = [], height = 520, compact = false, hi
           symbol: slot.symbol,
           size: compact ? 5 : 7,
           opacity: 0.78,
-          line: { width: pts.map((p) => (hl.has(p.population_id) ? 1.5 : 0)), color: "#000" },
+          line: { width: pts.map((p) => (hl.has(p.population_id) ? 1.5 : 0)), color: "#1e2630" },
         },
       };
     });
@@ -71,9 +71,9 @@ export function PcaPlot({ space, targets = [], height = 520, compact = false, hi
             y: targets.map((t) => t.coords[y] ?? null),
             text: targets.map((t) => t.name),
             textposition: "top right",
-            textfont: { family: SERIF, size: 14, color: "#000" },
+            textfont: { family: SERIF, size: 14, color: "#1e2630" },
             hovertemplate: "%{text} (projected)<extra></extra>",
-            marker: { color: "#000", symbol: "star", size: 15, line: { color: "#fff", width: 1.5 } },
+            marker: { color: "#1e2630", symbol: "star", size: 15, line: { color: "#fff", width: 1.5 } },
           },
         ]
       : [];

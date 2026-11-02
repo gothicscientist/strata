@@ -57,7 +57,7 @@ export default function UploadPage() {
       <PageHeader
         kicker="Datasets"
         title="Upload a dataset"
-        lede="Paste Global25-style coordinates, or add a raw genotype file from a consumer test or a single-sample VCF."
+        lede="Add a raw genotype file from a consumer test or a single-sample VCF, or paste Global25-style coordinates."
       />
 
       <Caveat title="How your genetic data is handled">
@@ -84,8 +84,59 @@ export default function UploadPage() {
         />
       </div>
 
-      <div className="grid gap-14 lg:grid-cols-2">
-        <Section n={1} title="G25 coordinates" id="g25">
+      <div className="grid gap-x-14 gap-y-4 lg:grid-cols-2">
+        <Section title="Raw genotype file" id="raw">
+          <p className="mb-3 text-small text-ink-2">
+            23andMe (v3 to v5), AncestryDNA (v1, v2), FamilyTreeDNA and MyHeritage CSV, or a
+            single-sample VCF. Plain text, .zip or .gz, up to 60&nbsp;MB.
+          </p>
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              pick(e.dataTransfer.files[0]);
+            }}
+            className={`flex h-56 flex-col items-center justify-center rounded-[var(--radius-panel)] border-2 border-dashed px-6 text-center text-small transition-colors ${
+              dragging ? "border-malachite bg-malachite-soft" : "border-rule bg-panel"
+            }`}
+          >
+            {file ? (
+              <>
+                <p className="font-medium">{file.name}</p>
+                <p className="num mt-1 text-caption text-ink-3">{(file.size / 1e6).toFixed(1)} MB</p>
+                <button type="button" className="linkish mt-3 text-caption" onClick={() => setFile(null)}>
+                  Choose a different file
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-[1.0625rem] font-semibold">Drop the file here</p>
+                <p className="my-1 text-caption text-ink-3">or</p>
+                <label htmlFor={ids.file} className="linkish cursor-pointer">
+                  choose a file from your computer
+                </label>
+              </>
+            )}
+            <input
+              ref={inputRef}
+              id={ids.file}
+              type="file"
+              accept={ACCEPT}
+              className="sr-only"
+              onChange={(e) => pick(e.target.files?.[0])}
+            />
+          </div>
+          <button type="button" className="btn mt-4" disabled={busy || !file} onClick={() => submit("file")}>
+            {busy ? "Uploading and checking…" : "Upload file"}
+          </button>
+        </Section>
+
+        <Section title="Or paste G25 coordinates" id="g25">
           <label htmlFor={ids.g25} className="label">
             One sample per line: a name, then 25 comma-separated coordinates. A header row is optional.
           </label>
@@ -128,56 +179,6 @@ export default function UploadPage() {
           </button>
         </Section>
 
-        <Section n={2} title="Raw genotype file" id="raw">
-          <p className="mb-3 text-small text-ink-2">
-            23andMe (v3 to v5), AncestryDNA (v1, v2), FamilyTreeDNA and MyHeritage CSV, or a
-            single-sample VCF. Plain text, .zip or .gz, up to 60&nbsp;MB.
-          </p>
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragging(false);
-              pick(e.dataTransfer.files[0]);
-            }}
-            className={`flex h-56 flex-col items-center justify-center border border-dashed px-6 text-center text-small ${
-              dragging ? "border-ink bg-wash" : "border-ink-3"
-            }`}
-          >
-            {file ? (
-              <>
-                <p className="font-medium">{file.name}</p>
-                <p className="num mt-1 text-caption text-ink-3">{(file.size / 1e6).toFixed(1)} MB</p>
-                <button type="button" className="linkish mt-3 text-caption" onClick={() => setFile(null)}>
-                  Choose a different file
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="italic">Drop the file here</p>
-                <p className="my-1 text-caption text-ink-3">or</p>
-                <label htmlFor={ids.file} className="linkish cursor-pointer">
-                  choose a file from your computer
-                </label>
-              </>
-            )}
-            <input
-              ref={inputRef}
-              id={ids.file}
-              type="file"
-              accept={ACCEPT}
-              className="sr-only"
-              onChange={(e) => pick(e.target.files?.[0])}
-            />
-          </div>
-          <button type="button" className="btn mt-4" disabled={busy || !file} onClick={() => submit("file")}>
-            {busy ? "Uploading and checking…" : "Upload file"}
-          </button>
-        </Section>
       </div>
 
       {error ? <ErrorNote error={error} /> : null}

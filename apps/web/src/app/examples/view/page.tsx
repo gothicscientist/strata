@@ -61,7 +61,7 @@ function ExampleInner() {
         </div>
       ) : null}
       <Section n={1} title="Inputs and parameters">
-        <dl className="grid max-w-[48rem] grid-cols-[minmax(8rem,auto)_1fr] gap-x-6 gap-y-1 text-small">
+        <dl className="kv max-w-[48rem]">
           {[...inputs, ...params].map(([k, v]) => (
             <div key={k} className="contents">
               <dt className="text-ink-3">{k}</dt>
