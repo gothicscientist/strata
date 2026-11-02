@@ -22,7 +22,7 @@ export const Plot = dynamic<PlotParams>(
   },
 );
 
-export const SERIF = '"Archivo Variable", Archivo, system-ui, sans-serif';
+export const SERIF = '"EB Garamond", Garamond, Georgia, serif';
 
 /** Shared publication styling: thin black axes, no grid, serif labels. */
 export function journalAxis(title: string, extra: Record<string, unknown> = {}) {

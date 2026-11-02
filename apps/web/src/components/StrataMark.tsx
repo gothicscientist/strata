@@ -5,13 +5,13 @@ export function StrataMark({ size = 22, className }: { size?: number; className?
   const w = Math.round(size * 0.78);
   const step = h / bands.length;
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden className={className}>
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden className={`strata-mark overflow-visible ${className ?? ""}`}>
       <defs>
         <clipPath id="strata-mark-clip">
           <rect x={0} y={0} width={w} height={h} rx={2.5} />
         </clipPath>
       </defs>
-      <g clipPath="url(#strata-mark-clip)">
+      <g>
         {bands.map((c, i) => {
           const y = i * step;
           const wobble = i % 2 ? 1.1 : -1.1;

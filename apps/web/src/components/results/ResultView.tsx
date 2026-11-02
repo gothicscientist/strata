@@ -427,17 +427,17 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
       <dl className="panel mb-6 grid max-w-[44rem] grid-cols-2 overflow-hidden text-small sm:grid-cols-4">
         <div className="border-r border-b border-rule-soft px-4 py-3 sm:border-b-0">
           <dt className="text-caption text-ink-3">Tail probability</dt>
-          <dd className="num mt-0.5 text-[1.5rem] leading-tight font-semibold [font-stretch:112%]">{pv(r.p_value)}</dd>
+          <dd className="num mt-0.5 text-[1.7rem] leading-tight font-semibold">{pv(r.p_value)}</dd>
         </div>
         <div className="border-b border-rule-soft px-4 py-3 sm:border-r sm:border-b-0">
           <dt className="text-caption text-ink-3">
             &chi;<sup>2</sup>
           </dt>
-          <dd className="num mt-0.5 text-[1.5rem] leading-tight font-semibold [font-stretch:112%]">{fixed(r.chisq, 2)}</dd>
+          <dd className="num mt-0.5 text-[1.7rem] leading-tight font-semibold">{fixed(r.chisq, 2)}</dd>
         </div>
         <div className="border-r border-rule-soft px-4 py-3">
           <dt className="text-caption text-ink-3">Degrees of freedom</dt>
-          <dd className="num mt-0.5 text-[1.5rem] leading-tight font-semibold [font-stretch:112%]">{r.dof}</dd>
+          <dd className="num mt-0.5 text-[1.7rem] leading-tight font-semibold">{r.dof}</dd>
         </div>
         <div
           className={`px-4 py-3 ${
@@ -446,7 +446,7 @@ function QpAdmView({ r, compact }: { r: QpAdmResult; compact: boolean }) {
         >
           <dt className="text-caption text-ink-3">Verdict</dt>
           <dd
-            className={`mt-0.5 text-[1.5rem] leading-tight font-semibold capitalize [font-stretch:112%] ${
+            className={`mt-0.5 text-[1.7rem] leading-tight font-semibold capitalize ${
               verdict === "rejected" || verdict === "infeasible" ? "text-alert" : verdict === "plausible" || verdict === "not rejected" ? "text-malachite" : ""
             }`}
           >

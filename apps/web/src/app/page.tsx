@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { analysisLabel, int } from "@/lib/format";
@@ -93,19 +93,51 @@ const STEPS: Array<{ title: string; body: string; href: string; action: string }
   },
 ];
 
+/** True once the element has scrolled into view (and stays true). */
+function useSeen<T extends HTMLElement>(): [React.RefObject<T | null>, boolean] {
+  const ref = useRef<T | null>(null);
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setSeen(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setSeen(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return [ref, seen];
+}
+
 function Workflow() {
+  const [ref, seen] = useSeen<HTMLOListElement>();
   return (
-    <ol className="relative grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+    <ol ref={ref} className="relative grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
       <span
         aria-hidden
-        className="absolute top-[0.9rem] right-[calc(25%-0.6rem)] left-[0.9rem] hidden h-px bg-ink/25 lg:block"
+        className="absolute top-[0.9rem] right-[calc(25%-0.6rem)] left-[0.9rem] hidden h-px origin-left bg-ink/25 transition-transform duration-[1400ms] ease-[cubic-bezier(.65,0,.35,1)] lg:block"
+        style={{ transform: seen ? "scaleX(1)" : "scaleX(0)" }}
       />
       {STEPS.map((s, i) => (
-        <li key={s.title} className="relative">
-          <span className="num relative z-10 mb-4 flex size-7 items-center justify-center rounded-full bg-ink text-[0.8rem] font-semibold text-white">
+        <li key={s.title} className="group relative">
+          <span
+            className={`num relative z-10 mb-4 flex size-7 items-center justify-center rounded-full bg-ink text-[0.9rem] font-semibold text-white transition-[background-color,transform] duration-200 group-hover:-translate-y-0.5 group-hover:rotate-[-8deg] group-hover:bg-malachite ${
+              seen ? "pop" : "opacity-0"
+            }`}
+            style={{ animationDelay: `${i * 300}ms` }}
+          >
             {i + 1}
           </span>
-          <h3 className="text-h3 [font-stretch:112%]">{s.title}</h3>
+          <h3 className="text-h3">{s.title}</h3>
           <p className="mt-1.5 text-small leading-[1.55] text-ink-2">{s.body}</p>
           <Link href={s.href} className="mt-3 inline-block text-small font-semibold">
             {s.action}
@@ -210,7 +242,7 @@ function ExampleList() {
               className="group grid gap-x-6 gap-y-1 px-5 py-4 no-underline hover:bg-wash sm:grid-cols-[minmax(0,1fr)_auto]"
             >
               <span className="min-w-0">
-                <span className="block text-[1.0625rem] leading-snug font-semibold text-ink group-hover:text-malachite">
+                <span className="block text-[1.2rem] leading-snug font-semibold text-ink group-hover:text-malachite">
                   {e.title}
                 </span>
                 <span className="mt-1 block text-small text-ink-2">{e.summary}</span>
@@ -247,9 +279,15 @@ export default function Home() {
       <header className="mb-20 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] lg:gap-14">
         <div className="flex flex-col">
           <h1 className="display text-[2.9rem] sm:text-[3.6rem] xl:text-display">
-            Ancient DNA, read layer by layer.
+            {["Ancient", "DNA,", "read", "layer", "by", "layer."].map((w, i) => (
+              <Fragment key={i}>
+                <span className="settle" style={{ animationDelay: `${120 + i * 90}ms` }}>
+                  {w}
+                </span>{" "}
+              </Fragment>
+            ))}
           </h1>
-          <p className="serif measure mt-7 text-[1.25rem] leading-[1.55] text-ink-2">
+          <p className="serif measure mt-7 text-[1.4rem] leading-[1.55] text-ink-2">
             Strata places a genome among ancient and present-day reference populations, fits mixture
             models with their uncertainty, and tests them formally with qpAdm. Every result states its
             method and the reference data it rests on.

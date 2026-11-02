@@ -93,6 +93,8 @@ export function LithologyDefs({ periods }: { periods: PeriodStyle[] }) {
 export function CoreSample({ layers, height = 520 }: { layers: Layer[]; height?: number }) {
   const router = useRouter();
   const [hover, setHover] = useState<string | null>(null);
+  // Tapping the surface of the core shakes it and lets the layers settle again.
+  const [quakes, setQuakes] = useState(0);
   const [ref, width] = useWidth<HTMLDivElement>(420);
   const narrow = width < 440;
   const floor = 42;
@@ -122,6 +124,7 @@ export function CoreSample({ layers, height = 520 }: { layers: Layer[]; height?:
 
   return (
     <div ref={ref} className="relative" style={{ height: total + cap * 2 + 8 }}>
+      <div key={quakes} className="absolute inset-0" style={{ animation: quakes ? "strata-quake 620ms ease-out" : undefined }}>
       <svg
         width={coreW + 24}
         height={total + cap * 2 + 8}
@@ -174,10 +177,63 @@ export function CoreSample({ layers, height = 520 }: { layers: Layer[]; height?:
                 ) : null;
               })()
             : null}
+          {/* Grains still settling through the youngest layer. */}
+          {placed[0]
+            ? [0.14, 0.31, 0.47, 0.6, 0.73, 0.88].map((fx, k) => (
+                <circle
+                  key={fx}
+                  cx={coreW * fx}
+                  cy={cap + 2}
+                  r={k % 2 ? 1 : 1.4}
+                  fill={placed[0]!.style.mark}
+                  pointerEvents="none"
+                  style={
+                    {
+                      "--fall": `${placed[0]!.h - 6}px`,
+                      animation: `strata-grain ${4.2 + (k % 3) * 1.3}s linear ${1.4 + k * 0.9}s infinite both`,
+                    } as React.CSSProperties
+                  }
+                />
+              ))
+            : null}
         </g>
+        {/* The hovered layer slides out of the core like a sample chip being pulled. */}
+        {hover
+          ? (() => {
+              const i = placed.findIndex((q) => q.period === hover);
+              const p = placed[i];
+              if (!p) return null;
+              return (
+                <g key={hover} pointerEvents="none" style={{ animation: "strata-pull 240ms cubic-bezier(.2,.9,.3,1.2) both" }}>
+                  <clipPath id="pull-clip">
+                    <rect x={0} y={p.y + cap} width={coreW} height={p.h} rx={2} />
+                  </clipPath>
+                  <g clipPath="url(#pull-clip)" style={{ filter: "drop-shadow(3px 3px 0 rgba(30,38,48,.25))" }}>
+                    <rect x={0} y={p.y + cap} width={coreW} height={p.h} fill={`url(#lith-${slug(p.period)})`} />
+                    <rect x={0} y={p.y + cap} width={coreW} height={p.h} fill="url(#core-shade)" />
+                    <rect x={0.5} y={p.y + cap + 0.5} width={coreW - 1} height={p.h - 1} fill="none" stroke="#1e2630" strokeOpacity={0.5} />
+                  </g>
+                </g>
+              );
+            })()
+          : null}
         {/* Surface of the core */}
         <ellipse cx={coreW / 2} cy={cap} rx={coreW / 2} ry={cap} fill={placed[0]?.style.color ?? "#ddd"} />
-        <ellipse cx={coreW / 2} cy={cap} rx={coreW / 2} ry={cap} fill="#fff" fillOpacity={0.35} stroke="#1e2630" strokeOpacity={0.25} strokeWidth={0.8} />
+        <ellipse
+          cx={coreW / 2}
+          cy={cap}
+          rx={coreW / 2}
+          ry={cap}
+          fill="#fff"
+          fillOpacity={0.35}
+          stroke="#1e2630"
+          strokeOpacity={0.25}
+          strokeWidth={0.8}
+          className="cursor-pointer"
+          onClick={() => setQuakes((q) => q + 1)}
+        >
+          <title>Tap the surface</title>
+        </ellipse>
         {/* Ticks to the labels */}
         {placed.map((p) => (
           <line
@@ -210,25 +266,26 @@ export function CoreSample({ layers, height = 520 }: { layers: Layer[]; height?:
               onMouseLeave={() => setHover(null)}
               onFocus={() => setHover(p.period)}
               onBlur={() => setHover(null)}
-              className={`-mx-2 grid w-full grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 rounded-[6px] px-2 py-1 no-underline transition-colors ${
-                hover === p.period ? "bg-panel" : ""
+              className={`-mx-2 grid w-full grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 rounded-[6px] px-2 py-1 no-underline transition-[background-color,transform] duration-200 ${
+                hover === p.period ? "translate-x-2 bg-panel" : ""
               }`}
             >
               <span className="min-w-0">
-                <span className="block truncate text-[0.95rem] leading-tight font-semibold text-ink">{p.period}</span>
-                <span className="num block truncate text-[0.75rem] leading-snug text-ink-3">
+                <span className="block truncate text-[1.08rem] leading-tight font-semibold text-ink">{p.period}</span>
+                <span className="num block truncate text-[0.86rem] leading-snug text-ink-3">
                   {bpRange(p.minBp, p.maxBp)}
                 </span>
               </span>
-              <span className="num text-right text-[0.8rem] leading-tight text-ink-2">
-                <span className="text-[1.05rem] font-semibold text-ink">{p.populations}</span>{" "}
+              <span className="num text-right text-[0.9rem] leading-tight text-ink-2">
+                <span className="text-[1.2rem] font-semibold text-ink">{p.populations}</span>{" "}
                 {p.populations === 1 ? "population" : "populations"}
-                <span className="block text-[0.72rem] text-ink-3">{int(p.individuals)} individuals</span>
+                <span className="block text-[0.82rem] text-ink-3">{int(p.individuals)} individuals</span>
               </span>
             </Link>
           </li>
         ))}
       </ol>
+      </div>
     </div>
   );
 }

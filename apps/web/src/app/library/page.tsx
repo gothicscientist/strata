@@ -151,7 +151,12 @@ function Library() {
                   }`}
                 >
                   {p ? (
-                    <span className="size-3.5 rounded-full ring-1 ring-black/10" style={{ background: st.color }} aria-hidden />
+                    <span
+                      key={active ? "on" : "off"}
+                      className={`size-3.5 rounded-full ring-1 ring-black/10 ${active ? "pop" : ""}`}
+                      style={{ background: st.color }}
+                      aria-hidden
+                    />
                   ) : (
                     <span className="stratum-rule size-3.5 rounded-full" aria-hidden />
                   )}

@@ -101,7 +101,7 @@ function Status() {
   const caps = health?.capabilities;
   const wait = !health;
   return (
-    <dl className="space-y-1 text-[0.75rem] leading-[1.5]" aria-label="Server status">
+    <dl className="space-y-1 text-[0.86rem] leading-[1.5]" aria-label="Server status">
       <Readout label="API" value={health ? `${health.status}, v${health.version}` : "not connected"} state={wait ? "wait" : health.status === "ok" ? "ok" : "off"} />
       <Readout label="Reference" value={caps?.reference_version ?? "not built"} state={wait ? "wait" : caps?.reference_loaded ? "ok" : "off"} />
       <Readout label="qpAdm" value={caps ? (caps.qpadm ? "available" : "not installed") : "—"} state={wait ? "wait" : caps?.qpadm ? "ok" : "off"} />
@@ -119,7 +119,7 @@ function Nav({ path, onNavigate }: { path: string; onNavigate?: () => void }) {
     <nav aria-label="Primary" className="space-y-6">
       {GROUPS.map((g) => (
         <div key={g.title}>
-          <p className="mb-1.5 px-3 text-[0.72rem] font-semibold tracking-[0.02em] text-[#7f8a95]">{g.title}</p>
+          <p className="mb-1.5 px-3 text-[0.82rem] font-semibold tracking-[0.02em] text-[#7f8a95]">{g.title}</p>
           <ul className="space-y-px">
             {g.items.map((n) => {
               const active = isActive(path, n.href);
@@ -134,14 +134,14 @@ function Nav({ path, onNavigate }: { path: string; onNavigate?: () => void }) {
                     }`}
                   >
                     {active ? (
-                      <span className="absolute top-1.5 bottom-1.5 left-0 w-[3px] rounded-r bg-[#62c39a]" aria-hidden />
+                      <span className="pop absolute top-1.5 bottom-1.5 left-0 w-[3px] origin-center rounded-r bg-[#62c39a]" aria-hidden />
                     ) : null}
-                    <span className={`num text-[0.72rem] ${active ? "text-[#62c39a]" : "text-[#6f7a86]"}`}>
+                    <span className={`num text-[0.82rem] ${active ? "text-[#62c39a]" : "text-[#6f7a86]"}`}>
                       {n.step ?? ""}
                     </span>
-                    <span>
-                      <span className="block text-[0.9375rem] font-medium leading-tight">{n.label}</span>
-                      <span className="block text-[0.72rem] leading-snug text-[#8d98a3] group-hover:text-[#a9b3bc]">
+                    <span className="transition-transform duration-150 group-hover:translate-x-0.5">
+                      <span className="block text-[1.06rem] font-medium leading-tight">{n.label}</span>
+                      <span className="block text-[0.82rem] leading-snug text-[#8d98a3] group-hover:text-[#a9b3bc]">
                         {n.hint}
                       </span>
                     </span>
@@ -168,9 +168,9 @@ export function SiteHeader() {
   }, [open]);
 
   const brand = (
-    <Link href="/" className="flex items-center gap-2.5 text-white no-underline hover:text-white" aria-label="Strata, home">
+    <Link href="/" className="group flex items-center gap-2.5 text-white no-underline hover:text-white" aria-label="Strata, home">
       <StrataMark size={24} />
-      <span className="text-[1.3rem] leading-none font-semibold tracking-[-0.01em] [font-stretch:125%]">Strata</span>
+      <span className="text-[1.55rem] leading-none font-semibold tracking-[-0.01em]">Strata</span>
     </Link>
   );
 
@@ -215,7 +215,7 @@ export function SiteHeader() {
         <Nav path={path} onNavigate={() => setOpen(false)} />
         <div className="mt-auto space-y-4 px-3 pt-10">
           <Status />
-          <p className="border-t border-white/10 pt-3 text-[0.75rem] leading-[1.5] text-[#a9b3bc] [&_a]:text-[#d5dbe0]">
+          <p className="border-t border-white/10 pt-3 text-[0.86rem] leading-[1.5] text-[#a9b3bc] [&_a]:text-[#d5dbe0]">
             <SessionLine />
           </p>
         </div>

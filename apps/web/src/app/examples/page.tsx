@@ -44,7 +44,7 @@ export default function ExamplesPage() {
                   {analysisLabel(e.kind)}
                   {e.tags?.length ? <span>{e.tags.join(", ")}</span> : null}
                 </span>
-                <h2 className="mt-1.5 text-[1.1875rem] leading-snug font-semibold text-ink group-hover:text-malachite [font-stretch:100%]">
+                <h2 className="mt-1.5 text-[1.35rem] leading-snug font-semibold text-ink group-hover:text-malachite">
                   {e.title}
                 </h2>
                 <p className="measure mt-1 text-small leading-[1.55] text-ink-2">{e.summary}</p>

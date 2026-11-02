@@ -18,16 +18,16 @@ export function PageHeader({
     <header className="mb-12">
       <div className="grid gap-6 pb-7 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-end lg:gap-14">
         <div>
-          <h1 className="text-[2.15rem] leading-[1.04] font-semibold tracking-[-0.015em] [font-stretch:118%] sm:text-h1">
+          <h1 className="text-[2.15rem] leading-[1.04] font-medium tracking-[-0.01em] sm:text-h1">
             {title}
           </h1>
           {lede ? (
-            <div className="serif measure mt-4 text-[1.1875rem] leading-[1.5] text-ink-2">{lede}</div>
+            <div className="serif measure mt-4 text-[1.35rem] leading-[1.5] text-ink-2">{lede}</div>
           ) : null}
         </div>
         {aside ? <div className="text-small leading-[1.5] text-ink-2 lg:pb-1">{aside}</div> : null}
       </div>
-      <div className="stratum-rule" aria-hidden />
+      <div className="stratum-rule stratum-draw" aria-hidden />
     </header>
   );
 }
@@ -51,7 +51,7 @@ export function Section({
       <h2 id={id ? `${id}-h` : undefined} className="mb-5 flex items-center gap-3 text-h2">
         {n !== undefined ? (
           <span
-            className="num inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-ink text-[0.8rem] font-semibold [font-stretch:100%]"
+            className="num inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-ink text-[0.9rem] font-semibold"
             aria-hidden
           >
             {n}
@@ -141,10 +141,16 @@ export function Caveat({ title, children }: { title: string; children: ReactNode
 export function Loading({ what }: { what: string }) {
   return (
     <p className="flex items-center gap-3 py-6 text-small text-ink-3" role="status" aria-live="polite">
-      <span className="relative block h-1 w-16 overflow-hidden rounded-full bg-rule-soft" aria-hidden>
-        <span className="absolute inset-y-0 left-0 w-1/3 animate-[strata-progress_1.1s_ease-in-out_infinite] rounded-full bg-malachite" />
+      <span className="flex h-5 w-5 flex-col-reverse justify-start gap-px" aria-hidden>
+        {["#34404f", "#5f7f6e", "#a46a3a", "#cdae66"].map((c, i) => (
+          <span
+            key={c}
+            className="block h-[4px] w-full rounded-[1px]"
+            style={{ background: c, animation: `strata-stack 1.6s ease-out ${i * 0.18}s infinite both` }}
+          />
+        ))}
       </span>
-      Loading {what}&hellip;
+      <span className="italic">Loading {what}&hellip;</span>
     </p>
   );
 }
@@ -220,7 +226,7 @@ export function ErrorNote({ error, retry }: { error: unknown; retry?: () => void
 export function KindMark({ kind }: { kind: "exploratory" | "formal" }) {
   return (
     <span
-      className={`inline-block rounded-[var(--radius-tag)] px-1.5 py-px align-[0.14em] text-[0.7rem] leading-[1.35] font-semibold tracking-[0.01em] whitespace-nowrap [font-stretch:100%] ${
+      className={`inline-block rounded-[var(--radius-tag)] px-1.5 py-px align-[0.14em] text-[0.8rem] leading-[1.35] font-semibold tracking-[0.01em] whitespace-nowrap ${
         kind === "formal"
           ? "border border-malachite bg-malachite text-white"
           : "border border-dashed border-[#c08419] bg-loess-soft text-loess"

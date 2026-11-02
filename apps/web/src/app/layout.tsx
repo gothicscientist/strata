@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource-variable/archivo/wdth.css";
-import "@fontsource-variable/archivo/wdth-italic.css";
-import "@fontsource-variable/source-serif-4/opsz.css";
-import "@fontsource-variable/source-serif-4/opsz-italic.css";
+import "@fontsource/eb-garamond/400.css";
+import "@fontsource/eb-garamond/400-italic.css";
+import "@fontsource/eb-garamond/500.css";
+import "@fontsource/eb-garamond/600.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "./globals.css";
 import { SessionProvider } from "@/components/SessionProvider";

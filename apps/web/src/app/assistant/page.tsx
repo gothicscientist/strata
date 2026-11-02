@@ -97,7 +97,7 @@ function MethodNote({ part }: { part: ToolPart }) {
     <details id={`method-${part.id}`} className="group border-b border-rule-soft py-1.5 text-caption">
       <summary className="cursor-pointer list-none text-ink-2 marker:hidden">
         <sup className="num mr-1.5 text-ink">{part.n}</sup>
-        <span className="font-mono text-[0.72rem] text-ink">{part.name}</span>
+        <span className="font-mono text-[0.82rem] text-ink">{part.name}</span>
         <span className="ml-2">
           {part.status === "running"
             ? "running…"
@@ -110,13 +110,13 @@ function MethodNote({ part }: { part: ToolPart }) {
       <div className="mt-2 grid gap-3 md:grid-cols-2">
         <div>
           <p className="mb-1 italic">Input</p>
-          <pre className="max-h-60 overflow-auto border border-rule bg-wash p-2 text-[0.7rem] leading-[1.5]">
+          <pre className="max-h-60 overflow-auto border border-rule bg-wash p-2 text-[0.8rem] leading-[1.5]">
             {JSON.stringify(part.input, null, 2)}
           </pre>
         </div>
         <div>
           <p className="mb-1 italic">Result</p>
-          <pre className="max-h-60 overflow-auto border border-rule bg-wash p-2 text-[0.7rem] leading-[1.5]">
+          <pre className="max-h-60 overflow-auto border border-rule bg-wash p-2 text-[0.8rem] leading-[1.5]">
             {part.status === "running" ? "…" : JSON.stringify(part.result ?? part.error, null, 2)}
           </pre>
         </div>
@@ -133,7 +133,7 @@ function AssistantAnswer({ turn, index }: { turn: AssistantTurn; index: number }
     .filter((x) => x.r !== null);
   return (
     <div>
-      <div className="serif text-[1.0625rem] leading-[1.65]">
+      <div className="serif text-[1.2rem] leading-[1.65]">
         {turn.parts.map((p, i) =>
           p.kind === "text" ? (
             <Prose key={i} text={p.text} citations={turn.citations} />
@@ -156,7 +156,7 @@ function AssistantAnswer({ turn, index }: { turn: AssistantTurn; index: number }
             <span className="font-semibold text-ink">
               Result {index}.{t.n}.
             </span>{" "}
-            Output of <span className="font-mono text-[0.72rem]">{t.name}</span>
+            Output of <span className="font-mono text-[0.82rem]">{t.name}</span>
             {typeof t.result?.analysis_id === "string" ? (
               <>
                 ; <Link href={`/analysis/?id=${encodeURIComponent(t.result.analysis_id)}`}>open the full analysis</Link>

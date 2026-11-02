@@ -8,12 +8,11 @@
  * exploratory results. The sediment ramp (light, young, at the top; dark, old, at the bottom) is
  * reserved for periods of time, so a colour always means the same layer wherever it appears.
  *
- * Type: Archivo (variable width) for interface and headings, set expanded at display sizes;
- * Source Serif 4 for reading text (ledes, methods, worked-example prose, assistant answers).
+ * Type: a single EB Garamond family, set like a journal page, with IBM Plex Mono for code.
  */
 @theme {
-  --font-sans: "Archivo Variable", "Archivo", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Source Serif 4 Variable", "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --font-serif: "EB Garamond", "Garamond", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-sans: var(--font-serif);
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   --color-paper: #f1f3ef; /* field stone: the page */
@@ -40,13 +39,13 @@
   --color-umber: #8a5418;
   --color-alert: #a32a1f;
 
-  --text-caption: 0.8125rem;
-  --text-small: 0.875rem;
-  --text-body: 1rem;
-  --text-h3: 1.1875rem;
-  --text-h2: 1.5rem;
-  --text-h1: 2.5rem;
-  --text-display: 4.25rem;
+  --text-caption: 0.875rem;
+  --text-small: 0.98rem;
+  --text-body: 1.1875rem;
+  --text-h3: 1.375rem;
+  --text-h2: 1.8125rem;
+  --text-h1: 2.875rem;
+  --text-display: 4.75rem;
 
   --radius-panel: 10px;
   --radius-control: 6px;
@@ -60,27 +59,23 @@
     color: var(--color-ink);
     background: var(--color-paper);
     font-kerning: normal;
+    font-variant-ligatures: common-ligatures;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
   }
   body {
     background: var(--color-paper);
     font-size: var(--text-body);
-    line-height: 1.55;
+    line-height: 1.5;
     min-height: 100vh;
   }
   h1,
   h2,
   h3,
   h4 {
-    font-weight: 600;
-    line-height: 1.15;
+    font-weight: 500;
+    line-height: 1.12;
     text-wrap: balance;
-    letter-spacing: -0.005em;
-  }
-  h1,
-  h2 {
-    font-stretch: 112%;
   }
   p {
     text-wrap: pretty;
@@ -144,10 +139,9 @@
     max-width: 40rem;
   }
   .display {
-    font-stretch: 125%;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    line-height: 0.98;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 0.96;
   }
   .serif {
     font-family: var(--font-serif);
@@ -162,8 +156,8 @@
   /* Reading text: worked examples, methods, the assistant. */
   .prose-journal {
     font-family: var(--font-serif);
-    font-size: 1.0625rem;
-    line-height: 1.65;
+    font-size: var(--text-body);
+    line-height: 1.6;
   }
   .prose-journal p {
     margin: 0;
@@ -291,25 +285,43 @@
     cursor: pointer;
     text-decoration: none;
     line-height: 1.25;
-    transition: background-color 120ms;
+    /* A chunky, pressable button: it sits on a ledge and sinks when pressed. */
+    box-shadow: 0 3px 0 #0f3d31;
+    transition:
+      background-color 120ms,
+      transform 90ms ease-out,
+      box-shadow 90ms ease-out;
   }
   .btn:hover {
     background: #165444;
     color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 0 #0f3d31;
+  }
+  .btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #0f3d31;
   }
   .btn:disabled {
     background: #9aa5a1;
     border-color: #9aa5a1;
+    box-shadow: 0 3px 0 #7d8884;
+    transform: none;
     cursor: not-allowed;
   }
   .btn-quiet {
     background: var(--color-panel);
     color: var(--color-ink);
     border-color: var(--color-rule);
+    box-shadow: 0 3px 0 var(--color-rule);
   }
   .btn-quiet:hover {
     background: var(--color-wash);
     color: var(--color-ink);
+    box-shadow: 0 4px 0 #b9c1bf;
+  }
+  .btn-quiet:active {
+    box-shadow: 0 1px 0 #b9c1bf;
   }
   .linkish {
     background: none;
@@ -349,6 +361,22 @@
   .kv > div:last-child > dt,
   .kv > div:last-child > dd {
     border-bottom: 0;
+  }
+
+  /* The signature rule draws itself in, left to right, each time a page opens. */
+  .stratum-draw {
+    animation: strata-draw 1100ms cubic-bezier(0.65, 0, 0.35, 1) 120ms both;
+  }
+
+  /* Headline words drop in and settle like grains. */
+  .settle {
+    display: inline-block;
+    animation: strata-settle 700ms cubic-bezier(0.2, 0.9, 0.25, 1.25) both;
+  }
+
+  /* A brief pop, for something that has just become true (a ticked requirement, a chosen chip). */
+  .pop {
+    animation: strata-pop 360ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
   }
 
   /* The signature rule: a thin sediment column laid on its side. */
@@ -395,5 +423,125 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes strata-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes strata-settle {
+  0% {
+    opacity: 0;
+    transform: translateY(-0.45em) rotate(-3deg);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(0.04em) rotate(0.4deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes strata-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+/* Grains of sediment drifting down through the top of the core. */
+@keyframes strata-grain {
+  0% {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(var(--fall, 60px));
+    opacity: 0;
+  }
+}
+/* The core shudders when its surface is tapped. */
+@keyframes strata-quake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-4px) rotate(-0.6deg);
+  }
+  30% {
+    transform: translateX(4px) rotate(0.5deg);
+  }
+  45% {
+    transform: translateX(-3px);
+  }
+  60% {
+    transform: translateX(2px);
+  }
+  80% {
+    transform: translateX(-1px);
+  }
+}
+/* Loading: four layers drop onto a stack, then the stack clears and starts again. */
+@keyframes strata-stack {
+  0% {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+  18%,
+  80% {
+    transform: none;
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+    opacity: 0;
+  }
+}
+/* The mark's layers ripple on hover. */
+@keyframes strata-ripple {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(2px);
+  }
+}
+
+.group:hover .strata-mark path {
+  animation: strata-ripple 520ms ease-in-out;
+}
+.group:hover .strata-mark path:nth-child(2) {
+  animation-delay: 60ms;
+}
+.group:hover .strata-mark path:nth-child(3) {
+  animation-delay: 120ms;
+}
+.group:hover .strata-mark path:nth-child(4) {
+  animation-delay: 180ms;
+}
+.group:hover .strata-mark path:nth-child(5) {
+  animation-delay: 240ms;
+}
+@keyframes strata-pull {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(12px);
   }
 }

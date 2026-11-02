@@ -167,7 +167,7 @@ function Composer() {
                             className="mt-1 self-start"
                           />
                           <span className="text-ink">
-                            <span className="block text-[1.0625rem] leading-snug font-semibold">{m.label}</span>
+                            <span className="block text-[1.2rem] leading-snug font-semibold">{m.label}</span>
                             <span className="mt-1 block text-small leading-[1.5] text-ink-2">{m.description}</span>
                             {disabled ? (
                               <span className="mt-1.5 block text-caption text-ink-3">
@@ -350,8 +350,11 @@ function Composer() {
         <aside className="lg:sticky lg:top-8 lg:self-start">
           <div className="panel p-5">
             <p className="text-caption font-semibold text-ink-3">Ready to run</p>
-            <p className="mt-1 flex flex-wrap items-center gap-2 text-[1.0625rem] font-semibold">
-              {method.label} <KindMark kind={method.formal ? "formal" : "exploratory"} />
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-[1.2rem] font-semibold">
+              {method.label}{" "}
+              <span key={method.key} className="pop inline-block">
+                <KindMark kind={method.formal ? "formal" : "exploratory"} />
+              </span>
             </p>
             <ul className="mt-4 space-y-1.5 text-small">
               {[
@@ -366,7 +369,7 @@ function Composer() {
                     : []),
               ].map(([k, v]) => (
                 <li key={k as string} className="grid grid-cols-[1rem_4rem_1fr] items-baseline gap-x-2">
-                  <span className={v ? "text-malachite" : "text-ink-3"} aria-hidden>
+                  <span key={v ? "y" : "n"} className={`inline-block ${v ? "pop text-malachite" : "text-ink-3"}`} aria-hidden>
                     {v ? "\u2713" : "\u25CB"}
                   </span>
                   <span className="text-ink-3">{k}</span>

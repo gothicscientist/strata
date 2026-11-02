@@ -115,7 +115,7 @@ export default function UploadPage() {
               </>
             ) : (
               <>
-                <p className="text-[1.0625rem] font-semibold">Drop the file here</p>
+                <p className="text-[1.2rem] font-semibold">Drop the file here</p>
                 <p className="my-1 text-caption text-ink-3">or</p>
                 <label htmlFor={ids.file} className="linkish cursor-pointer">
                   choose a file from your computer
