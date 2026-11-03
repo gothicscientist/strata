@@ -345,13 +345,20 @@ export function decodeChatEvent(event: string, data: string): ChatEvent | null {
 }
 
 /** POST a user message and stream the assistant's events. */
+export interface ChatCredentials {
+  provider: "anthropic" | "openai";
+  api_key: string;
+  model?: string;
+}
+
 export async function* streamChat(
   sessionId: string,
   content: string,
   signal?: AbortSignal,
+  credentials?: ChatCredentials,
 ): AsyncGenerator<ChatEvent> {
   const res = await request<Response>(`/chat/sessions/${encodeURIComponent(sessionId)}/messages`, {
-    json: { content },
+    json: { content, ...credentials },
     raw: true,
     accept: "text/event-stream",
     signal,

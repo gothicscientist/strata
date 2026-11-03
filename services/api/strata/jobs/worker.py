@@ -132,6 +132,9 @@ class Worker:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="python -m strata.jobs.worker")
     p.add_argument("--once", action="store_true", help="run queued jobs until empty, then exit")
+    p.add_argument(
+        "--max-jobs", type=int, default=0, help="stop --once after this many jobs (0: unlimited)"
+    )
     p.add_argument("--kinds", default="", help="comma separated job kinds to accept")
     p.add_argument(
         "--concurrency", type=int, default=int(os.environ.get("STRATA_WORKER_CONCURRENCY", "1"))
@@ -148,8 +151,11 @@ def main(argv: list[str] | None = None) -> int:
     worker = Worker(engine, settings, kinds=kinds, concurrency=args.concurrency)
     if args.once:
         worker.maintenance()
+        completed = 0
         while worker.run_one() and not worker.must_exit.is_set():
-            pass
+            completed += 1
+            if args.max_jobs > 0 and completed >= args.max_jobs:
+                break
         return EXIT_RESTART if worker.must_exit.is_set() else 0
     signal.signal(signal.SIGTERM, worker.request_stop)
     signal.signal(signal.SIGINT, worker.request_stop)
