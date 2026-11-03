@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useMemo } from "react";
+import { useMemo } from "react";
 import { api } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { analysisLabel, int } from "@/lib/format";
@@ -199,17 +199,14 @@ export default function Home() {
     <article>
       <header className="mb-20 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] lg:gap-14">
         <div className="flex flex-col">
-          <h1 className="display text-[2.9rem] sm:text-[3.6rem] xl:text-display">
-            {["Ancient", "DNA,", "read", "layer", "by", "layer."].map((w, i) => (
-              <Fragment key={i}>
-                <span className="settle" style={{ animationDelay: `${120 + i * 90}ms` }}>
-                  {w}
-                </span>{" "}
-              </Fragment>
-            ))}
-          </h1>
-          <p className="serif measure mt-7 text-[1.4rem] leading-[1.55] text-ink-2">
-            Compare your DNA with thousands of ancient people, then test which ancestry stories the data really supports.
+          <h1 className="display text-[3.6rem] leading-none sm:text-[4.6rem] xl:text-[5.4rem]">Strata</h1>
+          <p className="serif mt-3 text-[1.55rem] leading-snug text-ink-2 italic sm:text-[1.8rem]">
+            a research instrument for population genetics
+          </p>
+          <div className="stratum-rule stratum-draw mt-7 w-24" aria-hidden />
+          <p className="measure mt-7 text-[1.3rem] leading-[1.6] text-ink-2">
+            Place a genome among ancient and present-day reference populations, then test which ancestry models the
+            data supports.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link href="/upload/" className="btn">
