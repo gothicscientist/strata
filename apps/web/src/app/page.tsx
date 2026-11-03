@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useMemo } from "react";
 import { api } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { analysisLabel, int } from "@/lib/format";
 import { sortPeriods } from "@/lib/periods";
-import type { PopulationSummary } from "@/lib/types";
+import type { CoordinateSpaceInfo, PopulationSummary } from "@/lib/types";
 import { PcaPlot } from "@/components/charts/PcaPlot";
 import { CoreSample, type Layer } from "@/components/charts/CoreSample";
 import { useSession } from "@/components/SessionProvider";
+import { Explainer } from "@/components/Explainer";
+import { BuildDiagram } from "@/components/BuildDiagram";
+import { Term } from "@/components/Term";
 import { Empty, ErrorNote, KindMark, Loading } from "@/components/typography";
 
 /** Every population in the library, fetched page by page (the API caps a page). */
@@ -64,93 +67,16 @@ function LibraryCore() {
   );
 }
 
-const STEPS: Array<{ title: string; body: string; href: string; action: string }> = [
-  {
-    title: "Upload",
-    body: "23andMe, AncestryDNA, VCF or G25.",
-    href: "/upload/",
-    action: "Upload a file",
-  },
-  {
-    title: "Place",
-    body: "See where you sit in the reference PCA.",
-    href: "/analyses/new/?method=pca_project",
-    action: "Project a sample",
-  },
-  {
-    title: "Fit",
-    body: "Find the closest mix of source populations.",
-    href: "/analyses/new/?method=admixture_fit",
-    action: "Fit sources",
-  },
-  {
-    title: "Test",
-    body: "Test that mix formally with qpAdm.",
-    href: "/analyses/new/?method=qpadm",
-    action: "Set up qpAdm",
-  },
-];
-
-/** True once the element has scrolled into view (and stays true). */
-function useSeen<T extends HTMLElement>(): [React.RefObject<T | null>, boolean] {
-  const ref = useRef<T | null>(null);
-  const [seen, setSeen] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === "undefined") {
-      setSeen(true);
-      return;
-    }
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setSeen(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.35 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-  return [ref, seen];
+type SpacesResource = ReturnType<typeof useSpaces>;
+function useSpaces() {
+  return useResource((s) => api.spaces(s), []);
 }
+const firstSpace = (d: CoordinateSpaceInfo[] | null | undefined) => d?.find((s) => s.populations.length > 0);
 
-function Workflow() {
-  const [ref, seen] = useSeen<HTMLOListElement>();
-  return (
-    <ol ref={ref} className="relative grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-      <span
-        aria-hidden
-        className="absolute top-[0.9rem] right-[calc(25%-0.6rem)] left-[0.9rem] hidden h-px origin-left bg-ink/25 transition-transform duration-[1400ms] ease-[cubic-bezier(.65,0,.35,1)] lg:block"
-        style={{ transform: seen ? "scaleX(1)" : "scaleX(0)" }}
-      />
-      {STEPS.map((s, i) => (
-        <li key={s.title} className="group relative">
-          <span
-            className={`num relative z-10 mb-4 flex size-7 items-center justify-center rounded-full bg-ink text-[0.9rem] font-semibold text-white transition-[background-color,transform] duration-200 group-hover:-translate-y-0.5 group-hover:rotate-[-8deg] group-hover:bg-malachite ${
-              seen ? "pop" : ""
-            }`}
-            style={{ animationDelay: `${i * 300}ms` }}
-          >
-            {i + 1}
-          </span>
-          <h3 className="text-h3">{s.title}</h3>
-          <p className="mt-1.5 text-small leading-[1.55] text-ink-2">{s.body}</p>
-          <Link href={s.href} className="mt-3 inline-block text-small font-semibold">
-            {s.action}
-          </Link>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-function ReferenceSpace() {
-  const spaces = useResource((s) => api.spaces(s), []);
+function ReferenceSpace({ spaces }: { spaces: SpacesResource }) {
   if (spaces.loading) return <Loading what="the reference space" />;
   if (spaces.error) return <ErrorNote error={spaces.error} retry={spaces.reload} />;
-  const space = spaces.data?.find((s) => s.populations.length > 0);
+  const space = firstSpace(spaces.data);
   if (!space)
     return <Empty>The reference space has not been built on this server yet, so there is nothing to plot.</Empty>;
   return (
@@ -160,8 +86,7 @@ function ReferenceSpace() {
       </figure>
       <div className="text-small leading-[1.6] text-ink-2 lg:pt-2">
         <p>
-          <span className="num font-semibold text-ink">{space.populations.length}</span> populations. Hover
-          a mark for its name.
+          Each mark is a population, placed by <Term k="pca" />. Close together means genetically similar.
         </p>
         <p className="mt-4">
           <Link href="/library/" className="font-semibold">
@@ -193,14 +118,18 @@ function TwoKinds() {
       <div className="rounded-[var(--radius-panel)] border border-dashed border-[#c08419] bg-loess-soft/60 p-5 sm:p-6">
         <p className="mb-4 flex items-center gap-2">
           <KindMark kind="exploratory" />
-          <span className="text-small text-ink-2">PCA, nearest, mixture fits</span>
+          <span className="text-small text-ink-2">
+            <Term k="pca" />, nearest, mixture fits
+          </span>
         </p>
         {col(1)}
       </div>
       <div className="rounded-[var(--radius-panel)] border border-malachite bg-malachite-soft/70 p-5 sm:p-6">
         <p className="mb-4 flex items-center gap-2">
           <KindMark kind="formal" />
-          <span className="text-small text-ink-2">qpAdm, qpWave, f4</span>
+          <span className="text-small text-ink-2">
+            <Term k="qpadm" />, qpWave, <Term k="f4">f4</Term>
+          </span>
         </p>
         {col(2)}
       </div>
@@ -252,8 +181,20 @@ function Heading({ children, id }: { children: React.ReactNode; id: string }) {
   );
 }
 
+function Built({ spaces }: { spaces: SpacesResource }) {
+  const sp = firstSpace(spaces.data);
+  const prov = (sp?.provenance ?? {}) as Record<string, unknown>;
+  const num = (v: unknown) => (typeof v === "number" ? v : null);
+  return (
+    <BuildDiagram
+      stats={{ snps: num(prov.n_snps), projected: num(prov.n_projected_individuals), populations: sp?.populations.length ?? null }}
+    />
+  );
+}
+
 export default function Home() {
   const { session } = useSession();
+  const spaces = useSpaces();
   return (
     <article>
       <header className="mb-20 grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] lg:gap-14">
@@ -268,7 +209,7 @@ export default function Home() {
             ))}
           </h1>
           <p className="serif measure mt-7 text-[1.4rem] leading-[1.55] text-ink-2">
-            Place your genome among ancient populations, then test models of your ancestry.
+            Compare your DNA with thousands of ancient people, then test which ancestry stories the data really supports.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link href="/upload/" className="btn">
@@ -290,17 +231,22 @@ export default function Home() {
 
       <section className="mb-20" aria-labelledby="flow">
         <Heading id="flow">How it works</Heading>
-        <Workflow />
+        <Explainer />
       </section>
 
       <section className="mb-20" aria-labelledby="space">
         <Heading id="space">The reference space</Heading>
-        <ReferenceSpace />
+        <ReferenceSpace spaces={spaces} />
       </section>
 
       <section className="mb-20" aria-labelledby="kinds">
         <Heading id="kinds">Two kinds of answer</Heading>
         <TwoKinds />
+      </section>
+
+      <section className="mb-20" aria-labelledby="built">
+        <Heading id="built">How it is built</Heading>
+        <Built spaces={spaces} />
       </section>
 
       <section aria-labelledby="examples">

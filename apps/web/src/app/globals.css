@@ -545,3 +545,84 @@
     transform: translateX(12px);
   }
 }
+
+/* Explainer scenes on the landing page. */
+@keyframes strata-drop {
+  from {
+    transform: translateY(-150px);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes strata-ring {
+  from {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+@keyframes strata-trace {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes strata-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes strata-slide {
+  from {
+    left: 0%;
+  }
+  to {
+    left: var(--x);
+  }
+}
+@keyframes strata-stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.6) rotate(-8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-3deg);
+  }
+}
+/* Packets moving along the diagram's wires. */
+@keyframes strata-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+/* A term with a plain meaning on hover or tap. */
+.term {
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, var(--color-malachite) 70%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.2em;
+  font: inherit;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+.term:hover,
+.term[aria-expanded="true"] {
+  color: var(--color-malachite);
+}
