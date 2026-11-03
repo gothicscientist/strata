@@ -1,0 +1,18 @@
+{
+  "location": "westus2",
+  "tags": {
+    "project": "strata"
+  },
+  "properties": {
+    "appLogsConfiguration": {
+      "destination": null
+    },
+    "environmentMode": "WorkloadProfiles",
+    "workloadProfiles": [
+      {
+        "name": "Consumption",
+        "workloadProfileType": "Consumption"
+      }
+    ]
+  }
+}

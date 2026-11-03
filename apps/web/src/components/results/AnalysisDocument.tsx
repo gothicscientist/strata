@@ -76,7 +76,7 @@ export function ProvenanceList({ provenance }: { provenance: Record<string, unkn
       {describeParams(provenance).map(([k, v]) => (
         <div key={k} className="contents">
           <dt className="text-ink-3">{k}</dt>
-          <dd className="num break-words">{v}</dd>
+          <dd className="num min-w-0 [overflow-wrap:anywhere]">{v}</dd>
         </div>
       ))}
     </dl>
@@ -113,7 +113,7 @@ export function AnalysisDocument({ analysis }: { analysis: Analysis }) {
             {params.map(([k, v]) => (
               <div key={k} className="contents">
                 <dt className="text-ink-3">{k}</dt>
-                <dd className="num break-words">{v}</dd>
+                <dd className="num min-w-0 [overflow-wrap:anywhere]">{v}</dd>
               </div>
             ))}
           </dl>

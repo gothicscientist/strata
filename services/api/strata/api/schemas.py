@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Generic, Literal, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 T = TypeVar("T")
 
@@ -35,6 +35,7 @@ class Capabilities(Schema):
     qpadm: bool = Field(description="R + ADMIXTOOLS 2 available for formal qpAdm tests")
     llm_providers: list[str] = Field(description="LLM providers with a configured API key")
     llm_configured: bool = Field(description="The selected STRATA_LLM_PROVIDER has a key")
+    llm_byok: bool = True
     reference_version: str | None = Field(description="Loaded reference library version")
     reference_loaded: bool
     snp_panel_loaded: bool
@@ -220,3 +221,16 @@ class ChatSessionDetail(ChatSessionOut):
 
 class ChatMessageCreate(Schema):
     content: str = Field(min_length=1, max_length=8000)
+    provider: Literal["anthropic", "openai"] = "anthropic"
+    model: str | None = Field(None, min_length=1, max_length=120)
+    api_key: SecretStr | None = Field(None, exclude=True, repr=False)
+
+    @field_validator("api_key")
+    @classmethod
+    def validate_api_key(cls, value: SecretStr | None) -> SecretStr | None:
+        if value is not None:
+            raw = value.get_secret_value().strip()
+            if not 8 <= len(raw) <= 4096:
+                raise ValueError("API key must contain 8 to 4096 characters")
+            return SecretStr(raw)
+        return value

@@ -107,7 +107,7 @@ function Status() {
       <Readout label="qpAdm" value={caps ? (caps.qpadm ? "available" : "not installed") : "—"} state={wait ? "wait" : caps?.qpadm ? "ok" : "off"} />
       <Readout
         label="Assistant"
-        value={caps ? (caps.llm_providers.length ? caps.llm_providers.join(", ") : "not configured") : "—"}
+        value={caps ? (caps.llm_providers.length ? caps.llm_providers.join(", ") : "bring your own API key") : "—"}
         state={wait ? "wait" : caps?.llm_providers.length ? "ok" : "off"}
       />
     </dl>

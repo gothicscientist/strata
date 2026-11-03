@@ -215,7 +215,7 @@ async def post_message(
     settings: SettingsDep,
 ) -> EventSourceResponse:
     chat = _owned(db, principal, session_id)
-    if not settings.llm_configured:
+    if not settings.llm_configured and body.api_key is None:
         raise ApiError(
             503,
             f"research assistant unavailable: no API key configured for {settings.llm_provider}",
@@ -225,6 +225,13 @@ async def post_message(
         import strata.agent as agent_mod
     except ImportError as exc:
         raise ApiError(503, f"agent module unavailable: {exc}", "llm_unavailable") from exc
+
+    # Never change process environment or persist credentials. Each BYOK request owns its client.
+    provider = (
+        agent_mod.get_provider(body.provider, body.model, api_key=body.api_key.get_secret_value())
+        if body.api_key is not None
+        else None
+    )
 
     prior = list(
         db.scalars(
@@ -263,7 +270,9 @@ async def post_message(
         error: str | None = None
         done: dict[str, Any] | None = None
         try:
-            async for ev in agent_mod.stream_chat(history, body.content, ctx=ctx, cancel=cancel):
+            async for ev in agent_mod.stream_chat(
+                history, body.content, ctx=ctx, cancel=cancel, provider=provider
+            ):
                 if await request.is_disconnected():
                     cancel.set()
                 t = ev.get("type")
@@ -285,6 +294,8 @@ async def post_message(
             error = "client disconnected"
             raise
         finally:
+            if provider is not None:
+                await provider.close()
             msg_id = _persist(
                 chat.id,
                 principal.user_id,
