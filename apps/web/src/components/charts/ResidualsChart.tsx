@@ -46,14 +46,14 @@ export function ResidualsChart({
 
   return (
     <div ref={ref} className="relative">
-      <svg width={width} height={h + m.t + m.b} role="img" aria-label={title} className="block font-serif">
+      <svg width={width} height={h + m.t + m.b} role="img" aria-label={title} className="block font-sans">
         <g transform={`translate(${m.l},${m.t})`}>
           {band ? (
             [band, -band].map((b) => (
-              <line key={b} x1={0} x2={w} y1={y(b)} y2={y(b)} stroke="#9a9a9a" strokeWidth={0.75} strokeDasharray="3 3" />
+              <line key={b} x1={0} x2={w} y1={y(b)} y2={y(b)} stroke="#9aa3a8" strokeWidth={0.75} strokeDasharray="3 3" />
             ))
           ) : null}
-          <line x1={0} x2={w} y1={y(0)} y2={y(0)} stroke="#000" strokeWidth={0.75} />
+          <line x1={0} x2={w} y1={y(0)} y2={y(0)} stroke="#1e2630" strokeWidth={0.75} />
           {points.map((p, i) => {
             const cx = (x(`${i}`) ?? 0) + x.bandwidth() / 2;
             const out = highlightAbove !== undefined && Math.abs(p.value) > highlightAbove;
@@ -66,20 +66,20 @@ export function ResidualsChart({
                     x2={cx}
                     y1={y(p.value - 1.96 * p.se)}
                     y2={y(p.value + 1.96 * p.se)}
-                    stroke="#9a9a9a"
+                    stroke="#9aa3a8"
                     strokeWidth={1}
                   />
                 ) : null}
-                <line x1={cx} x2={cx} y1={y(0)} y2={y(p.value)} stroke="#000" strokeWidth={hover === i ? 2 : 1.25} />
-                <circle cx={cx} cy={y(p.value)} r={4} fill={out ? "#a13f5e" : "#000"} stroke="#fff" strokeWidth={1.5} />
+                <line x1={cx} x2={cx} y1={y(0)} y2={y(p.value)} stroke="#1e2630" strokeWidth={hover === i ? 2 : 1.25} />
+                <circle cx={cx} cy={y(p.value)} r={4} fill={out ? "#a13f5e" : "#1e2630"} stroke="#fff" strokeWidth={1.5} />
               </g>
             );
           })}
-          <line x1={0} x2={0} y1={0} y2={h} stroke="#000" strokeWidth={0.75} />
+          <line x1={0} x2={0} y1={0} y2={h} stroke="#1e2630" strokeWidth={0.75} />
           {y.ticks(5).map((t) => (
             <g key={t} transform={`translate(0,${y(t)})`}>
-              <line x2={-4} stroke="#000" strokeWidth={0.75} />
-              <text x={-7} dy="0.35em" textAnchor="end" fontSize={12} fill="#333" className="num">
+              <line x2={-4} stroke="#1e2630" strokeWidth={0.75} />
+              <text x={-7} dy="0.35em" textAnchor="end" fontSize={12} fill="#444e59" className="num">
                 {tickFmt(t).replace("-", "\u2212")}
               </text>
             </g>
@@ -93,7 +93,7 @@ export function ResidualsChart({
                 transform={`translate(${cx},${h + 14}) ${rotate ? "rotate(-50)" : ""}`}
                 textAnchor={rotate ? "end" : "middle"}
                 fontSize={11.5}
-                fill="#333"
+                fill="#444e59"
               >
                 {p.label}
               </text>

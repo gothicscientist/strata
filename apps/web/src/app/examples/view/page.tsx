@@ -9,7 +9,7 @@ import { asAnalysisResult } from "@/lib/results";
 import { useResource } from "@/lib/useResource";
 import { ResultView } from "@/components/results/ResultView";
 import { describeParams, ProvenanceList } from "@/components/results/AnalysisDocument";
-import { Caveat, Empty, ErrorNote, KindMark, Loading, PageHeader, Section } from "@/components/typography";
+import { Empty, ErrorNote, Fold, KindMark, Loading, PageHeader } from "@/components/typography";
 
 function ExampleInner() {
   const slug = useSearchParams().get("slug");
@@ -37,31 +37,31 @@ function ExampleInner() {
       <PageHeader
         kicker={analysisLabel(e.kind)}
         title={e.title}
-        lede={e.summary}
         aside={
           <p>
             <KindMark kind={e.result_kind} />
           </p>
         }
       />
-      {e.caveats?.length ? (
-        <div className="mb-10">
-          {e.caveats.map((c, i) => (
-            <Caveat key={i} title={i === 0 ? "About this example" : "Reading the result"}>
-              {c}
-            </Caveat>
-          ))}
-        </div>
-      ) : null}
-      {e.description ? (
-        <div className="measure prose-journal mb-12">
-          {e.description.split(/\n{2,}/).map((para, i) => (
-            <p key={i}>{para}</p>
-          ))}
-        </div>
-      ) : null}
-      <Section n={1} title="Inputs and parameters">
-        <dl className="grid max-w-[48rem] grid-cols-[minmax(8rem,auto)_1fr] gap-x-6 gap-y-1 text-small">
+      <section className="mb-12" aria-label="Results">
+        {result ? <ResultView result={result} /> : <Empty>This example has no displayable result.</Empty>}
+      </section>
+      <Fold title="About this example">
+        {e.description ? (
+          <div className="measure prose-journal">
+            {e.description.split(/\n{2,}/).map((para, i) => (
+              <p key={i}>{para}</p>
+            ))}
+          </div>
+        ) : null}
+        {e.caveats?.map((c, i) => (
+          <p key={i} className="measure mt-3 text-small text-ink-2">
+            {c}
+          </p>
+        ))}
+      </Fold>
+      <Fold title="Inputs and parameters">
+        <dl className="kv max-w-[48rem]">
           {[...inputs, ...params].map(([k, v]) => (
             <div key={k} className="contents">
               <dt className="text-ink-3">{k}</dt>
@@ -69,13 +69,10 @@ function ExampleInner() {
             </div>
           ))}
         </dl>
-      </Section>
-      <Section n={2} title="Results">
-        {result ? <ResultView result={result} /> : <Empty>This example has no displayable result.</Empty>}
-      </Section>
-      <Section n={3} title="Provenance">
+      </Fold>
+      <Fold title="Provenance">
         <ProvenanceList provenance={e.provenance} />
-      </Section>
+      </Fold>
     </article>
   );
 }

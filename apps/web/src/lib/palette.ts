@@ -8,9 +8,9 @@
 export const SERIES = ["#2c5c94", "#c08419", "#a13f5e", "#4a9a68", "#7c6fc0", "#8a5418"] as const;
 export const SYMBOLS = ["circle", "square", "diamond", "triangle-up", "cross", "triangle-down"];
 export const OTHER = "#a3a3a3";
-export const INK = "#000000";
-export const INK_3 = "#5c5c5c";
-export const RULE = "#d6d6d6";
+export const INK = "#1e2630";
+export const INK_3 = "#5f6974";
+export const RULE = "#ccd2d0";
 
 /** Assign a fixed slot to each region by count (largest first), stable by name. */
 export function regionSlots(

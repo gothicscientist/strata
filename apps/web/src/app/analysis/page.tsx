@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { ApiError, api, pollJob, TERMINAL } from "@/lib/api";
-import { analysisLabel, dateTime } from "@/lib/format";
+import { analysisLabel } from "@/lib/format";
 import { useResource } from "@/lib/useResource";
 import type { Job } from "@/lib/types";
 import { AnalysisDocument } from "@/components/results/AnalysisDocument";
@@ -26,8 +26,8 @@ function FailureNote({ message }: { message: string }) {
       <ErrorNote error={new ApiError(503, text, { detail: text, code: "reference_unavailable" })} />
     );
   return (
-    <div role="alert" className="my-6 max-w-[44rem] border-l-2 border-alert py-1 pl-5 text-small">
-      <p className="text-alert">The analysis failed.</p>
+    <div role="alert" className="my-6 max-w-[46rem] rounded-r-[6px] border-l-[3px] border-alert bg-[#fbecea] py-3 pr-4 pl-4 text-small">
+      <p className="font-semibold text-alert">The analysis failed.</p>
       <p className="mt-1 text-ink-2">{text}</p>
     </div>
   );
@@ -73,13 +73,11 @@ function AnalysisInner() {
         <div role="status" aria-live="polite" className="measure">
           <p className="text-h3 italic">{STATUS_TEXT[status]}</p>
           <p className="mt-2 text-small text-ink-2">
-            Submitted {dateTime(a.created_at)}
-            {job?.started_at ? `; started ${dateTime(job.started_at)}` : ""}.
-            {typeof job?.progress === "number" ? ` ${Math.round(job.progress * 100)}% complete.` : ""} This
-            page updates by itself; you can leave it and return from your workspace.
+            {typeof job?.progress === "number" ? `${Math.round(job.progress * 100)}% complete. ` : ""}You can
+            leave this page.
           </p>
-          <div className="mt-6 h-px w-full overflow-hidden bg-rule" aria-hidden>
-            <div className="h-px w-1/4 animate-[strata-progress_1.8s_ease-in-out_infinite] bg-ink" />
+          <div className="mt-6 h-1 w-full max-w-[40rem] overflow-hidden rounded-full bg-rule-soft" aria-hidden>
+            <div className="h-1 w-1/4 animate-[strata-progress_1.8s_ease-in-out_infinite] rounded-full bg-malachite" />
           </div>
           {pollError ? <ErrorNote error={pollError} retry={analysis.reload} /> : null}
         </div>

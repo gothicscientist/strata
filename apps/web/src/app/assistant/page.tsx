@@ -97,7 +97,7 @@ function MethodNote({ part }: { part: ToolPart }) {
     <details id={`method-${part.id}`} className="group border-b border-rule-soft py-1.5 text-caption">
       <summary className="cursor-pointer list-none text-ink-2 marker:hidden">
         <sup className="num mr-1.5 text-ink">{part.n}</sup>
-        <span className="font-mono text-[0.72rem] text-ink">{part.name}</span>
+        <span className="font-mono text-[0.82rem] text-ink">{part.name}</span>
         <span className="ml-2">
           {part.status === "running"
             ? "running…"
@@ -110,13 +110,13 @@ function MethodNote({ part }: { part: ToolPart }) {
       <div className="mt-2 grid gap-3 md:grid-cols-2">
         <div>
           <p className="mb-1 italic">Input</p>
-          <pre className="max-h-60 overflow-auto border border-rule bg-wash p-2 text-[0.7rem] leading-[1.5]">
+          <pre className="max-h-60 overflow-auto border border-rule bg-wash p-2 text-[0.8rem] leading-[1.5]">
             {JSON.stringify(part.input, null, 2)}
           </pre>
         </div>
         <div>
           <p className="mb-1 italic">Result</p>
-          <pre className="max-h-60 overflow-auto border border-rule bg-wash p-2 text-[0.7rem] leading-[1.5]">
+          <pre className="max-h-60 overflow-auto border border-rule bg-wash p-2 text-[0.8rem] leading-[1.5]">
             {part.status === "running" ? "…" : JSON.stringify(part.result ?? part.error, null, 2)}
           </pre>
         </div>
@@ -133,7 +133,7 @@ function AssistantAnswer({ turn, index }: { turn: AssistantTurn; index: number }
     .filter((x) => x.r !== null);
   return (
     <div>
-      <div className="text-body">
+      <div className="serif text-[1.2rem] leading-[1.65]">
         {turn.parts.map((p, i) =>
           p.kind === "text" ? (
             <Prose key={i} text={p.text} citations={turn.citations} />
@@ -156,7 +156,7 @@ function AssistantAnswer({ turn, index }: { turn: AssistantTurn; index: number }
             <span className="font-semibold text-ink">
               Result {index}.{t.n}.
             </span>{" "}
-            Output of <span className="font-mono text-[0.72rem]">{t.name}</span>
+            Output of <span className="font-mono text-[0.82rem]">{t.name}</span>
             {typeof t.result?.analysis_id === "string" ? (
               <>
                 ; <Link href={`/analysis/?id=${encodeURIComponent(t.result.analysis_id)}`}>open the full analysis</Link>
@@ -305,13 +305,8 @@ export default function AssistantPage() {
       <PageHeader
         kicker="Research assistant"
         title="Ask a question"
-        lede="The assistant answers by running Strata's analyses and reading the methods documentation. Each tool it runs is listed as a numbered method beneath the answer, with its inputs and results."
-        aside={
-          <p>
-            It sees population identifiers and derived coordinates, never genotypes. Numbers it
-            states are checked against tool results; unverified values are flagged.
-          </p>
-        }
+        lede="Answers come from real analyses, with every step shown."
+        aside={<p>It never sees genotypes.</p>}
       />
 
       <div className="max-w-[46rem]">
@@ -353,15 +348,19 @@ export default function AssistantPage() {
         </fieldset>
         {turns.length === 0 ? (
           <div className="mb-10 text-small text-ink-2">
-            <p className="mb-2 italic text-ink">For example</p>
-            <ul className="space-y-1.5">
+            <p className="mb-3 font-semibold text-ink">Start from a question like these</p>
+            <ul className="flex flex-col gap-2">
               {[
                 "Which reference populations are closest to Yamnaya Samara in the Strata PCA?",
-                "Fit Corded Ware as a mixture of Yamnaya and Globular Amphora, with intervals.",
+                "Which Bronze Age populations in the library come from the steppe?",
                 "What does a qpAdm p-value of 0.2 tell me, and what does it not?",
               ].map((q) => (
                 <li key={q}>
-                  <button type="button" className="linkish text-left" onClick={() => setInput(q)}>
+                  <button
+                    type="button"
+                    className="w-full rounded-[var(--radius-control)] border border-rule bg-panel px-4 py-2.5 text-left text-ink transition-colors hover:border-malachite hover:text-malachite"
+                    onClick={() => setInput(q)}
+                  >
                     {q}
                   </button>
                 </li>
@@ -370,19 +369,19 @@ export default function AssistantPage() {
           </div>
         ) : null}
 
-        <ol className="space-y-10">
+        <ol className="space-y-6">
           {turns.map((t, i) => {
             if (t.role === "user")
               return (
-                <li key={i} className="grid grid-cols-[3.5rem_1fr] gap-2 border-t border-rule pt-4">
-                  <span className="smallcaps pt-1 text-ink-3">Q.</span>
-                  <p className="whitespace-pre-wrap italic">{t.content}</p>
+                <li key={i} className="ml-auto max-w-[38rem] rounded-[var(--radius-panel)] rounded-br-[3px] bg-basalt px-5 py-3.5 text-[#eef1f3]">
+                  <span className="sr-only">You asked: </span>
+                  <p className="whitespace-pre-wrap">{t.content}</p>
                 </li>
               );
             answerNo += 1;
             return (
-              <li key={i} className="grid grid-cols-[3.5rem_1fr] gap-2" aria-live={i === turns.length - 1 && streaming ? "polite" : undefined}>
-                <span className="smallcaps pt-1.5 text-ink-3">A.</span>
+              <li key={i} className="panel p-5 sm:p-6" aria-live={i === turns.length - 1 && streaming ? "polite" : undefined}>
+                <span className="sr-only">Answer: </span>
                 <div className="min-w-0">
                   <AssistantAnswer turn={t} index={answerNo} />
                 </div>
@@ -395,7 +394,7 @@ export default function AssistantPage() {
         {error ? <ErrorNote error={error} /> : null}
 
         <form
-          className="mt-10 border-t border-ink pt-5"
+          className="panel sticky bottom-4 z-10 mt-8 p-4 shadow-[0_8px_30px_-12px_rgba(30,38,48,0.25)] sm:p-5"
           onSubmit={(e) => {
             e.preventDefault();
             void send();
@@ -409,7 +408,7 @@ export default function AssistantPage() {
                   <label key={d.id} className="flex items-baseline gap-2">
                     <input
                       type="checkbox"
-                      className="accent-black"
+                      className=""
                       checked={shared.includes(d.id)}
                       onChange={(e) =>
                         setShared((s) => (e.target.checked ? [...s, d.id] : s.filter((x) => x !== d.id)))
@@ -426,7 +425,7 @@ export default function AssistantPage() {
           </label>
           <textarea
             id="question"
-            className="field h-28 resize-y !font-serif !text-body !leading-[1.5]"
+            className="field h-24 resize-y !font-sans !text-body !leading-[1.5]"
             value={input}
             maxLength={8000}
             disabled={!connected || streaming}

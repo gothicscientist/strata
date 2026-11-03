@@ -63,11 +63,11 @@ export function WeightsChart({
         height={height}
         role="img"
         aria-label={`${title}. ${rows.map((r) => `${r.label} ${pctText(r.weight)}`).join(", ")}`}
-        className="block overflow-visible font-serif"
+        className="block overflow-visible font-sans"
       >
         {allInRange ? (
           <g transform={`translate(${left},${stackTop})`}>
-            <text x={-12} y={barH / 2} dy="0.35em" textAnchor="end" fontSize={13} fill="#333" fontStyle="italic">
+            <text x={-12} y={barH / 2} dy="0.35em" textAnchor="end" fontSize={13} fill="#444e59" >
               (a) composition
             </text>
             {segments.map((s) => {
@@ -104,7 +104,7 @@ export function WeightsChart({
 
         <g transform={`translate(${left},${forestTop})`}>
           {allInRange ? (
-            <text x={-12} y={-12} textAnchor="end" fontSize={13} fill="#333" fontStyle="italic">
+            <text x={-12} y={-12} textAnchor="end" fontSize={13} fill="#444e59" >
               (b) estimates
             </text>
           ) : null}
@@ -115,7 +115,7 @@ export function WeightsChart({
               x2={x(t)}
               y1={0}
               y2={rows.length * rowH}
-              stroke={t === 0 ? "#9a9a9a" : "#efefef"}
+              stroke={t === 0 ? "#9aa3a8" : "#e3e7e4"}
               strokeWidth={t === 0 ? 0.75 : 0.75}
             />
           ))}
@@ -130,15 +130,15 @@ export function WeightsChart({
                 opacity={hover === null || hover === i ? 1 : 0.5}
               >
                 <rect x={-left} y={i * rowH} width={left + plotW + right} height={rowH} fill="transparent" />
-                <text x={-12} y={cy} dy="0.35em" textAnchor="end" fontSize={13.5} fill="#000">
+                <text x={-12} y={cy} dy="0.35em" textAnchor="end" fontSize={13.5} fill="#1e2630">
                   {r.label.length > 30 ? `${r.label.slice(0, 29)}…` : r.label}
                   <title>{r.label}</title>
                 </text>
                 {hasCi ? (
                   <>
-                    <line x1={x(r.lo!)} x2={x(r.hi!)} y1={cy} y2={cy} stroke="#000" strokeWidth={1} />
-                    <line x1={x(r.lo!)} x2={x(r.lo!)} y1={cy - 5} y2={cy + 5} stroke="#000" strokeWidth={1} />
-                    <line x1={x(r.hi!)} x2={x(r.hi!)} y1={cy - 5} y2={cy + 5} stroke="#000" strokeWidth={1} />
+                    <line x1={x(r.lo!)} x2={x(r.hi!)} y1={cy} y2={cy} stroke="#1e2630" strokeWidth={1} />
+                    <line x1={x(r.lo!)} x2={x(r.lo!)} y1={cy - 5} y2={cy + 5} stroke="#1e2630" strokeWidth={1} />
+                    <line x1={x(r.hi!)} x2={x(r.hi!)} y1={cy - 5} y2={cy + 5} stroke="#1e2630" strokeWidth={1} />
                   </>
                 ) : null}
                 <rect
@@ -146,23 +146,23 @@ export function WeightsChart({
                   y={cy - 4.5}
                   width={9}
                   height={9}
-                  fill={allInRange ? sourceColor(i) : "#000"}
+                  fill={allInRange ? sourceColor(i) : "#1e2630"}
                   stroke="#fff"
                   strokeWidth={1.5}
                 />
               </g>
             );
           })}
-          <line x1={0} x2={plotW} y1={rows.length * rowH} y2={rows.length * rowH} stroke="#000" strokeWidth={0.75} />
+          <line x1={0} x2={plotW} y1={rows.length * rowH} y2={rows.length * rowH} stroke="#1e2630" strokeWidth={0.75} />
           {ticks.map((t) => (
             <g key={t} transform={`translate(${x(t)},${rows.length * rowH})`}>
-              <line y2={4} stroke="#000" strokeWidth={0.75} />
-              <text y={17} textAnchor="middle" fontSize={12} fill="#333" className="num">
+              <line y2={4} stroke="#1e2630" strokeWidth={0.75} />
+              <text y={17} textAnchor="middle" fontSize={12} fill="#444e59" className="num">
                 {Math.round(t * 100).toString().replace("-", "−")}%
               </text>
             </g>
           ))}
-          <text x={plotW / 2} y={rows.length * rowH + 32} textAnchor="middle" fontSize={13} fill="#000">
+          <text x={plotW / 2} y={rows.length * rowH + 32} textAnchor="middle" fontSize={13} fill="#1e2630">
             Mixture weight; whiskers: {intervalLabel}
           </text>
         </g>

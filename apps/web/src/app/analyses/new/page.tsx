@@ -53,8 +53,9 @@ function Composer() {
   const spaces = useResource((s) => api.spaces(s), []);
   const qpadmOk = health?.capabilities.qpadm ?? false;
 
+  const methodParam = sp.get("method");
   const [state, setState] = useState<ComposerState>({
-    method: "admixture_fit",
+    method: METHODS.some((m) => m.key === methodParam) ? (methodParam as MethodKey) : "admixture_fit",
     datasetId: sp.get("dataset") ?? "",
     sample: "",
     targetPopulation: [],
@@ -90,9 +91,12 @@ function Composer() {
   }, [datasets.data, state.datasetId]);
   useEffect(() => {
     if (ds && !ds.sample_names.includes(state.sample)) set({ sample: ds.sample_names[0] ?? "" });
-    // Exploratory methods need a dataset whose coordinates live in a known space.
-    if (ds?.space && !state.space) set({ space: ds.space });
-  }, [ds, state.sample, state.space]);
+  }, [ds, state.sample]);
+  // A dataset whose coordinates live in a known space (G25 rows) can only be analysed there,
+  // so choosing it also chooses its space.
+  useEffect(() => {
+    if (ds?.space) set({ space: ds.space });
+  }, [ds?.id, ds?.space]);
   useEffect(() => {
     if (!state.space && spaces.data?.length) set({ space: spaces.data[0]!.id });
   }, [spaces.data, state.space]);
@@ -122,46 +126,58 @@ function Composer() {
       <PageHeader
         kicker="Compose"
         title="New analysis"
-        lede="Choose a target, a method and its parameters. Exploratory methods work in a PCA or G25 space; qpAdm tests a model formally on f-statistics."
+        lede="Pick a method, a target and its sources."
       />
 
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_17rem] lg:gap-14">
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-12">
         <div className="min-w-0">
           <Section n={1} title="Method">
             <fieldset>
               <legend className="sr-only">Method</legend>
-              <div className="border-t border-ink">
-                {METHODS.map((m) => {
-                  const disabled = m.formal && !qpadmOk;
-                  return (
-                    <label
-                      key={m.key}
-                      className={`grid cursor-pointer grid-cols-[1.5rem_1fr] gap-2 border-b border-rule py-3 ${
-                        disabled ? "cursor-not-allowed opacity-50" : ""
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="method"
-                        value={m.key}
-                        checked={state.method === m.key}
-                        disabled={disabled}
-                        onChange={() => set({ method: m.key as MethodKey })}
-                        className="mt-1.5 accent-black"
-                      />
-                      <span>
-                        <span className="text-h3">{m.label}</span> <KindMark kind={m.formal ? "formal" : "exploratory"} />
-                        <span className="mt-0.5 block text-small text-ink-2">{m.description}</span>
-                        {disabled ? (
-                          <span className="mt-0.5 block text-caption text-ink-3 italic">
-                            ADMIXTOOLS&nbsp;2 is not installed on this server; see the worker documentation.
+              {(["exploratory", "formal"] as const).map((kind) => (
+                <div key={kind} className="mb-5">
+                  <p className="mb-2">
+                    <KindMark kind={kind} />
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {METHODS.filter((m) => m.formal === (kind === "formal")).map((m) => {
+                      const disabled = m.formal && !qpadmOk;
+                      const checked = state.method === m.key;
+                      return (
+                        <label
+                          key={m.key}
+                          className={`relative grid grid-cols-[1.1rem_1fr] gap-x-3 rounded-[var(--radius-panel)] border p-4 transition-colors ${
+                            disabled
+                              ? "cursor-not-allowed border-dashed border-rule bg-transparent opacity-60"
+                              : checked
+                                ? `cursor-pointer bg-panel ${m.formal ? "border-malachite" : "border-[#c08419]"} shadow-[0_0_0_1px_currentColor] ${m.formal ? "text-malachite" : "text-[#c08419]"}`
+                                : "cursor-pointer border-rule bg-panel hover:border-ink-3"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="method"
+                            value={m.key}
+                            checked={checked}
+                            disabled={disabled}
+                            onChange={() => set({ method: m.key as MethodKey })}
+                            className="mt-1 self-start"
+                          />
+                          <span className="text-ink">
+                            <span className="block text-[1.2rem] leading-snug font-semibold">{m.label}</span>
+                            <span className="mt-1 block text-small leading-[1.5] text-ink-2">{m.description}</span>
+                            {disabled ? (
+                              <span className="mt-1.5 block text-caption text-ink-3">
+                                Not installed on this server.
+                              </span>
+                            ) : null}
                           </span>
-                        ) : null}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </fieldset>
           </Section>
 
@@ -170,7 +186,7 @@ function Composer() {
               <div className="mb-6 max-w-[28rem]">
                 <PopulationPicker
                   label="Target population from the library"
-                  hint="Or leave empty and choose a sample from an uploaded raw-genotype dataset below."
+                  hint="Or use an uploaded sample below."
                   value={state.targetPopulation}
                   onChange={(v: Picked[]) => set({ targetPopulation: v })}
                   max={1}
@@ -241,7 +257,7 @@ function Composer() {
                   <div className="sm:col-span-2">
                     <PopulationPicker
                       label="Sources"
-                      hint="Two to eight candidate source populations."
+                      hint="2 to 8 sources."
                       value={state.sources}
                       onChange={(sources) => set({ sources })}
                       max={8}
@@ -253,18 +269,18 @@ function Composer() {
                     value={state.bootstrap}
                     min={0}
                     max={5000}
-                    hint="Resamples individuals within each source; 0 disables intervals."
+                    hint="0 turns intervals off."
                     onChange={(bootstrap) => set({ bootstrap })}
                   />
                   <NumberField label="Random seed" value={state.seed} min={0} onChange={(seed) => set({ seed })} />
                   <label className="flex items-baseline gap-2 text-small sm:col-span-2">
                     <input
                       type="checkbox"
-                      className="accent-black"
+                      className=""
                       checked={state.sensitivity}
                       onChange={(e) => set({ sensitivity: e.target.checked })}
                     />
-                    Run leave-one-out sensitivity diagnostics
+                    Leave-one-out checks
                   </label>
                 </>
               ) : null}
@@ -274,7 +290,7 @@ function Composer() {
                   <div className="sm:col-span-2">
                     <PopulationPicker
                       label="Candidate sources"
-                      hint="Every combination within the size range is fitted and ranked."
+                      hint="Every combination is fitted."
                       value={state.sources}
                       onChange={(sources) => set({ sources })}
                       max={24}
@@ -302,7 +318,7 @@ function Composer() {
                   <div>
                     <PopulationPicker
                       label="Right (outgroups)"
-                      hint="Populations differentially related to the sources. Use more right than left populations."
+                      hint="Use more right than left."
                       value={state.right}
                       onChange={(right) => set({ right })}
                       max={30}
@@ -313,8 +329,8 @@ function Composer() {
                     <NumberField label="Most sources per model" value={state.maxSources} min={1} max={5} onChange={(maxSources) => set({ maxSources })} />
                   ) : null}
                   <label className="flex items-baseline gap-2 text-small sm:col-span-2">
-                    <input type="checkbox" className="accent-black" checked={state.allsnps} onChange={(e) => set({ allsnps: e.target.checked })} />
-                    Use all SNPs per f4-statistic (allsnps), rather than only SNPs present in every population
+                    <input type="checkbox" className="" checked={state.allsnps} onChange={(e) => set({ allsnps: e.target.checked })} />
+                    Use all SNPs per f4-statistic (allsnps)
                   </label>
                 </>
               ) : null}
@@ -326,27 +342,61 @@ function Composer() {
             </div>
           </Section>
 
-          <div className="border-t border-ink pt-6">
+        </div>
+
+        <aside className="lg:sticky lg:top-8 lg:self-start">
+          <div className="panel p-5">
+                        <p className="mt-1 flex flex-wrap items-center gap-2 text-[1.2rem] font-semibold">
+              {method.label}{" "}
+              <span key={method.key} className="pop inline-block">
+                <KindMark kind={method.formal ? "formal" : "exploratory"} />
+              </span>
+            </p>
+            <ul className="mt-4 space-y-1.5 text-small">
+              {[
+                ["Target", formalTarget && state.targetPopulation[0] ? state.targetPopulation[0].name : ds ? `${state.sample || "—"} (${ds.name})` : null],
+                ...(method.formal
+                  ? ([
+                      ["Left", state.left.length ? `${state.left.length} chosen` : null],
+                      ["Right", state.right.length ? `${state.right.length} chosen` : null],
+                    ] as Array<[string, string | null]>)
+                  : state.method === "admixture_fit" || state.method === "admixture_rotate"
+                    ? ([["Sources", state.sources.length ? `${state.sources.length} chosen` : null]] as Array<[string, string | null]>)
+                    : []),
+              ].map(([k, v]) => (
+                <li key={k as string} className="grid grid-cols-[1rem_4rem_1fr] items-baseline gap-x-2">
+                  <span key={v ? "y" : "n"} className={`inline-block ${v ? "pop text-malachite" : "text-ink-3"}`} aria-hidden>
+                    {v ? "\u2713" : "\u25CB"}
+                  </span>
+                  <span className="text-ink-3">{k}</span>
+                  <span className={`truncate ${v ? "text-ink" : "text-ink-3"}`}>{v ?? "not chosen"}</span>
+                </li>
+              ))}
+            </ul>
             {!built.ok ? (
-              <ul className="mb-4 list-disc space-y-0.5 pl-5 text-small text-ink-2">
+              <ul className="mt-4 space-y-1 border-t border-rule-soft pt-3 text-caption leading-[1.5] text-ink-2">
                 {built.problems.map((p) => (
                   <li key={p}>{p}</li>
                 ))}
               </ul>
             ) : null}
-            <button type="button" className="btn" disabled={!built.ok || busy} onClick={submit}>
-              {busy ? "Submitting…" : `Run ${method.label.toLowerCase()}`}
+            <button type="button" className="btn mt-5 w-full" disabled={!built.ok || busy} onClick={submit}>
+              {busy ? "Submitting\u2026" : `Run ${method.label.toLowerCase()}`}
             </button>
             {error ? <ErrorNote error={error} /> : null}
           </div>
-        </div>
-
-        <aside className="text-caption leading-[1.6] text-ink-2 lg:pt-14">
-          <p className="mb-2 italic text-ink">On choosing a method</p>
-          <p>{method.guidance}</p>
-          <p className="mt-3">
-            See <Link href="/methods/">Methods</Link> for the statistics and their assumptions.
-          </p>
+          <details className="group mt-4 px-1 text-caption leading-[1.6] text-ink-2">
+            <summary className="cursor-pointer list-none font-semibold text-ink marker:hidden hover:text-malachite [&::-webkit-details-marker]:hidden">
+              <span className="mr-1.5 inline-block text-[0.8em] text-ink-3 transition-transform group-open:rotate-90" aria-hidden>
+                &#9656;
+              </span>
+              When to use this
+            </summary>
+            <p className="mt-2">{method.guidance}</p>
+            <p className="mt-2">
+              <Link href="/methods/">Methods</Link>
+            </p>
+          </details>
         </aside>
       </div>
     </>

@@ -95,9 +95,9 @@ export function OriginsMap({
           </clipPath>
         </defs>
         <g clipPath="url(#map-clip)">
-          <path d={path({ type: "Sphere" } as never) ?? ""} fill="#ffffff" stroke="#d6d6d6" strokeWidth={0.75} />
-          <path d={graticule} fill="none" stroke="#f0f0f0" strokeWidth={0.5} />
-          <path d={path(LAND as never) ?? ""} fill="#ededeb" stroke="#b9b9b9" strokeWidth={0.5} />
+          <path d={path({ type: "Sphere" } as never) ?? ""} fill="#f7f9f8" stroke="#ccd2d0" strokeWidth={0.75} />
+          <path d={graticule} fill="none" stroke="#e6eae8" strokeWidth={0.5} />
+          <path d={path(LAND as never) ?? ""} fill="#dde3df" stroke="#b8c1bd" strokeWidth={0.5} />
           {valid.map((p) => {
             const xy = project(p.lon, p.lat);
             if (!xy) return null;
@@ -115,8 +115,8 @@ export function OriginsMap({
                 <circle r={Math.max(r, 9)} fill="transparent" />
                 <circle
                   r={r}
-                  fill={p.emphasis ? "#000" : "rgba(44,92,148,0.18)"}
-                  stroke={p.emphasis ? "#fff" : "#2c5c94"}
+                  fill={p.emphasis ? "#1e2630" : "rgba(29,107,86,0.2)"}
+                  stroke={p.emphasis ? "#fff" : "#1d6b56"}
                   strokeWidth={active ? 1.75 : 1}
                 />
               </g>

@@ -20,7 +20,7 @@ export const METHODS: MethodInfo[] = [
     key: "pca_project",
     label: "PCA projection",
     formal: false,
-    description: "Place the sample in the reference principal-component space.",
+    description: "Where the sample sits in the PCA.",
     guidance:
       "Projection shows where a sample falls relative to reference populations. Proximity in two components can hide differences in the others; inspect several pairs of axes.",
   },
@@ -28,7 +28,7 @@ export const METHODS: MethodInfo[] = [
     key: "nearest",
     label: "Nearest populations",
     formal: false,
-    description: "Rank reference populations by distance to the sample.",
+    description: "The closest reference populations.",
     guidance:
       "Nearest populations are a description of similarity in one coordinate space, not of descent. Closely ranked neighbours are usually indistinguishable.",
   },
@@ -36,7 +36,7 @@ export const METHODS: MethodInfo[] = [
     key: "admixture_fit",
     label: "Exploratory admixture fit",
     formal: false,
-    description: "Best non-negative mixture of chosen sources, with bootstrap intervals.",
+    description: "Best mix of the sources you choose.",
     guidance:
       "The fit finds the convex combination of source means closest to the target. Any target can be fitted; the residual distance and the sensitivity diagnostics tell you how well. A tight fit is not evidence that admixture happened.",
   },
@@ -44,7 +44,7 @@ export const METHODS: MethodInfo[] = [
     key: "admixture_rotate",
     label: "Source rotation",
     formal: false,
-    description: "Fit every combination of candidate sources and rank the models.",
+    description: "Try every combination of sources.",
     guidance:
       "Rotation explores many models at once. Treat the ranking as a shortlist for qpAdm, not as a result in itself.",
   },
@@ -52,7 +52,7 @@ export const METHODS: MethodInfo[] = [
     key: "qpadm",
     label: "qpAdm",
     formal: true,
-    description: "Formal test of a mixture model on f4-statistics against an outgroup set.",
+    description: "Formal test of a mixture model.",
     guidance:
       "qpAdm asks whether the target's f4-statistics with the right populations are explained by the left populations. Choose right populations that are differentially related to the sources; a model is rejected at p < 0.01.",
   },
@@ -60,7 +60,7 @@ export const METHODS: MethodInfo[] = [
     key: "qpadm_rotate",
     label: "qpAdm rotation",
     formal: true,
-    description: "Test all subsets of candidate sources with qpAdm.",
+    description: "qpAdm on every subset of sources.",
     guidance:
       "Rotation tests every subset of the candidate left populations against a fixed right set. Several models may be non-rejected; prefer the simplest feasible one and report the others.",
   },

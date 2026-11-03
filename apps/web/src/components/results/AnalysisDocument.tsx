@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { analysisLabel, dateTime, isFormal } from "@/lib/format";
 import type { Analysis } from "@/lib/types";
 import { ResultView } from "./ResultView";
-import { ErrorNote, KindMark, PageHeader, Section } from "@/components/typography";
+import { ErrorNote, Fold, KindMark, PageHeader } from "@/components/typography";
 
 /** Plain-language description of an analysis' parameters, in the voice of a methods section. */
 export function describeParams(params: Record<string, unknown>): Array<[string, string]> {
@@ -72,7 +72,7 @@ export function ReportButtons({ id }: { id: string }) {
 export function ProvenanceList({ provenance }: { provenance: Record<string, unknown> | null | undefined }) {
   if (!provenance || Object.keys(provenance).length === 0) return null;
   return (
-    <dl className="grid max-w-[48rem] grid-cols-[minmax(8rem,auto)_minmax(0,1fr)] gap-x-6 gap-y-1 text-small">
+    <dl className="kv max-w-[48rem]">
       {describeParams(provenance).map(([k, v]) => (
         <div key={k} className="contents">
           <dt className="text-ink-3">{k}</dt>
@@ -92,24 +92,24 @@ export function AnalysisDocument({ analysis }: { analysis: Analysis }) {
         kicker={analysisLabel(analysis.kind)}
         title={analysis.title ?? `${analysisLabel(analysis.kind)}${analysis.params.target ? ` of ${String(analysis.params.target)}` : ""}`}
         aside={
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-            <dt className="text-ink-3">Kind</dt>
-            <dd>
-              <KindMark kind={formal ? "formal" : "exploratory"} />
-            </dd>
-            <dt className="text-ink-3">Created</dt>
-            <dd>{dateTime(analysis.created_at)}</dd>
-            <dt className="text-ink-3">Finished</dt>
-            <dd>{dateTime(analysis.finished_at)}</dd>
-            <dt className="text-ink-3">Identifier</dt>
-            <dd className="font-mono text-[0.72rem] break-all">{analysis.id}</dd>
-          </dl>
+          <p className="flex flex-wrap items-center gap-2">
+            <KindMark kind={formal ? "formal" : "exploratory"} />
+            <span className="text-ink-3">{dateTime(analysis.finished_at ?? analysis.created_at)}</span>
+          </p>
         }
       />
 
-      <Section n={1} title="Methods">
+      <section className="mb-12" aria-label="Results">
+        {analysis.result ? (
+          <ResultView result={analysis.result} />
+        ) : (
+          <ErrorNote error={new Error(analysis.error ?? "The analysis produced no result.")} />
+        )}
+      </section>
+
+      <Fold title="Parameters">
         {params.length ? (
-          <dl className="grid max-w-[48rem] grid-cols-[minmax(8rem,auto)_minmax(0,1fr)] gap-x-6 gap-y-1 text-small">
+          <dl className="kv max-w-[48rem]">
             {params.map(([k, v]) => (
               <div key={k} className="contents">
                 <dt className="text-ink-3">{k}</dt>
@@ -120,29 +120,17 @@ export function AnalysisDocument({ analysis }: { analysis: Analysis }) {
         ) : (
           <p className="text-small text-ink-2 italic">Default parameters.</p>
         )}
-      </Section>
-
-      <Section n={2} title="Results">
-        {analysis.result ? (
-          <ResultView result={analysis.result} />
-        ) : (
-          <ErrorNote error={new Error(analysis.error ?? "The analysis produced no result.")} />
-        )}
-      </Section>
+      </Fold>
 
       {analysis.provenance ? (
-        <Section n={3} title="Provenance">
+        <Fold title="Provenance">
           <ProvenanceList provenance={analysis.provenance} />
-        </Section>
+        </Fold>
       ) : null}
 
-      <Section n={analysis.provenance ? 4 : 3} title="Report">
-        <p className="measure mb-4 text-small text-ink-2">
-          The report records inputs, parameters, software and reference versions and every number
-          shown above, so the analysis can be reproduced.
-        </p>
+      <div className="mt-8">
         <ReportButtons id={analysis.id} />
-      </Section>
+      </div>
     </article>
   );
 }

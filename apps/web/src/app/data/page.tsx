@@ -43,7 +43,7 @@ export default function DataPage() {
       <PageHeader
         kicker="Provenance"
         title="Data sources and licences"
-        lede="Where the reference data come from, how they were processed, and the terms under which they may be reused."
+        lede="Sources, processing and licences."
       />
 
       <Section n={++n} title="Principles" aside="Strata does not redistribute raw genotype data from the Allen Ancient DNA Resource; the pipeline downloads it from its original source.">

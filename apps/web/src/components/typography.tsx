@@ -7,26 +7,32 @@ export function PageHeader({
   lede,
   aside,
 }: {
+  /** Kept for callers; the rail already says where you are, so it is not drawn. */
   kicker?: string;
   title: ReactNode;
   lede?: ReactNode;
   aside?: ReactNode;
 }) {
+  void kicker;
   return (
-    <header className="mb-12 grid gap-6 border-b border-ink pb-8 lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-14">
-      <div>
-        {kicker ? <p className="smallcaps mb-3 text-ink-3">{kicker}</p> : null}
-        <h1 className="text-[2.1rem] leading-[1.12] sm:text-h1">{title}</h1>
-        {lede ? (
-          <div className="measure mt-4 text-[1.25rem] leading-[1.45] text-ink-2 italic">{lede}</div>
-        ) : null}
+    <header className="mb-12">
+      <div className="grid gap-6 pb-7 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-end lg:gap-14">
+        <div>
+          <h1 className="text-[2.15rem] leading-[1.04] font-medium tracking-[-0.01em] sm:text-h1">
+            {title}
+          </h1>
+          {lede ? (
+            <div className="serif measure mt-4 text-[1.35rem] leading-[1.5] text-ink-2">{lede}</div>
+          ) : null}
+        </div>
+        {aside ? <div className="text-small leading-[1.5] text-ink-2 lg:pb-1">{aside}</div> : null}
       </div>
-      {aside ? <div className="self-end text-small text-ink-2 lg:pb-1">{aside}</div> : null}
+      <div className="stratum-rule stratum-draw" aria-hidden />
     </header>
   );
 }
 
-/** A numbered section in the manner of a paper: "2. Methods". */
+/** A section of a page. Numbers are for real sequences (steps of a form, parts of a report). */
 export function Section({
   n,
   title,
@@ -41,13 +47,20 @@ export function Section({
   aside?: ReactNode;
 }) {
   return (
-    <section id={id} className="mb-14 scroll-mt-8" aria-labelledby={id ? `${id}-h` : undefined}>
-      <h2 id={id ? `${id}-h` : undefined} className="mb-5 flex items-baseline gap-3 text-h2">
-        {n !== undefined ? <span className="num text-ink-3 tabular-nums">{n}.</span> : null}
+    <section id={id} className="mb-16 scroll-mt-20" aria-labelledby={id ? `${id}-h` : undefined}>
+      <h2 id={id ? `${id}-h` : undefined} className="mb-5 flex items-center gap-3 text-h2">
+        {n !== undefined ? (
+          <span
+            className="num inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-ink text-[0.9rem] font-semibold"
+            aria-hidden
+          >
+            {n}
+          </span>
+        ) : null}
         <span>{title}</span>
       </h2>
       {aside ? (
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-14">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-14">
           <div className="min-w-0">{children}</div>
           <aside className="text-caption leading-relaxed text-ink-2">{aside}</aside>
         </div>
@@ -71,8 +84,8 @@ export function Figure({
 }) {
   return (
     <figure className="my-8">
-      <div className="border-y border-rule py-4">{children}</div>
-      <figcaption className="mt-3 max-w-[44rem] text-caption leading-[1.5] text-ink-2">
+      <div className="panel overflow-hidden p-3 sm:p-5">{children}</div>
+      <figcaption className="mt-3 max-w-[46rem] text-caption leading-[1.55] text-ink-2">
         <span className="font-semibold text-ink">
           {label} {n}.
         </span>{" "}
@@ -82,7 +95,7 @@ export function Figure({
   );
 }
 
-/** Table with a journal caption above it ("Table 2. ..."). */
+/** Table with its caption above it ("Table 2. ..."). */
 export function TableFigure({
   n,
   caption,
@@ -96,11 +109,11 @@ export function TableFigure({
 }) {
   return (
     <figure className="my-8">
-      <figcaption className="mb-2 max-w-[44rem] text-caption leading-[1.5] text-ink-2">
+      <figcaption className="mb-2.5 max-w-[46rem] text-caption leading-[1.55] text-ink-2">
         <span className="font-semibold text-ink">Table {n}.</span> {caption}
       </figcaption>
-      <div className="overflow-x-auto">{children}</div>
-      {notes ? <div className="mt-2 max-w-[44rem] text-caption leading-[1.5] text-ink-3">{notes}</div> : null}
+      <div className="panel overflow-x-auto px-4 py-2">{children}</div>
+      {notes ? <div className="mt-2 max-w-[46rem] text-caption leading-[1.55] text-ink-3">{notes}</div> : null}
     </figure>
   );
 }
@@ -108,33 +121,66 @@ export function TableFigure({
 /** Footnote-style caveat with a marker. */
 export function Footnote({ mark = "*", children }: { mark?: string; children: ReactNode }) {
   return (
-    <p className="mt-3 max-w-[44rem] text-caption leading-[1.5] text-ink-2">
+    <p className="mt-3 max-w-[46rem] text-caption leading-[1.55] text-ink-3">
       <sup className="mr-1">{mark}</sup>
       {children}
     </p>
   );
 }
 
-/** A ruled note in the margin of the text block, used for caveats that must be read. */
+/** A caveat, folded to its title; one click opens the full text. */
 export function Caveat({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="my-6 max-w-[44rem] border-l border-ink py-1 pl-5 text-small leading-[1.55]">
-      <p className="mb-1 italic">{title}</p>
-      <div className="text-ink-2">{children}</div>
-    </div>
+    <details className="group my-4 max-w-[46rem] rounded-r-[6px] border-l-[3px] border-[#c08419] bg-loess-soft text-small leading-[1.55]">
+      <summary className="flex cursor-pointer list-none items-center gap-2 py-2 pr-4 pl-4 font-semibold text-ink marker:hidden [&::-webkit-details-marker]:hidden">
+        <span className="inline-block text-[0.8em] text-[#c08419] transition-transform group-open:rotate-90" aria-hidden>
+          &#9656;
+        </span>
+        {title}
+      </summary>
+      <div className="px-4 pb-3 text-ink-2">{children}</div>
+    </details>
+  );
+}
+
+/** Secondary detail (inputs, provenance, background) kept one click away. */
+export function Fold({ title, children, open = false }: { title: ReactNode; children: ReactNode; open?: boolean }) {
+  return (
+    <details open={open} className="group mb-3 max-w-[48rem] border-t border-rule">
+      <summary className="flex cursor-pointer list-none items-center gap-2 py-3 text-[1.15rem] text-ink marker:hidden hover:text-malachite [&::-webkit-details-marker]:hidden">
+        <span className="inline-block text-[0.75em] text-ink-3 transition-transform group-open:rotate-90" aria-hidden>
+          &#9656;
+        </span>
+        {title}
+      </summary>
+      <div className="pb-6">{children}</div>
+    </details>
   );
 }
 
 export function Loading({ what }: { what: string }) {
   return (
-    <p className="py-6 text-small text-ink-3 italic" role="status" aria-live="polite">
-      Loading {what}&hellip;
+    <p className="flex items-center gap-3 py-6 text-small text-ink-3" role="status" aria-live="polite">
+      <span className="flex h-5 w-5 flex-col-reverse justify-start gap-px" aria-hidden>
+        {["#34404f", "#5f7f6e", "#a46a3a", "#cdae66"].map((c, i) => (
+          <span
+            key={c}
+            className="block h-[4px] w-full rounded-[1px]"
+            style={{ background: c, animation: `strata-stack 1.6s ease-out ${i * 0.18}s infinite both` }}
+          />
+        ))}
+      </span>
+      <span className="italic">Loading {what}&hellip;</span>
     </p>
   );
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <div className="py-6 text-small text-ink-2 italic">{children}</div>;
+  return (
+    <div className="my-4 rounded-[var(--radius-panel)] border border-dashed border-rule bg-panel/60 px-5 py-5 text-small leading-[1.6] text-ink-2">
+      {children}
+    </div>
+  );
 }
 
 export function describeError(error: unknown): { title: string; detail: string; expected?: boolean } {
@@ -177,9 +223,11 @@ export function ErrorNote({ error, retry }: { error: unknown; retry?: () => void
   return (
     <div
       role={expected ? "status" : "alert"}
-      className={`my-6 max-w-[44rem] border-l py-1 pl-5 text-small ${expected ? "border-ink-3" : "border-l-2 border-alert"}`}
+      className={`my-6 max-w-[46rem] rounded-r-[6px] border-l-[3px] py-3 pr-4 pl-4 text-small ${
+        expected ? "border-ink-3 bg-wash" : "border-alert bg-[#fbecea]"
+      }`}
     >
-      <p className={expected ? "italic" : "text-alert"}>{title}</p>
+      <p className={`font-semibold ${expected ? "text-ink" : "text-alert"}`}>{title}</p>
       <p className="mt-1 text-ink-2">{detail}</p>
       {retry && !expected ? (
         <button type="button" className="linkish mt-2 text-small" onClick={retry}>
@@ -190,12 +238,18 @@ export function ErrorNote({ error, retry }: { error: unknown; retry?: () => void
   );
 }
 
-/** Marks a result as exploratory (G25/PCA distance fitting) or formal (qpAdm f-statistics). */
+/**
+ * Marks a result as exploratory (G25/PCA distance fitting) or formal (qpAdm f-statistics).
+ * Formal is solid malachite; exploratory is a dashed ochre outline, so the two differ in shape
+ * as well as colour.
+ */
 export function KindMark({ kind }: { kind: "exploratory" | "formal" }) {
   return (
     <span
-      className={`smallcaps inline-block border px-1 py-px align-[0.12em] text-[0.62em] ${
-        kind === "formal" ? "border-ink text-ink" : "border-ink-3 text-ink-2"
+      className={`inline-block rounded-[var(--radius-tag)] px-1.5 py-px align-[0.14em] text-[0.8rem] leading-[1.35] font-semibold tracking-[0.01em] whitespace-nowrap ${
+        kind === "formal"
+          ? "border border-malachite bg-malachite text-white"
+          : "border border-dashed border-[#c08419] bg-loess-soft text-loess"
       }`}
       title={
         kind === "formal"
@@ -203,7 +257,7 @@ export function KindMark({ kind }: { kind: "exploratory" | "formal" }) {
           : "Exploratory: geometric fit in a PCA/G25 space. Not a test of admixture."
       }
     >
-      {kind}
+      {kind === "formal" ? "Formal" : "Exploratory"}
     </span>
   );
 }

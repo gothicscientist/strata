@@ -27,20 +27,20 @@ export const SERIF = '"EB Garamond", Garamond, Georgia, serif';
 /** Shared publication styling: thin black axes, no grid, serif labels. */
 export function journalAxis(title: string, extra: Record<string, unknown> = {}) {
   return {
-    title: { text: title, font: { family: SERIF, size: 14, color: "#000" }, standoff: 8 },
+    title: { text: title, font: { family: SERIF, size: 14, color: "#1e2630" }, standoff: 8 },
     showgrid: false,
     zeroline: true,
-    zerolinecolor: "#e2e2e2",
+    zerolinecolor: "#e3e7e4",
     zerolinewidth: 1,
     showline: true,
-    linecolor: "#000",
+    linecolor: "#1e2630",
     linewidth: 0.75,
     mirror: false,
     ticks: "outside",
     ticklen: 4,
     tickwidth: 0.75,
-    tickcolor: "#000",
-    tickfont: { family: SERIF, size: 12, color: "#333" },
+    tickcolor: "#1e2630",
+    tickfont: { family: SERIF, size: 12, color: "#444e59" },
     automargin: true,
     ...extra,
   };
@@ -49,15 +49,15 @@ export function journalAxis(title: string, extra: Record<string, unknown> = {}) 
 export const journalLayout = {
   paper_bgcolor: "#ffffff",
   plot_bgcolor: "#ffffff",
-  font: { family: SERIF, size: 13, color: "#000" },
+  font: { family: SERIF, size: 13, color: "#1e2630" },
   hoverlabel: {
     bgcolor: "#ffffff",
-    bordercolor: "#000000",
-    font: { family: SERIF, size: 13, color: "#000" },
+    bordercolor: "#1e2630",
+    font: { family: SERIF, size: 13, color: "#1e2630" },
     align: "left",
   },
   legend: {
-    font: { family: SERIF, size: 12, color: "#333" },
+    font: { family: SERIF, size: 12, color: "#444e59" },
     bgcolor: "rgba(255,255,255,0)",
     borderwidth: 0,
     itemsizing: "constant",

@@ -1,50 +1,67 @@
 @import "tailwindcss";
 
 /*
- * Strata typographic system: a single Garamond family set like a journal page.
- * Sizes follow a modular scale on a 19px text size; leading 1.5 for serif body.
+ * Strata visual system.
+ *
+ * The page is cool field-stone; working surfaces (figures, tables, forms) are white panels set on
+ * it. Ink is slate, not black. Malachite marks interaction and formal results; ochre marks
+ * exploratory results. The sediment ramp (light, young, at the top; dark, old, at the bottom) is
+ * reserved for periods of time, so a colour always means the same layer wherever it appears.
+ *
+ * Type: a single EB Garamond family, set like a journal page, with IBM Plex Mono for code.
  */
 @theme {
   --font-serif: "EB Garamond", "Garamond", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --font-sans: var(--font-serif);
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  --color-paper: #ffffff;
-  --color-ink: #000000;
-  --color-ink-2: #333333;
-  --color-ink-3: #5c5c5c; /* 6.7:1 on white */
-  --color-rule: #d6d6d6;
-  --color-rule-soft: #ececec;
-  --color-wash: #f6f6f4; /* the only tinted surface: table hover and code */
+  --color-paper: #f1f3ef; /* field stone: the page */
+  --color-panel: #ffffff; /* working surfaces */
+  --color-ink: #1e2630; /* slate */
+  --color-ink-2: #444e59;
+  --color-ink-3: #5f6974; /* 5.2:1 on stone, 5.6:1 on white */
+  --color-rule: #ccd2d0;
+  --color-rule-soft: #e3e7e4;
+  --color-wash: #eaeee9;
 
-  /* chart hues; never used for text */
+  --color-malachite: #1d6b56; /* interaction, formal results; 6.0:1 on white */
+  --color-malachite-soft: #e2efe9;
+  --color-loess: #9a6a12; /* exploratory results as text; 4.8:1 on white */
+  --color-loess-soft: #f6eedb;
+  --color-basalt: #1a2129; /* the rail */
+
+  /* chart hues; never used for body text */
   --color-blue: #2c5c94;
   --color-ochre: #c08419;
   --color-rose: #a13f5e;
   --color-sage: #4a9a68;
   --color-violet: #7c6fc0;
   --color-umber: #8a5418;
-  --color-alert: #8f1d1d;
+  --color-alert: #a32a1f;
 
-  --text-caption: 0.8125rem;
-  --text-small: 0.9rem;
+  --text-caption: 0.875rem;
+  --text-small: 0.98rem;
   --text-body: 1.1875rem;
-  --text-h3: 1.3125rem;
-  --text-h2: 1.6875rem;
-  --text-h1: 2.5rem;
-  --text-display: 3.5rem;
+  --text-h3: 1.375rem;
+  --text-h2: 1.8125rem;
+  --text-h1: 2.875rem;
+  --text-display: 4.75rem;
+
+  --radius-panel: 10px;
+  --radius-control: 6px;
+  --radius-tag: 3px;
 }
 
 @layer base {
   html {
-    font-family: var(--font-serif);
+    font-family: var(--font-sans);
     font-size: 100%;
     color: var(--color-ink);
     background: var(--color-paper);
     font-kerning: normal;
+    font-variant-ligatures: common-ligatures;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
-    font-variant-ligatures: common-ligatures;
   }
   body {
     background: var(--color-paper);
@@ -57,71 +74,96 @@
   h3,
   h4 {
     font-weight: 500;
-    line-height: 1.2;
+    line-height: 1.12;
     text-wrap: balance;
   }
   p {
     text-wrap: pretty;
-    hyphens: auto;
   }
   a {
     color: inherit;
     text-decoration-line: underline;
-    text-decoration-thickness: 0.06em;
-    text-underline-offset: 0.18em;
-    text-decoration-color: var(--color-ink-3);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    text-decoration-color: color-mix(in srgb, var(--color-malachite) 55%, transparent);
   }
   a:hover {
-    text-decoration-color: var(--color-ink);
+    color: var(--color-malachite);
+    text-decoration-color: var(--color-malachite);
   }
   :focus-visible {
-    outline: 2px solid var(--color-ink);
-    outline-offset: 3px;
+    outline: 2px solid var(--color-malachite);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
   ::selection {
-    background: #e4e9f1;
+    background: #cfe5dc;
   }
   code,
   kbd,
   samp,
   pre {
     font-family: var(--font-mono);
-    font-size: 0.8em;
+    font-size: 0.84em;
   }
   hr {
     border: 0;
     border-top: 1px solid var(--color-rule);
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-malachite);
   }
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
     *::after {
       animation-duration: 0.01ms !important;
+      animation-delay: 0ms !important;
       transition-duration: 0.01ms !important;
     }
   }
 }
 
 @layer components {
-  /* Small capitals, set by hand: the web cut of EB Garamond ships without smcp. */
+  /* A quiet label: semibold, slightly tracked, sentence case. */
   .smallcaps {
-    text-transform: uppercase;
-    font-size: 0.74em;
-    letter-spacing: 0.085em;
-    font-weight: 500;
+    font-size: 0.8em;
+    letter-spacing: 0.01em;
+    font-weight: 600;
   }
   .num {
     font-variant-numeric: tabular-nums lining-nums;
   }
   .measure {
-    max-width: 38rem;
+    max-width: 40rem;
   }
-  .prose-journal p + p {
-    text-indent: 1.4em;
-    margin-top: 0;
+  .display {
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 0.96;
+  }
+  .serif {
+    font-family: var(--font-serif);
+  }
+
+  .panel {
+    background: var(--color-panel);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-panel);
+  }
+
+  /* Reading text: worked examples, methods, the assistant. */
+  .prose-journal {
+    font-family: var(--font-serif);
+    font-size: var(--text-body);
+    line-height: 1.6;
   }
   .prose-journal p {
-    margin: 0 0 0;
+    margin: 0;
+  }
+  .prose-journal p + p {
+    margin-top: 0.75rem;
   }
   .prose-journal > * + *:not(p) {
     margin-top: 1.25rem;
@@ -130,30 +172,42 @@
   .prose-journal > :not(p) + p {
     margin-top: 0.9rem;
   }
+  .prose-journal h1,
+  .prose-journal h2,
+  .prose-journal h3,
+  .prose-journal h4 {
+    font-family: var(--font-sans);
+  }
 
-  /* Booktabs tables: three rules, no verticals, tabular figures. */
+  /* Tables: header band, soft row rules, tabular figures. */
   .booktabs {
     width: 100%;
     border-collapse: collapse;
     font-size: var(--text-small);
-    line-height: 1.35;
+    line-height: 1.4;
     font-variant-numeric: tabular-nums lining-nums;
   }
   .booktabs > thead > tr > th {
-    border-top: 1.25px solid var(--color-ink);
-    border-bottom: 0.75px solid var(--color-ink);
-    font-weight: 500;
+    border-bottom: 1px solid var(--color-ink);
+    font-weight: 600;
+    font-size: var(--text-caption);
+    color: var(--color-ink-2);
     text-align: left;
-    padding: 0.45rem 0.75rem 0.4rem 0;
+    padding: 0.5rem 0.9rem 0.45rem 0;
     vertical-align: bottom;
+    white-space: nowrap;
   }
   .booktabs > tbody > tr > td {
-    padding: 0.38rem 0.75rem 0.38rem 0;
+    padding: 0.5rem 0.9rem 0.5rem 0;
     vertical-align: top;
-    border-bottom: 0.5px solid var(--color-rule-soft);
+    border-bottom: 1px solid var(--color-rule-soft);
   }
   .booktabs > tbody > tr:last-child > td {
-    border-bottom: 1.25px solid var(--color-ink);
+    border-bottom: 0;
+  }
+  .booktabs > thead > tr > th:first-child,
+  .booktabs > tbody > tr > td:first-child {
+    padding-left: 0.25rem;
   }
   .booktabs .r {
     text-align: right;
@@ -162,83 +216,112 @@
     background: var(--color-wash);
   }
 
-  /* Form controls: underlined fields like a printed form. */
+  /* Form controls: boxed, white, with a malachite focus ring. */
   .field {
     display: block;
     width: 100%;
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid var(--color-ink-3);
-    padding: 0.3rem 0 0.25rem;
+    background: var(--color-panel);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-control);
+    padding: 0.5rem 0.7rem;
     font: inherit;
     font-size: var(--text-small);
     color: var(--color-ink);
-    border-radius: 0;
+    transition:
+      border-color 120ms,
+      box-shadow 120ms;
+  }
+  .field::placeholder {
+    color: #8a929a;
+  }
+  .field:hover {
+    border-color: #aeb6b5;
   }
   .field:focus {
     outline: none;
-    border-bottom-color: var(--color-ink);
-    box-shadow: 0 1px 0 0 var(--color-ink);
+    border-color: var(--color-malachite);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-malachite) 18%, transparent);
   }
   select.field {
     appearance: none;
-    background-image: linear-gradient(45deg, transparent 50%, var(--color-ink) 50%),
-      linear-gradient(135deg, var(--color-ink) 50%, transparent 50%);
+    background-image: linear-gradient(45deg, transparent 50%, var(--color-ink-2) 50%),
+      linear-gradient(135deg, var(--color-ink-2) 50%, transparent 50%);
     background-position:
-      calc(100% - 9px) 55%,
-      calc(100% - 5px) 55%;
+      calc(100% - 15px) 52%,
+      calc(100% - 11px) 52%;
     background-size:
       4px 4px,
       4px 4px;
     background-repeat: no-repeat;
-    padding-right: 1.25rem;
+    padding-right: 2rem;
   }
   textarea.field {
-    border: 1px solid var(--color-rule);
-    padding: 0.6rem 0.7rem;
     font-family: var(--font-mono);
     font-size: 0.78rem;
     line-height: 1.55;
-  }
-  textarea.field:focus {
-    border-color: var(--color-ink);
-    box-shadow: none;
+    padding: 0.7rem 0.8rem;
   }
   .label {
     display: block;
     font-size: var(--text-caption);
+    font-weight: 600;
     color: var(--color-ink-2);
-    margin-bottom: 0.1rem;
+    margin-bottom: 0.3rem;
   }
 
   .btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     font: inherit;
     font-size: var(--text-small);
-    padding: 0.4rem 1rem 0.42rem;
-    border: 1px solid var(--color-ink);
-    background: var(--color-ink);
-    color: var(--color-paper);
-    border-radius: 0;
+    font-weight: 600;
+    padding: 0.6rem 1.15rem;
+    border: 1px solid var(--color-malachite);
+    background: var(--color-malachite);
+    color: #fff;
+    border-radius: var(--radius-control);
     cursor: pointer;
     text-decoration: none;
-    line-height: 1.3;
+    line-height: 1.25;
+    /* A chunky, pressable button: it sits on a ledge and sinks when pressed. */
+    box-shadow: 0 3px 0 #0f3d31;
+    transition:
+      background-color 120ms,
+      transform 90ms ease-out,
+      box-shadow 90ms ease-out;
   }
   .btn:hover {
-    background: #262626;
+    background: #165444;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 0 #0f3d31;
+  }
+  .btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #0f3d31;
   }
   .btn:disabled {
-    opacity: 0.45;
+    background: #9aa5a1;
+    border-color: #9aa5a1;
+    box-shadow: 0 3px 0 #7d8884;
+    transform: none;
     cursor: not-allowed;
   }
   .btn-quiet {
-    background: transparent;
+    background: var(--color-panel);
     color: var(--color-ink);
+    border-color: var(--color-rule);
+    box-shadow: 0 3px 0 var(--color-rule);
   }
   .btn-quiet:hover {
     background: var(--color-wash);
+    color: var(--color-ink);
+    box-shadow: 0 4px 0 #b9c1bf;
+  }
+  .btn-quiet:active {
+    box-shadow: 0 1px 0 #b9c1bf;
   }
   .linkish {
     background: none;
@@ -248,9 +331,67 @@
     color: inherit;
     cursor: pointer;
     text-decoration: underline;
-    text-decoration-thickness: 0.06em;
-    text-underline-offset: 0.18em;
-    text-decoration-color: var(--color-ink-3);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    text-decoration-color: color-mix(in srgb, var(--color-malachite) 55%, transparent);
+  }
+  .linkish:hover {
+    color: var(--color-malachite);
+  }
+
+  /* Key-value lists (inputs, parameters, provenance) as a ruled panel. */
+  .kv {
+    display: grid;
+    grid-template-columns: minmax(9rem, max-content) minmax(0, 1fr);
+    background: var(--color-panel);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-panel);
+    font-size: var(--text-small);
+    overflow: hidden;
+  }
+  .kv dt,
+  .kv dd {
+    padding: 0.45rem 1rem;
+    border-bottom: 1px solid var(--color-rule-soft);
+  }
+  .kv dt {
+    background: #f7f8f6;
+    border-right: 1px solid var(--color-rule-soft);
+  }
+  .kv > div:last-child > dt,
+  .kv > div:last-child > dd {
+    border-bottom: 0;
+  }
+
+  /* The signature rule draws itself in, left to right, each time a page opens. */
+  .stratum-draw {
+    animation: strata-draw 1100ms cubic-bezier(0.65, 0, 0.35, 1) 120ms both;
+  }
+
+  /* Headline words drop in and settle like grains. */
+  .settle {
+    display: inline-block;
+    animation: strata-settle 700ms cubic-bezier(0.2, 0.9, 0.25, 1.25) both;
+  }
+
+  /* A brief pop, for something that has just become true (a ticked requirement, a chosen chip). */
+  .pop {
+    animation: strata-pop 360ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  }
+
+  /* The signature rule: a thin sediment column laid on its side. */
+  .stratum-rule {
+    height: 6px;
+    border-radius: 1px;
+    background: linear-gradient(
+      90deg,
+      #e9ddb4 0 30%,
+      #cdae66 30% 46%,
+      #a46a3a 46% 60%,
+      #7f8b62 60% 74%,
+      #4e6a7a 74% 88%,
+      #34404f 88% 100%
+    );
   }
 }
 
@@ -260,5 +401,147 @@
   }
   100% {
     transform: translateX(400%);
+  }
+}
+
+/* Layers settle from the oldest upward when the landing core first draws. */
+@keyframes strata-deposit {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+@keyframes strata-label {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes strata-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes strata-settle {
+  0% {
+    opacity: 0;
+    transform: translateY(-0.45em) rotate(-3deg);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(0.04em) rotate(0.4deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes strata-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+/* Grains of sediment drifting down through the top of the core. */
+@keyframes strata-grain {
+  0% {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(var(--fall, 60px));
+    opacity: 0;
+  }
+}
+/* The core shudders when its surface is tapped. */
+@keyframes strata-quake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  15% {
+    transform: translateX(-4px) rotate(-0.6deg);
+  }
+  30% {
+    transform: translateX(4px) rotate(0.5deg);
+  }
+  45% {
+    transform: translateX(-3px);
+  }
+  60% {
+    transform: translateX(2px);
+  }
+  80% {
+    transform: translateX(-1px);
+  }
+}
+/* Loading: four layers drop onto a stack, then the stack clears and starts again. */
+@keyframes strata-stack {
+  0% {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+  18%,
+  80% {
+    transform: none;
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+    opacity: 0;
+  }
+}
+/* The mark's layers ripple on hover. */
+@keyframes strata-ripple {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(2px);
+  }
+}
+
+.group:hover .strata-mark path {
+  animation: strata-ripple 520ms ease-in-out;
+}
+.group:hover .strata-mark path:nth-child(2) {
+  animation-delay: 60ms;
+}
+.group:hover .strata-mark path:nth-child(3) {
+  animation-delay: 120ms;
+}
+.group:hover .strata-mark path:nth-child(4) {
+  animation-delay: 180ms;
+}
+.group:hover .strata-mark path:nth-child(5) {
+  animation-delay: 240ms;
+}
+@keyframes strata-pull {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(12px);
   }
 }

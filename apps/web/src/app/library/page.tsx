@@ -10,6 +10,7 @@ import type { Facets, PopulationQuery, Publication } from "@/lib/types";
 import { OriginsMap } from "@/components/charts/OriginsMap";
 import { Empty, ErrorNote, Figure, Loading, PageHeader } from "@/components/typography";
 import { shortCitation } from "@/lib/citation";
+import { periodStyle, sortPeriods } from "@/lib/periods";
 
 const PAGE_SIZE = 50;
 
@@ -106,7 +107,6 @@ function Library() {
 
   const selects: Array<[string, keyof Facets, string | undefined, (v: string) => void]> = [
     ["Region", "region", query.region, (v) => set({ region: v || undefined })],
-    ["Period", "period", query.period, (v) => set({ period: v || undefined })],
     ["Source dataset", "source_dataset", query.source_dataset, (v) => set({ source_dataset: v || undefined })],
   ];
 
@@ -115,12 +115,11 @@ function Library() {
       <PageHeader
         kicker="Reference library"
         title="Reference populations"
-        lede="Ancient and present-day groups available as sources, outgroups and points of comparison. Dates are calibrated years before present (BP, present = 1950)."
+        lede="Dates in calibrated years BP."
         aside={
           data ? (
             <p className="num">
-              {int(data.total)} population{data.total === 1 ? "" : "s"} match
-              {data.total === 1 ? "es" : ""} the current filters.
+              {int(data.total)} population{data.total === 1 ? "" : "s"}
             </p>
           ) : null
         }
@@ -129,11 +128,46 @@ function Library() {
       <form
         role="search"
         aria-label="Filter reference populations"
-        className="mb-10 grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-4 lg:grid-cols-[2fr_1fr_1fr_1fr_0.7fr_0.7fr]"
+        className="panel mb-10 p-4 sm:p-5"
         onSubmit={(e) => e.preventDefault()}
       >
+        <fieldset className="mb-5">
+          <legend className="label">Period</legend>
+          <div className="flex flex-wrap gap-1.5">
+            {[null, ...sortPeriods(facets.period, (p) => p)].map((p) => {
+              const active = (query.period ?? null) === p;
+              const st = periodStyle(p);
+              return (
+                <button
+                  key={p ?? "all"}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => set({ period: p ?? undefined })}
+                  className={`inline-flex items-center gap-2 rounded-full border py-1 pr-3 pl-1.5 text-small transition-colors ${
+                    active
+                      ? "border-ink bg-ink text-white"
+                      : "border-rule bg-panel text-ink-2 hover:border-ink-3 hover:text-ink"
+                  }`}
+                >
+                  {p ? (
+                    <span
+                      key={active ? "on" : "off"}
+                      className={`size-3.5 rounded-full ring-1 ring-black/10 ${active ? "pop" : ""}`}
+                      style={{ background: st.color }}
+                      aria-hidden
+                    />
+                  ) : (
+                    <span className="stratum-rule size-3.5 rounded-full" aria-hidden />
+                  )}
+                  {p ?? "All periods"}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-4 md:grid-cols-4 lg:grid-cols-[2fr_1fr_1fr_0.7fr_0.7fr]">
         <label className="col-span-2 md:col-span-4 lg:col-span-1">
-          <span className="label">Search names, sites and publications</span>
+          <span className="label">Search</span>
           <input
             className="field"
             type="search"
@@ -175,6 +209,7 @@ function Library() {
             placeholder="50 000"
           />
         </label>
+        </div>
       </form>
 
       {pops.loading && !data ? <Loading what="the reference library" /> : null}
@@ -196,7 +231,7 @@ function Library() {
         <>
           <Figure
             n={1}
-            caption={`Sampling locations of the ${last - first + 1} populations listed in Table 1. Marker area is proportional to the number of individuals. Select a marker to open the population.`}
+            caption="Marker size is the number of individuals. Click one to open it."
           >
             <OriginsMap
               title="Map of population sampling locations"
@@ -216,14 +251,12 @@ function Library() {
 
           <figure className="my-8">
             <figcaption className="mb-2 text-caption text-ink-2">
-              <span className="font-semibold text-ink">Table 1.</span> Reference populations{" "}
               <span className="num">
                 {first}&ndash;{last}
               </span>{" "}
-              of <span className="num">{int(data.total)}</span>. Dates give the range of sample
-              dates within the group; <em>n</em> is the number of individuals.
+              of <span className="num">{int(data.total)}</span>
             </figcaption>
-            <div className="overflow-x-auto">
+            <div className="panel overflow-x-auto px-4 py-2">
               <table className="booktabs">
                 <thead>
                   <tr>
@@ -241,11 +274,20 @@ function Library() {
                 <tbody>
                   {data.items.map((p) => (
                     <tr key={p.id} data-interactive="">
-                      <td>
-                        <Link href={`/library/population/?id=${encodeURIComponent(p.id)}`}>{p.name}</Link>
+                      <td className="font-medium">
+                        <Link href={`/library/population/?id=${encodeURIComponent(p.id)}`} className="no-underline hover:underline">
+                          {p.name}
+                        </Link>
                       </td>
                       <td>{p.region ?? "—"}</td>
-                      <td>{p.period ?? "—"}</td>
+                      <td className="whitespace-nowrap">
+                        <span
+                          className="mr-2 inline-block h-2.5 w-4 rounded-[2px] align-[0.02em] ring-1 ring-black/10"
+                          style={{ background: periodStyle(p.period).color }}
+                          aria-hidden
+                        />
+                        {p.period ?? "—"}
+                      </td>
                       <td className="r num whitespace-nowrap">
                         {bpRange(p.date_min_bp, p.date_max_bp, p.date_mean_bp)}
                       </td>
@@ -253,12 +295,14 @@ function Library() {
                       <td>{p.data_source}</td>
                       <td className="text-ink-2">
                         {p.publication_ids.length
-                          ? p.publication_ids
-                              .map((id) => {
-                                const pub = pubIndex.get(id);
-                                return pub ? shortCitation(pub) : id;
-                              })
-                              .join("; ")
+                          ? [
+                              ...new Set(
+                                p.publication_ids.map((id) => {
+                                  const pub = pubIndex.get(id);
+                                  return pub ? shortCitation(pub) : id;
+                                }),
+                              ),
+                            ].join("; ")
                           : "—"}
                       </td>
                     </tr>
