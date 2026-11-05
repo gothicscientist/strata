@@ -70,7 +70,7 @@ genotype calls do not.
    environment using `environment.json` and ARM API `2026-07-01` explicitly. The
    `environmentMode: WorkloadProfiles` property is required: Express cannot host
    the event job or the custom domain. Keep only the Consumption workload profile.
-3. Push the deployment branch. `.github/workflows/runtime-image.yml` publishes
+3. Push to `main`. `.github/workflows/runtime-image.yml` publishes
    `ghcr.io/gothicscientist/strata-runtime:<commit>`. Use a public commit tag or
    immutable digest; do not deploy the moving `portfolio` tag automatically.
    For a digest, pass its source commit with `--git-sha`. Commit tags supply the
@@ -94,8 +94,13 @@ genotype calls do not.
 
    ```sh
    wrangler pages deploy apps/web/out --project-name strata-web \
-     --branch codex/deploy-stratalab-cc
+     --branch <the project's production branch>
    ```
+
+   Since November 3 this step is automatic: `.github/workflows/deploy-web.yml`
+   builds and deploys on every push to `main` that touches `apps/web/`, using the
+   repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. It asks
+   Cloudflare for the production branch, so the deployment lands on stratalab.cc.
 
 6. Bind `stratalab.cc` in Pages Custom domains. Cloudflare DNS should contain the
    apex CNAME to the assigned Pages hostname, the `api` CNAME to Azure (DNS only),

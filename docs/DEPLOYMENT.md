@@ -105,6 +105,16 @@ variables above. `scripts/write-headers.mjs` writes `out/_headers` with a
 per-page CSP whose `connect-src` is derived from these variables, so changing
 the API origin requires a rebuild.
 
+**Automatic deploys.** The live site (`strata-web`, served at stratalab.cc) is a
+direct-upload Pages project, so Cloudflare does not watch this repository.
+`.github/workflows/deploy-web.yml` does: every push to `main` that changes
+`apps/web/` is typechecked, tested, built and deployed to the project's
+production branch. It needs two repository secrets, `CLOUDFLARE_API_TOKEN`
+(a token with *Account → Cloudflare Pages → Edit*) and `CLOUDFLARE_ACCOUNT_ID`.
+The three `NEXT_PUBLIC_*` values default to the live origins and can be
+overridden with repository variables of the same names. Run it by hand from the
+Actions tab to redeploy without a change.
+
 ## 4. Reference data
 
 The reference library (populations, samples, PCA space, SNP panel) and the f2

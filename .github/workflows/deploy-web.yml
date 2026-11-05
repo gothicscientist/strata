@@ -1,0 +1,111 @@
+name: Deploy web to stratalab.cc
+
+# stratalab.cc is the Cloudflare Pages project `strata-web`. It was created by
+# direct upload (`wrangler pages deploy`), so Cloudflare never sees pushes to this
+# repository by itself. This workflow is what makes a merge to main go live.
+#
+# Needs two repository secrets (Settings -> Secrets and variables -> Actions):
+#   CLOUDFLARE_API_TOKEN   a token with "Account -> Cloudflare Pages -> Edit"
+#   CLOUDFLARE_ACCOUNT_ID  the account that owns the strata-web project
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/web/**
+      - .github/workflows/deploy-web.yml
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  PAGES_PROJECT: strata-web
+  # Build-time origins baked into the bundle and into the CSP in out/_headers.
+  # These are public by design (the Supabase key is the publishable key, the same
+  # one every visitor's browser receives). Override with repository variables.
+  NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'https://strata-api.delightfulflower-446608ec.westus2.azurecontainerapps.io' }}
+  NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'https://ghxzwjdjtepcwycgwknd.supabase.co' }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_PN77ECEccX24paFelFjfpg_al7dsRkb' }}
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://stratalab.cc
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Check Cloudflare secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: .
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "::error::Set the CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets; see docs/DEPLOYMENT.md section 3.3."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: apps/web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+      # A direct-upload deployment is "production" (what stratalab.cc serves) only
+      # when its --branch equals the project's production branch. Ask Cloudflare
+      # which branch that is rather than guessing, so this keeps working if it is
+      # ever changed in the dashboard.
+      - name: Find the production branch
+        id: prod
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          resp=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PAGES_PROJECT")
+          branch=$(echo "$resp" | jq -r '.result.production_branch // empty')
+          if [ -z "$branch" ]; then
+            echo "::error::Could not read the production branch of $PAGES_PROJECT"; exit 1
+          fi
+          echo "Production branch: $branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          COMMIT_MSG: ${{ github.event.head_commit.message || 'Manual deploy' }}
+        run: |
+          npx --yes wrangler@4 pages deploy out \
+            --project-name "$PAGES_PROJECT" \
+            --branch "${{ steps.prod.outputs.branch }}" \
+            --commit-hash "$GITHUB_SHA" \
+            --commit-message "$(printf '%s' "$COMMIT_MSG" | head -n1 | cut -c1-200)" \
+            --commit-dirty=false
+
+      - name: Check stratalab.cc serves this build
+        working-directory: .
+        run: |
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://stratalab.cc/)
+            [ "$code" = 200 ] && { echo "stratalab.cc is up (HTTP $code)"; exit 0; }
+            sleep 10
+          done
+          echo "::warning::stratalab.cc did not answer 200 after deploy"

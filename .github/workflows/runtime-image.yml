@@ -2,7 +2,7 @@ name: Build deployment runtime
 on:
   workflow_dispatch:
   push:
-    branches: [codex/deploy-stratalab-cc]
+    branches: [main]
     paths: [services/**, data/**, docs/methods/**, .dockerignore, .github/workflows/runtime-image.yml]
 permissions:
   contents: read
