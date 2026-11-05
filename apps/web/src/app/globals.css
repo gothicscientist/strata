@@ -114,12 +114,23 @@
   input[type="radio"] {
     accent-color: var(--color-malachite);
   }
+  /* Tailwind's reset gives buttons the arrow cursor; anything you can press shows a hand here. */
+  button:not(:disabled),
+  [role="button"],
+  [role="tab"],
+  label[for],
+  summary,
+  select {
+    cursor: pointer;
+  }
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
     *::after {
       animation-duration: 0.01ms !important;
       animation-delay: 0ms !important;
+      /* One pass, so looping animations rest instead of flickering through their frames. */
+      animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
   }
@@ -625,4 +636,382 @@
 .term:hover,
 .term[aria-expanded="true"] {
   color: var(--color-malachite);
+}
+
+/* ---- Caveman ------------------------------------------------------------------------------
+ * Parts rotate about joints given in the drawing's own units (viewBox 0 0 64 80). Poses that
+ * hold an arm up set it as a plain transform too, so they still read with motion turned off.
+ * ------------------------------------------------------------------------------------------ */
+.cm .cm-fig {
+  transform-origin: 32px 76px;
+}
+.cm .cm-torso {
+  transform-origin: 32px 76px;
+  animation: cm-breathe 3.4s ease-in-out infinite;
+}
+.cm .cm-eyes {
+  transform-origin: 32px 22.4px;
+  animation: cm-blink 5.3s ease-in-out infinite;
+}
+.cm .cm-head {
+  transform-origin: 32px 33px;
+  transition: transform 300ms;
+}
+.cm .cm-look {
+  transition: transform 300ms;
+}
+.cm .cm-tool-arm {
+  transform-origin: 21.5px 38.5px;
+}
+.cm .cm-free-arm {
+  transform-origin: 42.5px 38.5px;
+}
+.cm .cm-leg-l {
+  transform-origin: 27px 56px;
+}
+.cm .cm-leg-r {
+  transform-origin: 37px 56px;
+}
+.cm .cm-dust {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.cm .cm-hop {
+  animation: cm-hop 560ms cubic-bezier(0.3, 0.9, 0.4, 1) both;
+}
+
+.cm[data-pose="dig"] .cm-tool-arm {
+  animation: cm-dig 3.6s cubic-bezier(0.45, 0, 0.3, 1) infinite;
+}
+.cm[data-pose="dig"] .cm-dust {
+  animation: cm-dust 3.6s ease-out infinite;
+}
+.cm[data-pose="dig"] .cm-look {
+  transform: translate(-0.8px, 0.9px);
+}
+
+.cm[data-pose="walk"] .cm-leg-l {
+  animation: cm-step 0.62s ease-in-out infinite alternate;
+}
+.cm[data-pose="walk"] .cm-leg-r {
+  animation: cm-step 0.62s ease-in-out infinite alternate-reverse;
+}
+.cm[data-pose="walk"] .cm-torso {
+  animation: cm-bob 0.31s ease-in-out infinite alternate;
+}
+.cm[data-pose="walk"] .cm-tool-arm {
+  animation: cm-swing 0.62s ease-in-out infinite alternate-reverse;
+}
+.cm[data-pose="walk"] .cm-free-arm {
+  animation: cm-swing 0.62s ease-in-out infinite alternate;
+}
+.cm[data-pose="walk"] .cm-look {
+  transform: translateX(1.3px);
+}
+
+.cm[data-pose="puzzled"] .cm-free-arm {
+  transform: rotate(-146deg);
+  animation: cm-scratch 2.8s ease-in-out infinite;
+}
+.cm[data-pose="puzzled"] .cm-head {
+  transform: rotate(-7deg);
+}
+.cm[data-pose="puzzled"] .cm-look {
+  transform: translate(1px, -0.9px);
+}
+.cm .cm-q {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cm-q 2.8s ease-in-out infinite;
+}
+
+.cm[data-pose="cheer"] .cm-tool-arm {
+  transform: rotate(120deg);
+  animation: cm-cheer-l 0.5s ease-in-out infinite alternate;
+}
+.cm[data-pose="cheer"] .cm-free-arm {
+  transform: rotate(-120deg);
+  animation: cm-cheer-r 0.5s ease-in-out infinite alternate;
+}
+.cm[data-pose="cheer"] .cm-fig {
+  animation: cm-bounce 0.5s ease-in-out infinite alternate;
+}
+.cm[data-pose="cheer"] .cm-head {
+  transform: rotate(4deg);
+}
+
+/* A wave hello when the pointer comes near (on whatever element carries .cm-host). */
+.cm-host:hover .cm:is([data-pose="dig"], [data-pose="idle"]) .cm-free-arm,
+.cm-host:focus-visible .cm:is([data-pose="dig"], [data-pose="idle"]) .cm-free-arm {
+  animation: cm-wave 1.25s ease-in-out both;
+}
+.cm-host:hover .cm:is([data-pose="dig"], [data-pose="idle"]) .cm-look {
+  transform: translate(0.6px, -0.4px);
+}
+.cm-button {
+  display: inline-block;
+  line-height: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+}
+
+@keyframes cm-breathe {
+  50% {
+    transform: scaleY(1.018);
+  }
+}
+@keyframes cm-blink {
+  0%,
+  90%,
+  97%,
+  100% {
+    transform: none;
+  }
+  93% {
+    transform: scaleY(0.1);
+  }
+}
+@keyframes cm-dig {
+  0%,
+  52% {
+    transform: none;
+  }
+  66% {
+    transform: rotate(62deg);
+  }
+  70% {
+    transform: rotate(66deg);
+  }
+  77% {
+    transform: rotate(-5deg);
+  }
+  82% {
+    transform: rotate(1deg);
+  }
+  88%,
+  100% {
+    transform: none;
+  }
+}
+@keyframes cm-dust {
+  0%,
+  76% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  79% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(1.1);
+  }
+}
+@keyframes cm-hop {
+  0% {
+    transform: none;
+  }
+  30% {
+    transform: translateY(-8px);
+  }
+  55% {
+    transform: scale(1.05, 0.95);
+  }
+  75% {
+    transform: scale(0.98, 1.02);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes cm-wave {
+  0%,
+  100% {
+    transform: none;
+  }
+  22% {
+    transform: rotate(-128deg);
+  }
+  40% {
+    transform: rotate(-100deg);
+  }
+  58% {
+    transform: rotate(-130deg);
+  }
+  76% {
+    transform: rotate(-104deg);
+  }
+}
+@keyframes cm-step {
+  from {
+    transform: rotate(-16deg);
+  }
+  to {
+    transform: rotate(16deg);
+  }
+}
+@keyframes cm-bob {
+  to {
+    transform: translateY(-1.2px);
+  }
+}
+@keyframes cm-swing {
+  from {
+    transform: rotate(-12deg);
+  }
+  to {
+    transform: rotate(12deg);
+  }
+}
+@keyframes cm-scratch {
+  0%,
+  12%,
+  24%,
+  36%,
+  100% {
+    transform: rotate(-146deg);
+  }
+  6%,
+  18%,
+  30% {
+    transform: rotate(-158deg);
+  }
+}
+@keyframes cm-q {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-8deg);
+  }
+  50% {
+    transform: translateY(-2.5px) rotate(8deg);
+  }
+}
+@keyframes cm-cheer-l {
+  from {
+    transform: rotate(108deg);
+  }
+  to {
+    transform: rotate(132deg);
+  }
+}
+@keyframes cm-cheer-r {
+  from {
+    transform: rotate(-108deg);
+  }
+  to {
+    transform: rotate(-132deg);
+  }
+}
+@keyframes cm-bounce {
+  to {
+    transform: translateY(-3px);
+  }
+}
+
+/* The footer digger strolls along the sediment rule and turns at each end. */
+.cm-walker {
+  position: absolute;
+  bottom: calc(100% - 3px);
+  left: 0;
+  pointer-events: none;
+  animation: cm-stroll 84s linear infinite;
+}
+@keyframes cm-stroll {
+  0% {
+    left: 0;
+    transform: none;
+  }
+  49.4% {
+    left: calc(100% - 30px);
+    transform: none;
+  }
+  50% {
+    left: calc(100% - 30px);
+    transform: scaleX(-1);
+  }
+  99.4% {
+    left: 0;
+    transform: scaleX(-1);
+  }
+  100% {
+    left: 0;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cm *,
+  .cm-walker {
+    animation: none !important;
+  }
+}
+
+/* ---- Things you can press ----------------------------------------------------------------- */
+
+/* The upload drop zone: the whole box opens the file picker. */
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 15.5rem;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+  border: 2px dashed #b9c1bf;
+  border-radius: var(--radius-panel);
+  background: var(--color-panel);
+  transition:
+    border-color 150ms,
+    background-color 150ms,
+    box-shadow 150ms;
+}
+.dropzone:hover {
+  border-color: var(--color-malachite);
+  background: color-mix(in srgb, var(--color-malachite-soft) 55%, white);
+}
+.dropzone[data-drag="true"] {
+  border-style: solid;
+  border-color: var(--color-malachite);
+  background: var(--color-malachite-soft);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-malachite) 16%, transparent);
+}
+.dropzone-input:focus-visible + .dropzone {
+  outline: 2px solid var(--color-malachite);
+  outline-offset: 3px;
+}
+.dropzone:hover .btn-quiet,
+.dropzone-input:focus-visible + .dropzone .btn-quiet {
+  border-color: var(--color-malachite);
+  color: var(--color-malachite);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 #b9c1bf;
+}
+
+/* Diagram boxes breathe a halo until someone touches one, so the map reads as pressable. */
+@keyframes strata-beckon {
+  0%,
+  100% {
+    stroke-opacity: 0;
+  }
+  50% {
+    stroke-opacity: 0.7;
+  }
+}
+/* A hand that taps, beside "tap a box". */
+@keyframes strata-tap {
+  0%,
+  60%,
+  100% {
+    transform: none;
+  }
+  70% {
+    transform: translate(1px, 2px) scale(0.92);
+  }
+  80% {
+    transform: none;
+  }
 }

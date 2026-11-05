@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useWidth } from "./useWidth";
+import { Caveman } from "../Caveman";
 import { bpRange, int } from "@/lib/format";
 import { periodStyle, type Lithology, type PeriodStyle } from "@/lib/periods";
 
@@ -90,7 +91,7 @@ export function LithologyDefs({ periods }: { periods: PeriodStyle[] }) {
  * Layer thickness grows with the square root of the number of populations, with a floor so a
  * period holding one population is still legible.
  */
-export function CoreSample({ layers, height = 520 }: { layers: Layer[]; height?: number }) {
+export function CoreSample({ layers, height = 520, digger = false }: { layers: Layer[]; height?: number; digger?: boolean }) {
   const router = useRouter();
   const [hover, setHover] = useState<string | null>(null);
   // Tapping the surface of the core shakes it and lets the layers settle again.
@@ -122,7 +123,23 @@ export function CoreSample({ layers, height = 520 }: { layers: Layer[]; height?:
 
   const href = (p: string) => `/library/?period=${encodeURIComponent(p)}`;
 
+  // The digger stands on the surface; his feet (y 77 of 80 in his drawing) meet its middle.
+  const manH = narrow ? 66 : 80;
+  const lift = digger ? Math.round(manH * 0.9) : 0;
+  const manTop = lift + cap - (77 / 80) * manH;
+
   return (
+    <div className="relative" style={{ paddingTop: lift }}>
+    {digger ? (
+      <Caveman
+        pose="dig"
+        size={manH}
+        label="Shake the core"
+        onPoke={() => setQuakes((q) => q + 1)}
+        className="absolute z-10"
+        style={{ top: manTop, left: coreW / 2 - manH * 0.4 + 4 }}
+      />
+    ) : null}
     <div ref={ref} className="relative" style={{ height: total + cap * 2 + 8 }}>
       <div key={quakes} className="absolute inset-0" style={{ animation: quakes ? "strata-quake 620ms ease-out" : undefined }}>
       <svg
@@ -286,6 +303,7 @@ export function CoreSample({ layers, height = 520 }: { layers: Layer[]; height?:
         ))}
       </ol>
       </div>
+    </div>
     </div>
   );
 }

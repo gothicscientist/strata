@@ -351,10 +351,21 @@ export function Explainer() {
               aria-controls="step-panel"
               tabIndex={on ? 0 : -1}
               onClick={() => pick(i)}
-              className={`group relative overflow-hidden rounded-[var(--radius-panel)] border px-1 py-2 text-center lg:text-left transition-[background-color,border-color,transform] duration-200 lg:px-4 lg:py-3 ${
-                on ? "border-ink bg-panel" : "border-transparent hover:-translate-y-px hover:bg-panel/70"
+              className={`group relative overflow-hidden rounded-[var(--radius-panel)] border px-1 py-2 text-center lg:text-left transition-[background-color,border-color,box-shadow,transform] duration-150 lg:py-3 lg:pr-9 lg:pl-4 ${
+                on
+                  ? "border-malachite bg-panel shadow-[0_0_0_1px_var(--color-malachite)]"
+                  : "border-rule bg-panel/75 shadow-[0_3px_0_var(--color-rule)] hover:-translate-y-0.5 hover:border-ink-3/50 hover:bg-panel hover:shadow-[0_5px_0_#b9c1bf] active:translate-y-0.5 active:shadow-[0_1px_0_#b9c1bf]"
               }`}
             >
+              <svg
+                aria-hidden
+                viewBox="0 0 10 16"
+                className={`absolute top-1/2 right-3.5 hidden h-4 w-2.5 -translate-y-1/2 transition-[transform,color] duration-150 lg:block ${
+                  on ? "text-malachite" : "text-ink-3 group-hover:translate-x-0.5 group-hover:text-ink"
+                }`}
+              >
+                <path d="M2 2l6 6-6 6" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
               <span className="flex flex-col items-center gap-1 lg:flex-row lg:gap-2.5">
                 <span
                   key={on ? `on-${plays}` : "off"}
@@ -403,7 +414,14 @@ export function Explainer() {
               </button>
             ))}
           </div>
-          <button type="button" onClick={() => pick(step)} className="linkish text-[0.95rem] text-ink-3 hover:text-malachite">
+          <button
+            type="button"
+            onClick={() => pick(step)}
+            className="group inline-flex items-center gap-1.5 rounded-[6px] px-2 py-1 text-[0.95rem] text-ink-2 transition-colors hover:bg-wash hover:text-malachite"
+          >
+            <svg aria-hidden viewBox="0 0 16 16" className="size-3.5 transition-transform duration-300 group-hover:-rotate-90">
+              <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3.2h-3.2" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
             Play again
           </button>
         </div>
@@ -417,8 +435,11 @@ export function Explainer() {
             {hood ? s.hood : s.plain}
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <Link href={s.href} className="text-small font-semibold">
+            <Link href={s.href} className="btn btn-quiet group py-1.5">
               {s.action}
+              <span aria-hidden className="transition-transform duration-150 group-hover:translate-x-0.5">
+                &rarr;
+              </span>
             </Link>
             <span className="text-caption text-ink-3">Illustration, not real data.</span>
           </div>

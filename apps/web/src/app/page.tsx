@@ -58,7 +58,7 @@ function LibraryCore() {
   const individuals = pops.data!.reduce((a, p) => a + (p.n_samples ?? 0), 0);
   return (
     <figure>
-      <CoreSample layers={layers} height={540} />
+      <CoreSample layers={layers} height={540} digger />
       <figcaption className="mt-4 text-caption text-ink-3">
         <span className="num text-ink-2">{int(total)}</span> populations,{" "}
         <span className="num text-ink-2">{int(individuals)}</span> individuals. Click a layer to browse it.
