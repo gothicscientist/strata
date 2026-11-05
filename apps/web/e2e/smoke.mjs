@@ -10,7 +10,7 @@ const BASE = `http://localhost:${PORT}`;
 const API = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/+$/, "");
 
 const PAGES = [
-  ["/", /layer by layer/],
+  ["/", /population genetics/],
   ["/library/", /Reference populations/],
   ["/library/population/", /No population was specified|Loading/],
   ["/examples/", /Example analyses/],

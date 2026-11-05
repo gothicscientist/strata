@@ -88,7 +88,7 @@ function Readout({ label, value, state }: { label: string; value: string; state:
   return (
     <div className="grid grid-cols-[0.5rem_4.75rem_1fr] items-baseline gap-x-2">
       <span className={`inline-block size-1.5 -translate-y-px rounded-full ${dot}`} aria-hidden />
-      <dt className="text-[#8d98a3]">{label}</dt>
+      <dt className="text-[#a7b1ba]">{label}</dt>
       <dd className="num truncate text-[#d5dbe0]" title={value}>
         {value}
       </dd>
@@ -101,7 +101,7 @@ function Status() {
   const caps = health?.capabilities;
   const wait = !health;
   return (
-    <dl className="space-y-1 text-[0.86rem] leading-[1.5]" aria-label="Server status">
+    <dl className="space-y-1 text-[0.92rem] leading-[1.5]" aria-label="Server status">
       <Readout label="API" value={health ? `${health.status}, v${health.version}` : "not connected"} state={wait ? "wait" : health.status === "ok" ? "ok" : "off"} />
       <Readout label="Reference" value={caps?.reference_version ?? "not built"} state={wait ? "wait" : caps?.reference_loaded ? "ok" : "off"} />
       <Readout label="qpAdm" value={caps ? (caps.qpadm ? "available" : "not installed") : "—"} state={wait ? "wait" : caps?.qpadm ? "ok" : "off"} />
@@ -119,7 +119,7 @@ function Nav({ path, onNavigate }: { path: string; onNavigate?: () => void }) {
     <nav aria-label="Primary" className="space-y-6">
       {GROUPS.map((g) => (
         <div key={g.title}>
-          <p className="mb-1.5 px-3 text-[0.82rem] font-semibold tracking-[0.02em] text-[#7f8a95]">{g.title}</p>
+          <p className="mb-1.5 px-3 text-[0.82rem] font-semibold tracking-[0.02em] text-[#9ca7b1]">{g.title}</p>
           <ul className="space-y-px">
             {g.items.map((n) => {
               const active = isActive(path, n.href);
@@ -136,7 +136,7 @@ function Nav({ path, onNavigate }: { path: string; onNavigate?: () => void }) {
                     {active ? (
                       <span className="pop absolute top-1.5 bottom-1.5 left-0 w-[3px] origin-center rounded-r bg-[#62c39a]" aria-hidden />
                     ) : null}
-                    <span className={`num text-[0.82rem] ${active ? "text-[#62c39a]" : "text-[#6f7a86]"}`}>
+                    <span className={`num text-[0.82rem] ${active ? "text-[#62c39a]" : "text-[#8994a0]"}`}>
                       {n.step ?? ""}
                     </span>
                     <span className="transition-transform duration-150 group-hover:translate-x-0.5">
@@ -212,7 +212,7 @@ export function SiteHeader() {
         <Nav path={path} onNavigate={() => setOpen(false)} />
         <div className="mt-auto space-y-4 px-3 pt-10">
           <Status />
-          <p className="border-t border-white/10 pt-3 text-[0.86rem] leading-[1.5] text-[#a9b3bc] [&_a]:text-[#d5dbe0]">
+          <p className="border-t border-white/10 pt-3 text-[0.92rem] leading-[1.5] text-[#a9b3bc] [&_a]:text-[#d5dbe0]">
             <SessionLine />
           </p>
         </div>
