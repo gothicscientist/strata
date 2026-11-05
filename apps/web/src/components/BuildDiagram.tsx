@@ -196,7 +196,13 @@ export interface BuildStats {
 export function BuildDiagram({ stats }: { stats: BuildStats }) {
   const [wrap, width] = useWidth<HTMLDivElement>(820);
   const [seenRef, seen] = useSeen<HTMLDivElement>(0.25);
-  const [sel, setSel] = useState<Id>("engine");
+  const [sel, setSelected] = useState<Id>("engine");
+  // Until someone points at a box, the others glow in turn to show they can be opened.
+  const [touched, setTouched] = useState(false);
+  const setSel = (id: Id) => {
+    setSelected(id);
+    setTouched(true);
+  };
   const L = width < 620 ? NARROW : WIDE;
   const linked = (e: Edge) => e.from === sel || e.to === sel;
 
@@ -224,6 +230,18 @@ export function BuildDiagram({ stats }: { stats: BuildStats }) {
       </dl>
 
       <div ref={wrap} className="panel p-3 sm:p-5">
+        <p className="mb-2 flex items-center gap-2 px-1 text-caption text-ink-3">
+          <svg aria-hidden viewBox="0 0 20 20" className="size-4 text-malachite" style={touched ? undefined : { animation: "strata-tap 2.4s ease-in-out infinite" }}>
+            <path
+              d="M7.5 9.5V3.8a1.3 1.3 0 0 1 2.6 0v5l.2-1.2a1.3 1.3 0 0 1 2.5.4v1l.3-.6a1.3 1.3 0 0 1 2.4.7v4.4c0 2.6-2 4.5-4.6 4.5h-1c-1.6 0-3-.8-3.8-2.1L3.8 12a1.3 1.3 0 0 1 2.1-1.5z"
+              fill="#e2efe9"
+              stroke="currentColor"
+              strokeWidth={1.4}
+              strokeLinejoin="round"
+            />
+          </svg>
+          Tap a box to see what it does.
+        </p>
         <svg viewBox={`0 0 ${L.w} ${L.h}`} className="mx-auto block w-full" style={{ maxWidth: L.w }} role="group" aria-label="How Strata is built">
           <defs>
             <marker id="wire-head" viewBox="0 0 8 8" refX={7} refY={4} markerWidth={7} markerHeight={7} orient="auto-start-reverse">
@@ -297,6 +315,20 @@ export function BuildDiagram({ stats }: { stats: BuildStats }) {
                   animation: seen ? `strata-pop 320ms cubic-bezier(.3,1.5,.5,1) ${i * 70}ms both` : undefined,
                 }}
               >
+                {!touched && !on ? (
+                  <rect
+                    x={cx - w / 2 - 4}
+                    y={cy - h / 2 - 4}
+                    width={w + 8}
+                    height={h + 8}
+                    rx={11}
+                    fill="none"
+                    stroke="#1d6b56"
+                    strokeWidth={2}
+                    strokeOpacity={0}
+                    style={{ animation: `strata-beckon 2.6s ease-in-out ${1.2 + i * 0.33}s infinite` }}
+                  />
+                ) : null}
                 <rect
                   x={cx - w / 2}
                   y={cy - h / 2 + 3}
@@ -323,6 +355,15 @@ export function BuildDiagram({ stats }: { stats: BuildStats }) {
                 <text x={cx} y={cy + 15} textAnchor="middle" style={{ fontSize: 12.5 }} className="num fill-ink-3">
                   {n.sub}
                 </text>
+                {/* A corner badge: plus to open, filled when this box is the one shown below. */}
+                <g transform={`translate(${cx + w / 2} ${cy - h / 2})`}>
+                  <circle r={8} fill={on ? "#1d6b56" : "#fff"} stroke={on ? "#1d6b56" : "#8a949c"} strokeWidth={1.2} className="transition-[fill,stroke] duration-200" />
+                  {on ? (
+                    <path d="M-3.4 -1.4 L0 2 L3.4 -1.4" fill="none" stroke="#fff" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+                  ) : (
+                    <path d="M-3.6 0 H3.6 M0 -3.6 V3.6" stroke="#4f5963" strokeWidth={1.7} strokeLinecap="round" />
+                  )}
+                </g>
               </g>
             );
           })}

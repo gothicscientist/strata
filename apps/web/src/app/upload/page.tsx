@@ -7,6 +7,7 @@ import { parseG25 } from "@/lib/g25";
 import { relativeExpiry } from "@/lib/format";
 import type { Dataset } from "@/lib/types";
 import { QcReport } from "@/components/QcReport";
+import { Caveman } from "@/components/Caveman";
 import { useSession } from "@/components/SessionProvider";
 import { Caveat, ErrorNote, PageHeader, Section } from "@/components/typography";
 
@@ -88,47 +89,48 @@ export default function UploadPage() {
           <p className="mb-3 text-small text-ink-2">
             23andMe, AncestryDNA, FamilyTreeDNA, MyHeritage or VCF. Up to 60&nbsp;MB.
           </p>
-          <div
+          <input
+            ref={inputRef}
+            id={ids.file}
+            type="file"
+            accept={ACCEPT}
+            className="dropzone-input sr-only"
+            onChange={(e) => pick(e.target.files?.[0])}
+          />
+          <label
+            htmlFor={ids.file}
+            data-drag={dragging}
             onDragOver={(e) => {
               e.preventDefault();
               setDragging(true);
             }}
-            onDragLeave={() => setDragging(false)}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+            }}
             onDrop={(e) => {
               e.preventDefault();
               setDragging(false);
               pick(e.dataTransfer.files[0]);
             }}
-            className={`flex h-56 flex-col items-center justify-center rounded-[var(--radius-panel)] border-2 border-dashed px-6 text-center text-small transition-colors ${
-              dragging ? "border-malachite bg-malachite-soft" : "border-rule bg-panel"
-            }`}
+            className="dropzone cm-host text-small"
           >
+            <Caveman pose={dragging ? "cheer" : "idle"} size={66} className="mb-2" />
             {file ? (
               <>
-                <p className="font-medium">{file.name}</p>
-                <p className="num mt-1 text-caption text-ink-3">{(file.size / 1e6).toFixed(1)} MB</p>
-                <button type="button" className="linkish mt-3 text-caption" onClick={() => setFile(null)}>
-                  Choose a different file
-                </button>
+                <span className="block font-medium">{file.name}</span>
+                <span className="num mt-1 block text-caption text-ink-3">{(file.size / 1e6).toFixed(1)} MB</span>
+                <span className="linkish mt-3 text-caption">Choose a different file</span>
               </>
+            ) : dragging ? (
+              <span className="block text-[1.2rem] font-semibold text-malachite">Let go to add it</span>
             ) : (
               <>
-                <p className="text-[1.2rem] font-semibold">Drop the file here</p>
-                <p className="my-1 text-caption text-ink-3">or</p>
-                <label htmlFor={ids.file} className="linkish cursor-pointer">
-                  choose a file from your computer
-                </label>
+                <span className="block text-[1.2rem] font-semibold">Drop the file here</span>
+                <span className="my-1 block text-caption text-ink-3">or</span>
+                <span className="btn btn-quiet pointer-events-none">Choose a file</span>
               </>
             )}
-            <input
-              ref={inputRef}
-              id={ids.file}
-              type="file"
-              accept={ACCEPT}
-              className="sr-only"
-              onChange={(e) => pick(e.target.files?.[0])}
-            />
-          </div>
+          </label>
           <button type="button" className="btn mt-4" disabled={busy || !file} onClick={() => submit("file")}>
             {busy ? "Uploading and checking…" : "Upload file"}
           </button>
