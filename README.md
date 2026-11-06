@@ -1,6 +1,8 @@
 # Strata
 
-*A research instrument for population genetics.*
+**A web workspace for comparing genomes with reference populations and evaluating admixture models.**
+
+[Open Strata](https://stratalab.cc/) · [Try a worked example](https://stratalab.cc/examples/) · [Methods](https://stratalab.cc/methods/) · [Architecture](docs/ARCHITECTURE.md) · [Run locally](#quick-start)
 
 Strata is an open-source web platform for computational population genetics. It places a
 genome, or a set of Global25-style coordinates, among a curated library of ancient and
@@ -46,6 +48,8 @@ sign-in, saved analyses, dataset management, model comparison, and reproducible 
 reports that record input hashes, parameters, software and reference-data versions.
 
 ## Worked examples
+
+Start with the [example gallery](https://stratalab.cc/examples/) to inspect results without uploading a genome. For the underlying inputs and outputs, see [`data/examples/`](data/examples/).
 
 `data/examples/` holds real ADMIXTOOLS 2 computations, with inputs, outputs and provenance
 (software versions, command, sha256 of parameters and results). They run on the f2 blocks
